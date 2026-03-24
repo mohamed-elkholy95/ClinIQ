@@ -1,24 +1,21 @@
 """Batch processing endpoints.
 
 Allows callers to submit up to 100 clinical documents as a single asynchronous
-batch job. Jobs are persisted in the database and processed in the background
-via Celery (wired up in a later milestone). The polling endpoint returns live
-progress.
+batch job.  Jobs are persisted in the database and dispatched to Celery workers
+for background inference.  The polling endpoint returns live progress.
 """
 
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.batch import BatchRequest, BatchStatusResponse, BatchSubmitResponse
 from app.core.config import Settings, get_settings
-from app.core.exceptions import NotFoundError
 from app.db.models import BatchJob
 from app.db.session import get_db_session
 
@@ -49,7 +46,6 @@ router = APIRouter(tags=["batch"])
 )
 async def submit_batch_job(
     payload: BatchRequest,
-    request: Request,
     db: Annotated[AsyncSession, Depends(get_db_session)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> BatchSubmitResponse:
