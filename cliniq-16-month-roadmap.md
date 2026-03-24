@@ -8,6 +8,18 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 11 (2026-03-24)
+- [x] **Test coverage pushed from 78% to 89%** (4148 statements, 439 missed) — 94 new tests across 5 modules:
+  - `test_sklearn_icd_classifier.py` (26 tests) — SklearnICDClassifier (load empty/from file/failure, predict with predict_proba/decision_function, batch predict, ensure_loaded), TransformerICDClassifier (load mocks), HierarchicalICDClassifier (dispatch, no-match, batch, load), ICDCodePrediction/ICDPredictionResult dataclasses, get_chapter_for_code helper (13 ICD-10 chapter lookups + edge cases)
+  - `test_spacy_ner.py` (18 tests) — SpacyNERModel (load/load-from-path/load-failure, entity extraction, type mapping, negation detection, uncertainty detection, inference error), TransformerNERModel (load/load-from-path/load-failure, BIO tag extraction, inference error), Entity dataclass to_dict
+  - `test_auth_get_current_user.py` (11 tests) — JWT auth (valid token, invalid token, missing sub, user not found, inactive user), API key auth (valid key, invalid key), no credentials, get_optional_user (no auth, auth error, valid auth)
+  - `test_seed.py` (10 tests) — ICD-10 seed data validation (count, structure, dental codes, common codes, no duplicates), seed_icd_codes (new + skip existing), seed_admin_user (create + skip existing), seed_all orchestrator
+  - `test_abstractive_summarizer.py` (8 tests) — AbstractiveSummarizer load (success/from-path/failure), single/multi-chunk summarization, error propagation, detail level, SummarizationResult dataclass
+  - `test_ml_risk_scorer.py` (14 tests) — MLRiskScorer (load with/without path, load failure, null assessment, classifier prediction, feature extraction with/without entities, ICD chapter features, inference error), RuleBasedRiskScorer recommendation generation (critical/high/moderate/low tiers, max cap)
+- [x] **Removed dead code** — `app/api/v1/schemas.py` (312 lines, 0% coverage, never imported — actual schemas in `app/api/schemas/`)
+- [x] **Updated README** — coverage badge 84% → 89%, Python badge 3.11 → 3.12
+- [x] **Total test suite: 1015 passing** (backend: 1015, frontend: 113), 0 failures
+
 #### Post-PRD Enhancements — Session 10 (2026-03-24)
 - [x] **Frontend test infrastructure** — Set up Vitest 4.1 + React Testing Library + jsdom environment with ResizeObserver polyfill for Recharts compatibility
 - [x] **113 new frontend tests** across 7 test modules (~1,200 lines):

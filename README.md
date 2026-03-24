@@ -3,8 +3,8 @@
 **Clinical Intelligence & Query Platform** -- AI-powered clinical NLP that transforms unstructured medical text into structured, actionable intelligence.
 
 [![CI/CD](https://github.com/cliniq/cliniq/actions/workflows/ci.yml/badge.svg)](https://github.com/cliniq/cliniq/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-84%25-brightgreen)](https://github.com/cliniq/cliniq)
-[![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/downloads/release/python-3110/)
+[![Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen)](https://github.com/cliniq/cliniq)
+[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/downloads/release/python-3120/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
