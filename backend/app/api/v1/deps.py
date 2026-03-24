@@ -13,7 +13,7 @@ from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import decode_access_token, verify_api_key
 from app.db.models import APIKey, User
 from app.db.session import get_db_session
-from app.ml.pipeline import MLPipeline, get_pipeline
+from app.ml.pipeline import ClinicalPipeline
 
 # Security schemes
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
@@ -94,9 +94,30 @@ async def get_superuser(
     return current_user
 
 
-def get_ml_pipeline() -> MLPipeline:
-    """Get ML pipeline instance."""
-    return get_pipeline()
+def get_ml_pipeline() -> ClinicalPipeline:
+    """Get ML pipeline instance.
+
+    Returns a :class:`ClinicalPipeline` configured with components from
+    the model registry.  The pipeline uses lazy loading, so this function
+    is fast and safe to call in dependency injection.
+
+    Design decision: We import the model registry here (rather than at
+    module level) to avoid circular imports and to allow the registry
+    singletons to initialise only when the first request arrives.
+    """
+    from app.services.model_registry import (
+        get_icd_model,
+        get_ner_model,
+        get_risk_scorer,
+        get_summarizer,
+    )
+
+    return ClinicalPipeline(
+        ner_model=get_ner_model(),
+        icd_classifier=get_icd_model(),
+        summarizer=get_summarizer(),
+        risk_scorer=get_risk_scorer(),
+    )
 
 
 # Type aliases for cleaner dependency injection
@@ -104,4 +125,4 @@ DBSession = Annotated[AsyncSession, Depends(get_db_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 SuperUser = Annotated[User, Depends(get_superuser)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
-PipelineDep = Annotated[MLPipeline, Depends(get_ml_pipeline)]
+PipelineDep = Annotated[ClinicalPipeline, Depends(get_ml_pipeline)]
