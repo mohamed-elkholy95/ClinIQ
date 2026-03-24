@@ -1,51 +1,98 @@
-"""Authentication and user management schemas."""
-
-from __future__ import annotations
+"""Authentication and authorisation schemas."""
 
 from datetime import datetime
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
+# EmailStr requires the optional 'email-validator' package.  Use an annotated
+# str with a pattern constraint so the schema works without that extra dep while
+# still expressing the intent clearly in the OpenAPI spec.
+EmailStr = Annotated[
+    str,
+    Field(
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+        max_length=255,
+        description="Valid email address",
+        examples=["clinician@hospital.org"],
+    ),
+]
 
 # ---------------------------------------------------------------------------
-# Auth / token schemas
+# Token schemas
 # ---------------------------------------------------------------------------
 
 
 class TokenRequest(BaseModel):
-    """OAuth2-compatible password-grant request body."""
+    """OAuth2 password-flow token request (maps to /auth/token form data)."""
 
-    username: str = Field(description="User email address used as the username")
-    password: str = Field(description="User password (transmitted only over HTTPS)")
+    username: str = Field(
+        description="User's email address used as the login credential",
+        examples=["clinician@hospital.org"],
+    )
+    password: str = Field(
+        min_length=8,
+        description="User's password",
+    )
+    grant_type: Literal["password"] = Field(
+        default="password",
+        description="OAuth2 grant type; must be 'password'",
+    )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "username": "clinician@hospital.org",
-                "password": "s3cur3P@ssword",
+                "password": "S3cureP@ssw0rd",
+                "grant_type": "password",
             }
         }
     }
 
 
 class TokenResponse(BaseModel):
-    """JWT token pair returned on successful authentication."""
+    """JWT bearer token response."""
 
     access_token: str = Field(description="Signed JWT access token")
-    token_type: str = Field(default="bearer", description="Token type; always 'bearer'")
+    refresh_token: str | None = Field(
+        default=None,
+        description="Opaque refresh token for obtaining a new access token after expiry",
+    )
+    token_type: Literal["bearer"] = Field(
+        default="bearer",
+        description="OAuth2 token type; always 'bearer'",
+    )
     expires_in: int = Field(
-        ge=0,
-        description="Seconds until the access token expires",
+        ge=1,
+        description="Access token lifetime in seconds from the time of issue",
+    )
+    scope: str = Field(
+        default="cliniq:read cliniq:write",
+        description="Space-separated list of OAuth2 scopes granted to this token",
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...",
                 "token_type": "bearer",
                 "expires_in": 1800,
+                "scope": "cliniq:read cliniq:write",
             }
+        }
+    }
+
+
+class RefreshTokenRequest(BaseModel):
+    """Request body for refreshing an expired access token."""
+
+    refresh_token: str = Field(description="Refresh token previously issued by /auth/token")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {"refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."}
         }
     }
 
@@ -56,51 +103,77 @@ class TokenResponse(BaseModel):
 
 
 class UserCreate(BaseModel):
-    """Request body for new user registration."""
+    """Request body for registering a new user account."""
 
-    email: EmailStr = Field(description="Unique email address for the new account")
+    email: EmailStr  # type: ignore[valid-type]  # annotated alias defined above
     password: str = Field(
         min_length=8,
         max_length=128,
-        description="Account password (minimum 8 characters)",
+        description="Plain-text password (minimum 8 characters; hashed server-side before storage)",
     )
     full_name: str | None = Field(
         default=None,
         max_length=255,
-        description="Optional display name for the user",
+        description="User's full name (optional)",
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "email": "clinician@hospital.org",
-                "password": "s3cur3P@ssword",
+                "password": "S3cureP@ssw0rd",
                 "full_name": "Dr. Jane Smith",
             }
         }
     }
 
 
-class UserResponse(BaseModel):
-    """Public user profile returned by auth endpoints."""
+class UserUpdate(BaseModel):
+    """Request body for updating an existing user account (all fields optional)."""
 
-    id: UUID = Field(description="Unique user identifier")
-    email: str = Field(description="User email address")
-    full_name: str | None = Field(default=None, description="Display name")
-    is_active: bool = Field(description="Whether the account is enabled")
-    role: str = Field(description="User role (e.g. 'user', 'admin')")
-    created_at: datetime = Field(description="UTC timestamp of account creation")
+    full_name: str | None = Field(
+        default=None,
+        max_length=255,
+        description="New full name",
+    )
+    password: str | None = Field(
+        default=None,
+        min_length=8,
+        max_length=128,
+        description="New password (hashed server-side before storage)",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {"full_name": "Dr. Jane Smith", "password": None}
+        }
+    }
+
+
+class UserResponse(BaseModel):
+    """Public user representation returned from the API (no password hash)."""
+
+    id: UUID = Field(description="Server-assigned unique user identifier (UUID v4)")
+    email: str = Field(description="User's email address")
+    full_name: str | None = Field(default=None, description="User's full display name")
+    is_active: bool = Field(description="Whether the account is currently active")
+    is_superuser: bool = Field(description="Whether the user has super-admin privileges")
+    role: str = Field(description="Role assigned to the user (e.g. 'user', 'admin', 'clinician')")
+    created_at: datetime = Field(description="UTC timestamp when the account was created")
+    updated_at: datetime = Field(description="UTC timestamp of the last account update")
 
     model_config = {
         "from_attributes": True,
         "json_schema_extra": {
             "example": {
-                "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "email": "clinician@hospital.org",
                 "full_name": "Dr. Jane Smith",
                 "is_active": True,
-                "role": "user",
-                "created_at": "2026-03-24T09:00:00Z",
+                "is_superuser": False,
+                "role": "clinician",
+                "created_at": "2026-01-10T08:00:00Z",
+                "updated_at": "2026-03-20T14:30:00Z",
             }
         },
     }
@@ -117,62 +190,64 @@ class APIKeyCreate(BaseModel):
     name: str = Field(
         min_length=1,
         max_length=100,
-        description="Human-readable label for this API key (e.g. 'CI pipeline key')",
+        description="Human-readable label for the key (e.g. 'EHR integration prod')",
     )
     rate_limit: int = Field(
         default=100,
         ge=1,
         le=10_000,
-        description="Maximum number of API requests allowed per 24-hour period",
+        description="Maximum number of API requests allowed per 24-hour period for this key",
     )
-    expires_days: int | None = Field(
+    expires_at: datetime | None = Field(
         default=None,
-        ge=1,
-        le=3650,
-        description="Key lifetime in days from now. Omit for a non-expiring key.",
+        description="Optional expiry timestamp (UTC). Omit for a non-expiring key.",
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "name": "production-etl-key",
-                "rate_limit": 1000,
-                "expires_days": 365,
+                "name": "EHR integration prod",
+                "rate_limit": 500,
+                "expires_at": None,
             }
         }
     }
 
 
 class APIKeyResponse(BaseModel):
-    """Newly created API key; the raw key is shown only once."""
+    """API key representation returned from the API."""
 
-    id: UUID = Field(description="API key unique identifier")
-    name: str = Field(description="Human-readable label")
-    key: str | None = Field(
+    id: UUID = Field(description="Server-assigned unique key identifier (UUID v4)")
+    name: str = Field(description="Human-readable label for the key")
+    key_prefix: str = Field(
+        description="First few characters of the key (e.g. 'ciq_abc1'), safe to display",
+    )
+    plain_key: str | None = Field(
         default=None,
         description=(
-            "Raw API key value — returned only at creation time and never again. "
-            "Store it securely immediately."
+            "The full plaintext key value. ONLY returned at creation time. "
+            "Store it securely — it cannot be retrieved again."
         ),
     )
-    key_prefix: str = Field(description="First few characters of the key for identification")
-    rate_limit: int = Field(description="Requests allowed per 24-hour period")
     is_active: bool = Field(description="Whether the key is currently active")
-    expires_at: datetime | None = Field(default=None, description="UTC expiry timestamp, or null for non-expiring")
-    created_at: datetime = Field(description="UTC creation timestamp")
+    rate_limit: int = Field(description="Maximum requests per 24-hour period")
+    expires_at: datetime | None = Field(default=None, description="Key expiry timestamp (null = no expiry)")
+    last_used_at: datetime | None = Field(default=None, description="UTC timestamp of the most recent use")
+    created_at: datetime = Field(description="UTC timestamp when the key was created")
 
     model_config = {
         "from_attributes": True,
         "json_schema_extra": {
             "example": {
-                "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                "name": "production-etl-key",
-                "key": "cliniq_abc123...",
-                "key_prefix": "cliniq_a",
-                "rate_limit": 1000,
+                "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                "name": "EHR integration prod",
+                "key_prefix": "ciq_abc1",
+                "plain_key": "ciq_abc1xxxxxxxxxxxxxxxxxxxxxxxx",
                 "is_active": True,
-                "expires_at": "2027-03-24T00:00:00Z",
-                "created_at": "2026-03-24T09:00:00Z",
+                "rate_limit": 500,
+                "expires_at": None,
+                "last_used_at": None,
+                "created_at": "2026-03-24T10:00:00Z",
             }
         },
     }
