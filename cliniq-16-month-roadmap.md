@@ -8,6 +8,15 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 5 (2026-03-24)
+- [x] **Wired real Celery dispatch to batch route** — `_process_batch_stub` replaced with `process_batch_task.delay()` from `worker.py`; documents are serialised to JSON-safe dicts for the task payload
+- [x] **Wired real JWT auth to auth routes** — replaced `_get_current_user_placeholder` (which always raised 401) with the real `get_current_user` dependency from `deps.py` that validates JWT tokens and API keys
+- [x] **Cleaned up stale imports** — removed unused `datetime`, `timezone`, `func`, `Request`, `NotFoundError`, `AuthenticationError`, `AuthorizationError` across batch and auth route modules
+- [x] **New test modules** — 3 new test suites (~790 lines):
+  - `test_health_route.py` — database/Redis/model probes, liveness/readiness, overall status aggregation (healthy/degraded/unhealthy)
+  - `test_auth_route.py` — login (valid/invalid/disabled), registration (success/duplicate), profile retrieval, API key creation
+  - `test_batch_route.py` — job creation + Celery dispatch, ETA scaling, serialised doc fields, progress computation, zero-total guard, 404 handling
+
 #### Post-PRD Enhancements — Session 4 (2026-03-24)
 - [x] **Bug fix: broken `deps.py` imports** — `MLPipeline` and `get_pipeline` never existed in the pipeline module; replaced with `ClinicalPipeline` and wired to model registry singletons (`get_ner_model`, `get_icd_model`, `get_summarizer`, `get_risk_scorer`)
 - [x] **Expanded test coverage** — 4 new test modules (1,200+ lines):
