@@ -8,7 +8,7 @@ dental expertise.
 
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -578,3 +578,136 @@ class CDTCodePredictor:
         predictions.sort(key=lambda x: x["confidence"], reverse=True)
 
         return predictions[:10]  # Return top 10
+
+
+# ---------------------------------------------------------------------------
+# DentalAssessment — composite result returned by the pipeline
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class DentalAssessment:
+    """Aggregate dental assessment produced by the ClinicalPipeline.
+
+    Combines dental NER entities, periodontal risk scoring, CDT code
+    predictions, and clinical recommendations into a single result object.
+
+    Attributes
+    ----------
+    entities:
+        Dental-specific entities extracted by :class:`DentalNERModel`.
+    periodontal_risk_score:
+        Normalised risk score in ``[0, 1]`` from the periodontal assessor.
+    periodontal_classification:
+        Categorical risk level (``"low"``, ``"moderate"``, ``"high"``).
+    cdt_codes:
+        Mapping of CDT code → description for predicted procedures.
+    recommendations:
+        Clinically actionable recommendations derived from the assessment.
+    processing_time_ms:
+        Inference wall-clock time in milliseconds.
+    model_name:
+        Name of the dental NER model used.
+    model_version:
+        Version string of the dental NER model used.
+    """
+
+    entities: list[DentalEntity] = field(default_factory=list)
+    periodontal_risk_score: float = 0.0
+    periodontal_classification: str = "low"
+    cdt_codes: dict[str, str] = field(default_factory=dict)
+    recommendations: list[str] = field(default_factory=list)
+    processing_time_ms: float = 0.0
+    model_name: str = ""
+    model_version: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-serialisable representation."""
+        return {
+            "entities": [e.to_dict() for e in self.entities],
+            "periodontal_risk_score": self.periodontal_risk_score,
+            "periodontal_classification": self.periodontal_classification,
+            "cdt_codes": self.cdt_codes,
+            "recommendations": self.recommendations,
+            "processing_time_ms": self.processing_time_ms,
+            "model_name": self.model_name,
+            "model_version": self.model_version,
+        }
+
+
+# ---------------------------------------------------------------------------
+# PeriodontalRiskAssessor — adapter used by the pipeline
+# ---------------------------------------------------------------------------
+
+
+class PeriodontalRiskAssessor:
+    """Pipeline-facing adapter for periodontal risk scoring.
+
+    Wraps :class:`PeriodontalRiskAssessment` with a ``load`` / ``ensure_loaded``
+    lifecycle and a unified ``assess`` interface expected by
+    :class:`~app.ml.pipeline.ClinicalPipeline`.
+
+    Parameters
+    ----------
+    model_name:
+        Identifier used in logging and metadata.
+    version:
+        Semantic version string.
+    """
+
+    def __init__(
+        self,
+        model_name: str = "periodontal-risk-assessor",
+        version: str = "1.0.0",
+    ) -> None:
+        self.model_name = model_name
+        self.version = version
+        self._delegate: PeriodontalRiskAssessment | None = None
+        self._is_loaded: bool = False
+
+    @property
+    def is_loaded(self) -> bool:
+        """``True`` if the assessor is ready for inference."""
+        return self._is_loaded
+
+    def load(self) -> None:
+        """Initialise the underlying :class:`PeriodontalRiskAssessment`."""
+        self._delegate = PeriodontalRiskAssessment()
+        self._is_loaded = True
+        logger.info("Loaded PeriodontalRiskAssessor v%s", self.version)
+
+    def ensure_loaded(self) -> None:
+        """Call :meth:`load` if not yet loaded."""
+        if not self._is_loaded:
+            self.load()
+
+    def assess(
+        self,
+        text: str,
+        entities: list[DentalEntity] | None = None,
+    ) -> dict[str, Any]:
+        """Run periodontal risk assessment.
+
+        Parameters
+        ----------
+        text:
+            Raw clinical document text.
+        entities:
+            Optional dental entities already extracted by :class:`DentalNERModel`.
+
+        Returns
+        -------
+        dict
+            Dictionary with keys ``overall_risk``, ``risk_score``,
+            ``risk_factors``, ``protective_factors``, ``recommendations``,
+            and ``processing_time_ms``.
+        """
+        import time as _time
+
+        self.ensure_loaded()
+        assert self._delegate is not None  # guaranteed by ensure_loaded
+
+        start = _time.time()
+        result = self._delegate.calculate_risk(entities or [], text)
+        result["processing_time_ms"] = (_time.time() - start) * 1000
+        return result

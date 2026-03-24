@@ -196,13 +196,13 @@ def mock_summarizer() -> MagicMock:
     summarizer.version = "1.0.0"
     summarizer.summarize.return_value = SummarizationResult(
         summary="Patient presents with diabetes managed with metformin.",
-        original_length=100,
-        summary_length=50,
-        compression_ratio=2.0,
+        key_findings=["diabetes managed with metformin"],
+        detail_level="standard",
         processing_time_ms=100.0,
         model_name="test-summarizer",
         model_version="1.0.0",
-        summary_type="extractive",
+        sentence_count_original=10,
+        sentence_count_summary=1,
     )
     return summarizer
 

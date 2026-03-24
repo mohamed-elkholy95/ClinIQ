@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from app.ml.ner.model import Entity
 from app.ml.icd.model import ICDCodePrediction, ICDPredictionResult
-from app.ml.summarization.model import SummaryResult
+from app.ml.summarization.model import SummarizationResult as SummaryResult
 
 
 class TestAnalyzeEndpoint:
