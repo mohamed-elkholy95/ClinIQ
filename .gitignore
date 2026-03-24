@@ -1,1 +1,59 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Node / Frontend
+node_modules/
+.next/
+out/
+
+# ML Artifacts
+models/*.bin
+models/*.pt
+models/*.onnx
+.mlflow/
+checkpoints/
+wandb/
+
+# Data
+data/raw/
+data/processed/
+*.csv
+*.jsonl
+!package.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+postgres_data/
+redis_data/
+minio_data/
+
+# Project
 AGENTS.md
