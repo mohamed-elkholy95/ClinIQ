@@ -47,10 +47,20 @@ async def _probe_redis(settings: Settings) -> str:
         return "unhealthy"
 
 
-async def _probe_models() -> str:
-    """Check whether ML model artefacts are accessible; always returns 'loaded' for now."""
-    # Pending ModelRegistry integration — always reports loaded for now.
-    return "loaded"
+async def _probe_models() -> dict[str, str]:
+    """Check which ML models are currently loaded via the model registry.
+
+    Returns a dict with per-model status (``'loaded'`` / ``'not_loaded'``)
+    plus an overall ``'_status'`` key that is ``'loaded'`` when at least
+    one model is ready, ``'not_loaded'`` when none are.
+    """
+    from app.services.model_registry import health_check as registry_health
+
+    statuses = registry_health()
+    per_model = {k: ("loaded" if v else "not_loaded") for k, v in statuses.items()}
+    any_loaded = any(statuses.values())
+    per_model["_status"] = "loaded" if any_loaded else "not_loaded"
+    return per_model
 
 
 @router.get(
@@ -76,12 +86,14 @@ async def health_check(
     """Return the aggregated health status of all service dependencies."""
     db_status = await _probe_database(db)
     redis_status = await _probe_redis(settings)
-    model_status = await _probe_models()
+    model_info = await _probe_models()
+    model_status = model_info.pop("_status", "not_loaded")
 
     dependencies: dict[str, str] = {
         "database": db_status,
         "redis": redis_status,
         "models": model_status,
+        **{f"model_{k}": v for k, v in model_info.items()},
     }
 
     # Determine overall status based on critical dependency health.
