@@ -23,7 +23,6 @@ from app.api.schemas.auth import (
     UserResponse,
 )
 from app.core.config import Settings, get_settings
-from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import (
     create_access_token,
     generate_api_key,
@@ -31,33 +30,11 @@ from app.core.security import (
     hash_api_key,
     verify_password,
 )
+from app.api.v1.deps import get_current_user
 from app.db.models import APIKey, User
 from app.db.session import get_db_session
 
 router = APIRouter(tags=["auth"])
-
-
-# ---------------------------------------------------------------------------
-# Dependency: current authenticated user (placeholder)
-# ---------------------------------------------------------------------------
-
-
-async def _get_current_user_placeholder(
-    db: Annotated[AsyncSession, Depends(get_db_session)],
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> User:
-    """Placeholder current-user resolver.
-
-    Once the full OAuth2 middleware is wired (see
-    ``app.api.v1.deps.get_current_user``), this placeholder should be
-    replaced with JWT-bearer token validation.  For now it raises
-    HTTP 401 to signal that authentication is required.
-    """
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Not authenticated. Provide a valid Bearer token.",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -184,7 +161,7 @@ async def create_api_key(
     payload: APIKeyCreate,
     db: Annotated[AsyncSession, Depends(get_db_session)],
     settings: Annotated[Settings, Depends(get_settings)],
-    current_user: Annotated[User, Depends(_get_current_user_placeholder)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> APIKeyResponse:
     """Create a new API key for the authenticated user."""
     plain_key = generate_api_key()
@@ -235,7 +212,7 @@ async def create_api_key(
     },
 )
 async def get_current_user_profile(
-    current_user: Annotated[User, Depends(_get_current_user_placeholder)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> UserResponse:
     """Return the authenticated user's profile."""
     return UserResponse.model_validate(current_user)

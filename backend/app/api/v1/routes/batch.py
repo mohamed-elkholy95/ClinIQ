@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,21 +23,6 @@ from app.db.models import BatchJob
 from app.db.session import get_db_session
 
 router = APIRouter(tags=["batch"])
-
-
-# ---------------------------------------------------------------------------
-# Background processing stub
-# ---------------------------------------------------------------------------
-
-
-async def _process_batch_stub(job_id: str, db_url: str) -> None:
-    """Placeholder background task — logs intent but does not run real inference.
-
-    In production this will dispatch a Celery task:
-        process_batch_job.delay(job_id)
-    """
-    # Celery dispatch target: process_batch_job.delay(job_id)
-    pass
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +49,6 @@ async def _process_batch_stub(job_id: str, db_url: str) -> None:
 )
 async def submit_batch_job(
     payload: BatchRequest,
-    background_tasks: BackgroundTasks,
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db_session)],
     settings: Annotated[Settings, Depends(get_settings)],
@@ -88,8 +72,19 @@ async def submit_batch_job(
     db.add(batch_job)
     # Session is committed by the get_db_session dependency after the response is sent.
 
-    # Enqueue the processing task as a fire-and-forget background task.
-    background_tasks.add_task(_process_batch_stub, str(job_id), settings.database_url)
+    # Dispatch the batch to Celery for background processing.
+    # Each document is serialised to a dict for the JSON task payload.
+    from app.worker import process_batch_task
+
+    serialised_docs = [
+        {
+            "text": doc.text,
+            "document_id": doc.document_id,
+            "metadata": doc.metadata,
+        }
+        for doc in payload.documents
+    ]
+    process_batch_task.delay(str(job_id), serialised_docs, pipeline_config)
 
     # Rough ETA: assume ~0.5 s per document per active stage.
     active_stages = sum(
