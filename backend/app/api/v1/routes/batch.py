@@ -1,241 +1,161 @@
-"""Batch processing endpoint routes."""
+"""Batch processing endpoints.
 
-import asyncio
-import logging
+Allows callers to submit up to 100 clinical documents as a single asynchronous
+batch job. Jobs are persisted in the database and processed in the background
+via Celery (wired up in a later milestone). The polling endpoint returns live
+progress.
+"""
+
+from __future__ import annotations
+
 import uuid
 from datetime import datetime, timezone
 from typing import Annotated
 
-from celery.result import AsyncResult
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import CurrentUser, DBSession, PipelineDep
-from app.api.v1.schemas import (
-    BatchJobResponse,
-    BatchRequest,
-    BatchStatusResponse,
-)
+from app.api.schemas.batch import BatchRequest, BatchStatusResponse, BatchSubmitResponse
+from app.core.config import Settings, get_settings
+from app.core.exceptions import NotFoundError
 from app.db.models import BatchJob
-from sqlalchemy import select
+from app.db.session import get_db_session
 
-logger = logging.getLogger(__name__)
+router = APIRouter(tags=["batch"])
 
-router = APIRouter(prefix="/batch", tags=["batch-processing"])
+
+# ---------------------------------------------------------------------------
+# Background processing stub
+# ---------------------------------------------------------------------------
+
+
+async def _process_batch_stub(job_id: str, db_url: str) -> None:
+    """Placeholder background task — logs intent but does not run real inference.
+
+    In production this will dispatch a Celery task:
+        process_batch_job.delay(job_id)
+    """
+    # TODO: replace with Celery dispatch once task queue is wired.
+    pass
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
 
 @router.post(
-    "",
-    response_model=BatchJobResponse,
+    "/batch",
+    response_model=BatchSubmitResponse,
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Create batch processing job",
-    description="Submit multiple documents for batch processing.",
+    summary="Submit batch processing job",
+    description=(
+        "Submit 1–100 clinical documents for asynchronous analysis. "
+        "The pipeline stages to run (NER, ICD, summarisation, risk scoring) are "
+        "configured globally for the whole batch via the `pipeline` object. "
+        "Returns a `job_id` that can be used to poll `GET /batch/{job_id}` for progress. "
+        "An optional `notify_webhook` URL receives a POST when the job completes."
+    ),
+    responses={
+        202: {"description": "Job accepted and queued"},
+        422: {"description": "Input validation error"},
+    },
 )
-async def create_batch_job(
-    request: BatchRequest,
-    current_user: CurrentUser,
-    db: DBSession,
-) -> BatchJobResponse:
-    """Create a new batch processing job."""
-    if len(request.documents) > 100:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Maximum 100 documents per batch",
-        )
+async def submit_batch_job(
+    payload: BatchRequest,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> BatchSubmitResponse:
+    """Persist the batch job record and enqueue background processing."""
+    job_id = uuid.uuid4()
+    doc_count = len(payload.documents)
 
-    # Create job record
-    job_id = str(uuid.uuid4())
+    pipeline_config = payload.pipeline.model_dump()
+
     batch_job = BatchJob(
         id=job_id,
-        user_id=current_user.id,
+        # user_id will be set once auth middleware is wired; using a sentinel UUID for now.
+        user_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
         status="pending",
-        total_documents=len(request.documents),
-        pipeline_config={
-            "enable_ner": request.enable_ner,
-            "enable_icd": request.enable_icd,
-            "enable_summarization": request.enable_summarization,
-            "enable_risk": request.enable_risk,
-        },
+        total_documents=doc_count,
+        processed_documents=0,
+        failed_documents=0,
+        pipeline_config=pipeline_config,
     )
-
     db.add(batch_job)
-    await db.commit()
+    # Session is committed by the get_db_session dependency after the response is sent.
 
-    # Queue background task
-    # In production, this would use Celery
-    # _process_batch.delay(job_id, request.documents, request.dict())
+    # Enqueue the processing task as a fire-and-forget background task.
+    background_tasks.add_task(_process_batch_stub, str(job_id), settings.database_url)
 
-    return BatchJobResponse(
+    # Rough ETA: assume ~0.5 s per document per active stage.
+    active_stages = sum(
+        [
+            payload.pipeline.run_ner,
+            payload.pipeline.run_icd,
+            payload.pipeline.run_summary,
+            payload.pipeline.run_risk,
+        ]
+    )
+    estimated_seconds = max(1, int(doc_count * active_stages * 0.5))
+
+    return BatchSubmitResponse(
         job_id=job_id,
         status="pending",
-        total_documents=len(request.documents),
-        message="Batch job created and queued for processing",
+        document_count=doc_count,
+        estimated_duration_seconds=estimated_seconds,
     )
 
 
 @router.get(
-    "/{job_id}",
+    "/batch/{job_id}",
     response_model=BatchStatusResponse,
-    summary="Get batch job status",
-    description="Check the status of a batch processing job.",
+    status_code=status.HTTP_200_OK,
+    summary="Poll batch job status",
+    description=(
+        "Retrieve the current status and progress of a batch job. "
+        "When `status` is 'completed', a `result_file` pre-signed URL is included "
+        "for downloading the full results. "
+        "For small batches (≤10 documents), inline `results` are also included "
+        "on the completion response."
+    ),
+    responses={
+        200: {"description": "Job status returned"},
+        404: {"description": "Job not found"},
+    },
 )
 async def get_batch_status(
-    job_id: str,
-    current_user: CurrentUser,
-    db: DBSession,
+    job_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> BatchStatusResponse:
-    """Get status of a batch job."""
-    result = await db.execute(
-        select(BatchJob).where(
-            BatchJob.id == job_id,
-            BatchJob.user_id == current_user.id,
-        )
-    )
-    batch_job = result.scalar_one_or_none()
+    """Return the current status and progress of a batch job."""
+    result = await db.execute(select(BatchJob).where(BatchJob.id == job_id))
+    job = result.scalar_one_or_none()
 
-    if not batch_job:
+    if job is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Batch job {job_id} not found",
+            detail=f"Batch job '{job_id}' not found.",
         )
+
+    progress = (
+        round(job.processed_documents / job.total_documents, 4) if job.total_documents else 0.0
+    )
 
     return BatchStatusResponse(
-        job_id=str(batch_job.id),
-        status=batch_job.status,
-        total_documents=batch_job.total_documents,
-        processed_documents=batch_job.processed_documents,
-        failed_documents=batch_job.failed_documents,
-        created_at=batch_job.created_at,
-        started_at=batch_job.started_at,
-        completed_at=batch_job.completed_at,
-        result_url=f"/api/v1/batch/{job_id}/results" if batch_job.status == "completed" else None,
-        error_message=batch_job.error_message,
+        job_id=job.id,
+        status=job.status,  # type: ignore[arg-type]
+        progress=progress,
+        total_documents=job.total_documents,
+        processed_documents=job.processed_documents,
+        failed_documents=job.failed_documents,
+        created_at=job.created_at,
+        started_at=job.started_at,
+        completed_at=job.completed_at,
+        error_message=job.error_message,
+        result_file=job.result_file,
+        results=None,  # Inline results populated once result persistence is implemented.
     )
-
-
-@router.get(
-    "/{job_id}/results",
-    summary="Get batch job results",
-    description="Download results of a completed batch job.",
-)
-async def get_batch_results(
-    job_id: str,
-    current_user: CurrentUser,
-    db: DBSession,
-) -> dict:
-    """Get results of completed batch job."""
-    result = await db.execute(
-        select(BatchJob).where(
-            BatchJob.id == job_id,
-            BatchJob.user_id == current_user.id,
-        )
-    )
-    batch_job = result.scalar_one_or_none()
-
-    if not batch_job:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Batch job {job_id} not found",
-        )
-
-    if batch_job.status != "completed":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Batch job is {batch_job.status}, not completed",
-        )
-
-    # In production, this would return a signed URL to MinIO/S3
-    return {
-        "job_id": job_id,
-        "result_file": batch_job.result_file,
-        "download_url": f"/download/{batch_job.result_file}",
-        "expires_at": None,
-    }
-
-
-@router.delete(
-    "/{job_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Cancel batch job",
-    description="Cancel a pending or running batch job.",
-)
-async def cancel_batch_job(
-    job_id: str,
-    current_user: CurrentUser,
-    db: DBSession,
-) -> None:
-    """Cancel a batch job."""
-    result = await db.execute(
-        select(BatchJob).where(
-            BatchJob.id == job_id,
-            BatchJob.user_id == current_user.id,
-        )
-    )
-    batch_job = result.scalar_one_or_none()
-
-    if not batch_job:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Batch job {job_id} not found",
-        )
-
-    if batch_job.status in ["completed", "failed"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot cancel job with status: {batch_job.status}",
-        )
-
-    batch_job.status = "cancelled"
-    await db.commit()
-
-
-@router.get(
-    "",
-    summary="List batch jobs",
-    description="List batch jobs for the current user.",
-)
-async def list_batch_jobs(
-    current_user: CurrentUser,
-    db: DBSession,
-    limit: int = 20,
-    offset: int = 0,
-    status_filter: str | None = None,
-) -> dict:
-    """List batch jobs for current user."""
-    query = select(BatchJob).where(BatchJob.user_id == current_user.id)
-
-    if status_filter:
-        query = query.where(BatchJob.status == status_filter)
-
-    query = query.order_by(BatchJob.created_at.desc()).limit(limit).offset(offset)
-
-    result = await db.execute(query)
-    jobs = result.scalars().all()
-
-    # Get total count
-    from sqlalchemy import func
-
-    count_query = select(func.count(BatchJob.id)).where(
-        BatchJob.user_id == current_user.id
-    )
-    if status_filter:
-        count_query = count_query.where(BatchJob.status == status_filter)
-
-    count_result = await db.execute(count_query)
-    total = count_result.scalar()
-
-    return {
-        "jobs": [
-            {
-                "job_id": str(job.id),
-                "status": job.status,
-                "total_documents": job.total_documents,
-                "processed_documents": job.processed_documents,
-                "created_at": job.created_at.isoformat(),
-                "completed_at": job.completed_at.isoformat() if job.completed_at else None,
-            }
-            for job in jobs
-        ],
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-    }

@@ -1,152 +1,183 @@
-version: "3.9"
+# ClinIQ Development Docker Compose
+# For local development and testing
+
+version: "3.8"
 
 services:
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: cliniq-api
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://cliniq:cliniq@postgres:5432/cliniq
-      - DATABASE_SYNC_URL=postgresql://cliniq:cliniq@postgres:5432/cliniq
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://redis:6379/2
-      - MINIO_ENDPOINT=minio:9000
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - ENVIRONMENT=development
-      - DEBUG=true
-    volumes:
-      - ./backend:/app
-      - model-data:/app/models
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    networks:
-      - cliniq-network
-    restart: unless-stopped
-
-  worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: cliniq-worker
-    command: celery -A app.worker worker --loglevel=info --concurrency=2
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://cliniq:cliniq@postgres:5432/cliniq
-      - DATABASE_SYNC_URL=postgresql://cliniq:cliniq@postgres:5432/cliniq
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://redis:6379/2
-      - MINIO_ENDPOINT=minio:9000
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    volumes:
-      - ./backend:/app
-      - model-data:/app/models
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - cliniq-network
-    restart: unless-stopped
-
+  # ===========================================
+  # PostgreSQL Database
+  # ===========================================
   postgres:
     image: postgres:16-alpine
     container_name: cliniq-postgres
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: cliniq
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
       POSTGRES_DB: cliniq
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cliniq"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - cliniq-network
-    restart: unless-stopped
 
+  # ===========================================
+  # Redis Cache & Task Queue
+  # ===========================================
   redis:
     image: redis:7-alpine
     container_name: cliniq-redis
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - cliniq-network
-    restart: unless-stopped
 
+  # ===========================================
+  # MinIO Object Storage
+  # ===========================================
   minio:
     image: minio/minio:latest
     container_name: cliniq-minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme_in_production}
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - cliniq-network
-    restart: unless-stopped
-
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.9.2
-    container_name: cliniq-mlflow
     ports:
-      - "5000:5000"
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ===========================================
+  # MLflow Tracking Server
+  # ===========================================
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.0
+    container_name: cliniq-mlflow
     environment:
       - MLFLOW_BACKEND_STORE_URI=postgresql://cliniq:cliniq@postgres:5432/mlflow
-      - MLFLOW_DEFAULT_ARTIFACT_ROOT=s3://mlflow/
-      - AWS_ACCESS_KEY_ID=minioadmin
-      - AWS_SECRET_ACCESS_KEY=minioadmin
-      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - MLFLOW_ARTIFACT_ROOT=/mlflow/artifacts
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
     command: >
       mlflow server
       --backend-store-uri postgresql://cliniq:cliniq@postgres:5432/mlflow
-      --default-artifact-root s3://mlflow/
+      --default-artifact-root file:///mlflow/artifacts
       --host 0.0.0.0
       --port 5000
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
+
+  # ===========================================
+  # FastAPI Backend
+  # ===========================================
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: cliniq-api
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://cliniq:cliniq@postgres:5432/cliniq
+      - REDIS_URL=redis://redis:6379/0
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - SECRET_KEY=dev-secret-key-change-in-production
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./models:/app/models
+    depends_on:
+      postgres:
         condition: service_healthy
-    networks:
-      - cliniq-network
-    restart: unless-stopped
+      redis:
+        condition: service_healthy
+
+  # ===========================================
+  # Celery Worker (Background Tasks)
+  # ===========================================
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: cliniq-worker
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://cliniq:cliniq@postgres:5432/cliniq
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - ENVIRONMENT=development
+    command: celery -A app.worker worker --loglevel=info --concurrency=2
+    volumes:
+      - ./backend:/app
+      - ./models:/app/models
+    depends_on:
+      - postgres
+      - redis
+
+  # ===========================================
+  # Prometheus (Metrics)
+  # ===========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cliniq-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  # ===========================================
+  # Grafana (Dashboards)
+  # ===========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cliniq-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-changeme_in_production}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
 
 volumes:
-  postgres-data:
-  redis-data:
-  minio-data:
-  model-data:
+  postgres_data:
+  redis_data:
+  minio_data:
+  mlflow_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
-  cliniq-network:
-    driver: bridge
+  default:
+    name: cliniq-network
