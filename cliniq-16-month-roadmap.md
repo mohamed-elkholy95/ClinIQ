@@ -8,6 +8,21 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 2 (2026-03-24)
+- [x] **Expanded test coverage** — 6 new test modules (738 lines) for previously untested code:
+  - `test_model_registry.py` — lazy loading, singleton caching, thread safety (barrier test), reset, functional smoke tests
+  - `test_rate_limit.py` — in-memory rate limiting, health bypass, 429 enforcement, per-client-key tracking
+  - `test_auth_middleware.py` — active-user gate, superuser gate, RBAC factory, superuser bypass
+  - `test_logging_middleware.py` — X-Request-ID UUID validity, X-Process-Time presence, configure_logging
+  - `test_document_service.py` — single/batch analysis, InferenceError propagation, text hashing, pipeline caching
+  - `test_composite_ner.py` — union/intersection/majority voting, deduplication, edge cases
+- [x] **Educational inline comments** — Added design-decision documentation to:
+  - `model_registry.py` — explains lazy loading, double-checked locking, thread safety, separation from routes
+  - `rate_limit.py` — sliding window algorithm, in-memory fallback trade-offs, client identification
+  - `auth.py` — dual auth schemes, RBAC factory, API key timing safety, optional auth
+- [x] **Model registry health_check()** — new function reports per-model load status without triggering lazy loading
+- [x] **Health endpoint integration** — `/health` now shows per-model readiness (ner, icd, summarizer, risk_scorer)
+
 #### Post-PRD Hardening (2026-03-24)
 - [x] Fixed broken `document_service.py` (syntax errors, bad imports, mismatched variables)
 - [x] Fixed test `conftest.py` (wrong class names: MLPipeline→ClinicalPipeline, SummaryResult→SummarizationResult)
