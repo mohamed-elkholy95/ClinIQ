@@ -8,6 +8,19 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 14 (2026-03-24)
+- [x] **Test coverage pushed from 97% to 99%** (4142 statements, 52 missed) — 80 new tests across 8 modules:
+  - `test_coverage_final.py` (36 tests) — targeted edge cases: TransformerNER BIO tag extraction (continuation, special tokens, O-after-entity), CompositeNER intersection/majority/overlap, SklearnICD 1D proba reshape + decision_function sigmoid + batch predict, DentalNER quadrant mapping + surface validation, TextDistributionMonitor empty records + vocab diversity, PredictionMonitor confidence/label drift, ModelMetrics gauge methods, main.py exception handlers via TestClient, ExtractiveSummarizer InferenceError, AnalysisService error wrapping, AnalysisRequest validation, SHAP format_explanation
+  - `test_dental_model_extended.py` (≈20 tests) — DentalAssessment.to_dict, PeriodontalRiskAssessor lifecycle, primary tooth extraction, procedure extraction
+  - `test_batch_schema_validator.py` — batch schema validation edges
+  - `test_document_service_extended.py` — document service error handling
+  - `test_logging_middleware_extended.py` — logging middleware dispatch
+  - `test_metrics_utils.py` — metric utility functions
+  - `test_seed_extended.py` — seed data validation
+  - `test_text_preprocessing_extended.py` — text preprocessing pipelines
+- [x] **Remaining 52 missed lines** are untestable __main__ guards, real ML library import paths (SHAP/torch), and Redis async connection paths
+- [x] **Total test suite: 1206 passing** (backend: 1206, frontend: 113), 0 failures
+
 #### Post-PRD Enhancements — Session 13 (2026-03-24)
 - [x] **Test coverage pushed from 96% to 97%** (4142 statements, 114 missed) — 47 new tests across 4 modules:
   - `test_deps_get_current_user.py` (12 tests) — JWT auth (valid/invalid/missing-sub/user-not-found/inactive), API key auth (valid/not-found/hash-mismatch/orphaned-user), no-credentials, get_current_active_user (active/inactive)
