@@ -8,6 +8,18 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 10 (2026-03-24)
+- [x] **Frontend test infrastructure** — Set up Vitest 4.1 + React Testing Library + jsdom environment with ResizeObserver polyfill for Recharts compatibility
+- [x] **113 new frontend tests** across 7 test modules (~1,200 lines):
+  - `EntityTag.test.tsx` (22 tests) — entity text rendering, confidence percentage display/rounding, click handlers, cursor-pointer conditional class, sm/md size variants, colour mapping per EntityType (6 types), EntityTypeBadge label correctness
+  - `ConfidenceBar.test.tsx` (19 tests) — percentage display/rounding/visibility toggle, label rendering, bar width computation, colour threshold boundaries (green≥0.9, blue≥0.7, amber≥0.5, red<0.5), sm/md/lg size variants, 0%/100% edge cases, custom className
+  - `RiskGauge.test.tsx` (19 tests) — numeric score display, "/ 100" denominator, risk level labels (low/moderate/high/critical), SVG element/circle count, size prop, progress colour from riskColors, strokeDashoffset math (0/50/100), custom className, badge colour mapping
+  - `LoadingSkeleton.test.tsx` (14 tests) — Skeleton (animate-pulse, className, style), CardSkeleton structure, TableSkeleton row counts (default/custom), ChartSkeleton 12 bars with random heights, TextBlockSkeleton line counts and last-line 60% width
+  - `ErrorBoundary.test.tsx` (8 tests) — healthy child rendering, default/custom fallback on throw, "Try again" button, error message in technical details, onError callback with Error + ErrorInfo, reset/recovery after retry, collapsible details element
+  - `api.test.ts` (17 tests) — all 13 API endpoint functions (analyzeText, extractEntities, predictICD, summarizeText, assessRisk, createBatchJob, getBatchJob, getDocuments, getDocument, getModels, getDashboardStats, login, getCurrentUser, logout), axios instance config (baseURL, timeout), interceptor registration
+  - `Dashboard.test.tsx` (14 tests) — page heading/description, 4 stat cards with formatted values, trend percentage indicators, Processing Volume/Recent Activity/Entity Distribution sections, entity type counts and labels, recent activity items and actions
+- [x] **Total frontend tests: 113 passing**, 0 failures (Vitest 4.1, jsdom, ~1.2s runtime)
+
 #### Post-PRD Enhancements — Session 9 (2026-03-24)
 - [x] **92 new unit tests** across 6 new test modules (~1,750 lines) covering all previously untested API route handlers:
   - `test_analyze_route.py` (25 tests) — full pipeline stage helpers (_run_ner, _run_icd, _run_summary, _run_risk) with confidence filtering, compression maths, category mapping, factor capping; run_analysis orchestration (all-enabled, selective disable, document_id echo, text_length, 500/422 errors, audit trail, audit failure resilience)
