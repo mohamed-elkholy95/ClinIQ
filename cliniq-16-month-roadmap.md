@@ -8,6 +8,16 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 9 (2026-03-24)
+- [x] **92 new unit tests** across 6 new test modules (~1,750 lines) covering all previously untested API route handlers:
+  - `test_analyze_route.py` (25 tests) — full pipeline stage helpers (_run_ner, _run_icd, _run_summary, _run_risk) with confidence filtering, compression maths, category mapping, factor capping; run_analysis orchestration (all-enabled, selective disable, document_id echo, text_length, 500/422 errors, audit trail, audit failure resilience)
+  - `test_ner_route.py` (13 tests) — entity type filtering, negation/uncertainty exclusion, confidence threshold, combined filter composition, field mapping; endpoint happy path, sorting, model name passthrough, error propagation
+  - `test_icd_route.py` (11 tests) — confidence filter, top_k forwarding, chapter toggle, empty/all-filtered cases; prediction endpoint + ICD code lookup (found/404/uppercase)
+  - `test_summarize_route.py` (11 tests) — compression ratio edge cases, key_points toggle, detail_level forwarding, model metadata; endpoint timing and error handling
+  - `test_risk_route.py` (17 tests) — _score_to_category boundaries, score/category normalisation, domain filtering, zero-score exclusion, protective factors, recommendations; endpoint happy path and errors
+  - `test_models_route.py` (13 tests) — ORM serialisation (dates, UUIDs), list_models grouping, empty registry; get_model found/404/no-production/no-active
+- [x] **Total test suite: 921 passing** (829 existing + 92 new), 0 failures, 0 errors (+ 40 SDK tests passing separately)
+
 #### Post-PRD Enhancements — Session 8 (2026-03-24)
 - [x] **Resolved all 35 test failures** — full suite now passes: **829 tests passing, 0 failures, 0 errors** (+ 40 SDK tests passing separately)
 - [x] **Production bug fixes** (4 fixes in application code):
