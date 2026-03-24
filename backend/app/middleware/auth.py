@@ -1,4 +1,22 @@
-"""Authentication middleware and dependencies."""
+"""Authentication middleware and FastAPI dependency functions.
+
+Design decisions:
+    - **Dual auth schemes** — Supports both JWT Bearer tokens (for browser/SPA
+      sessions) and API key headers (for programmatic/SDK access).  The JWT
+      path is tried first because it's cheaper to validate (no DB round-trip
+      for key comparison).
+    - **Dependency injection** — Each auth level (``get_current_user``,
+      ``get_current_active_user``, ``get_current_superuser``) is a FastAPI
+      ``Depends``-compatible async function, composable in route signatures.
+    - **RBAC factory** — ``require_role()`` returns a dependency closure that
+      checks the user's ``role`` field.  Superusers bypass role checks entirely,
+      following the principle of least surprise.
+    - **API key timing** — We iterate all active keys and use constant-time
+      ``verify_api_key`` to avoid timing-based enumeration.  For large
+      key sets, consider indexing by a key prefix (first 8 chars).
+    - **Optional auth** — ``get_optional_user`` allows public endpoints to
+      still benefit from user context when auth is present.
+"""
 
 from datetime import datetime, timezone
 from uuid import UUID

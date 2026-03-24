@@ -1,4 +1,24 @@
-"""Rate limiting middleware using Redis."""
+"""Rate limiting middleware using Redis (with in-memory fallback).
+
+Design decisions:
+    - **Sliding window algorithm** — We use a Redis sorted set (ZSET) with
+      timestamps as scores.  On each request we remove entries older than
+      the window, add the current timestamp, and count remaining entries.
+      This gives precise per-second control compared to the simpler
+      fixed-window approach, which can allow 2× the limit at window edges.
+    - **In-memory fallback** — When Redis is unavailable the middleware
+      degrades gracefully to a per-process ``dict[str, list[float]]``
+      sliding window.  This means rate limits are per-worker rather than
+      global, which is an acceptable trade-off for development/single-node
+      deployments.
+    - **Client identification** — We prefer the ``X-API-Key`` header for
+      identifying callers (so authenticated users keep their own quota).
+      If absent, we fall back to the client IP, honouring ``X-Forwarded-For``
+      for reverse-proxy setups.
+    - **Health endpoint bypass** — ``/api/v1/health`` and docs endpoints are
+      excluded so that orchestrators (Kubernetes liveness probes, load
+      balancers) never get rate-limited.
+"""
 
 import time
 

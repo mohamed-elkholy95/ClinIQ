@@ -3,9 +3,22 @@
 Provides a central place to initialise, load, and access ML model instances
 so that API route handlers can call real inference instead of mock stubs.
 
-Models are loaded lazily on first access and cached for the lifetime of the
-process.  Thread-safety is achieved via a simple module-level lock — adequate
-for the async FastAPI worker model where true parallelism is limited.
+Design decisions:
+    - **Lazy loading** — Models are only loaded on first access, keeping
+      application startup fast (important for container health checks).
+    - **Double-checked locking** — The outer ``if`` avoids acquiring the lock
+      on the hot path (model already loaded), while the inner ``if`` inside the
+      lock prevents duplicate initialisation when two threads race on the first
+      call.  This pattern is safe in CPython (GIL guarantees reference
+      assignment is atomic), and the ``threading.Lock`` makes it portable.
+    - **Thread-safety** — Uses a module-level ``threading.Lock``.  For the
+      async FastAPI worker model where true parallelism is limited to threads
+      in the threadpool executor, this is sufficient.  If we needed
+      multi-process safety (e.g. gunicorn preforked workers), each worker
+      would get its own copy — which is the desired behaviour for ML models.
+    - **Separation from routes** — Keeping model lifecycle here rather than in
+      route modules means routes stay thin and testable (just mock the registry
+      function).
 
 Usage from route handlers::
 
@@ -132,6 +145,25 @@ def get_risk_scorer() -> BaseRiskScorer:
                 _risk_scorer = model
                 logger.info("Risk scorer ready.")
     return _risk_scorer
+
+
+def health_check() -> dict[str, bool]:
+    """Return the load status of each model without triggering lazy loading.
+
+    Useful for health/readiness endpoints that need to report which models
+    are available without incurring the cost of loading them.
+
+    Returns
+    -------
+    dict[str, bool]
+        Mapping of model name to whether it is currently loaded and cached.
+    """
+    return {
+        "ner": _ner_model is not None and _ner_model.is_loaded,
+        "icd": _icd_model is not None and _icd_model.is_loaded,
+        "summarizer": _summarizer is not None and _summarizer.is_loaded,
+        "risk_scorer": _risk_scorer is not None and _risk_scorer.is_loaded,
+    }
 
 
 def reset_all() -> None:
