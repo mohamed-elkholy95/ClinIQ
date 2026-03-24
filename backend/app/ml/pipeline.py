@@ -399,14 +399,20 @@ class ClinicalPipeline:
                 perio_classification = perio_data.get("classification", "Unknown")
                 recommendations = perio_data.get("recommendations", [])
 
-            # Collect CDT codes from entities
-            from app.ml.dental.model import CDT_CODES
+            # Collect CDT codes from entities.
+            # Build a reverse lookup (code → description) from the dental
+            # model's class-level CDT_CODES dict which maps procedure names
+            # to {"code": ..., "description": ...} dicts.
+            code_to_desc: dict[str, str] = {}
+            if hasattr(self._dental_model, "CDT_CODES"):
+                for _proc, info in self._dental_model.CDT_CODES.items():
+                    code_to_desc[info["code"]] = info["description"]
 
             suggested_cdt: dict[str, str] = {}
             for ent in dental_entities:
-                cdt = ent.metadata.get("cdt_code")
-                if cdt and cdt in CDT_CODES:
-                    suggested_cdt[cdt] = CDT_CODES[cdt]
+                cdt = ent.metadata.get("cdt_code") if ent.metadata else None
+                if cdt and cdt in code_to_desc:
+                    suggested_cdt[cdt] = code_to_desc[cdt]
 
             result.dental_assessment = DentalAssessment(
                 entities=dental_entities,
