@@ -1,11 +1,13 @@
 """NER (Named Entity Recognition) endpoint.
 
 Exposes a standalone NER inference endpoint that extracts clinical entities
-from free-text without running the full analysis pipeline.
+from free-text without running the full analysis pipeline.  Entities are
+produced by the real rule-based NER model loaded via the model registry.
 """
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import Annotated
 
@@ -16,72 +18,65 @@ from app.api.schemas.ner import EntityResponse, NERRequest, NERResponse
 from app.core.config import Settings, get_settings
 from app.core.exceptions import InferenceError
 from app.db.session import get_db_session
+from app.services.model_registry import get_ner_model
 
 router = APIRouter(tags=["ner"])
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Placeholder inference helper
+# Inference helper — delegates to the real ML model
 # ---------------------------------------------------------------------------
 
 
 def _run_ner_inference(request: NERRequest) -> list[EntityResponse]:
-    """Placeholder NER inference; returns mock entities.
+    """Run NER inference using the model registry.
 
-    Replace this with a call to the real NER model once the model layer is wired.
+    Parameters
+    ----------
+    request:
+        Validated NER request with text and optional filters.
+
+    Returns
+    -------
+    list[EntityResponse]
+        Extracted entities, filtered per request parameters.
     """
-    mock_entities: list[EntityResponse] = [
+    model = get_ner_model()
+    raw_entities = model.extract_entities(request.text)
+
+    # Convert ML-layer Entity dataclasses to API schema objects.
+    entities: list[EntityResponse] = [
         EntityResponse(
-            text="hypertension",
-            entity_type="DISEASE",
-            start_char=11,
-            end_char=23,
-            confidence=0.96,
-            normalized_text="Hypertension",
-            umls_cui="C0020538",
-            is_negated=False,
-            is_uncertain=False,
-        ),
-        EntityResponse(
-            text="metformin",
-            entity_type="MEDICATION",
-            start_char=44,
-            end_char=53,
-            confidence=0.94,
-            normalized_text="Metformin",
-            umls_cui="C0025598",
-            is_negated=False,
-            is_uncertain=False,
-        ),
-        EntityResponse(
-            text="chest pain",
-            entity_type="SYMPTOM",
-            start_char=100,
-            end_char=110,
-            confidence=0.89,
-            normalized_text="chest pain",
-            umls_cui="C0008031",
-            is_negated=True,
-            is_uncertain=False,
-        ),
+            text=e.text,
+            entity_type=e.entity_type,
+            start_char=e.start_char,
+            end_char=e.end_char,
+            confidence=e.confidence,
+            normalized_text=e.normalized_text,
+            umls_cui=e.umls_cui,
+            is_negated=e.is_negated,
+            is_uncertain=e.is_uncertain,
+        )
+        for e in raw_entities
     ]
 
     # Apply entity type filter if requested.
     if request.entity_types is not None:
-        mock_entities = [e for e in mock_entities if e.entity_type in request.entity_types]
+        entities = [e for e in entities if e.entity_type in request.entity_types]
 
     # Apply negation filter.
     if not request.include_negated:
-        mock_entities = [e for e in mock_entities if not e.is_negated]
+        entities = [e for e in entities if not e.is_negated]
 
     # Apply uncertainty filter.
     if not request.include_uncertain:
-        mock_entities = [e for e in mock_entities if not e.is_uncertain]
+        entities = [e for e in entities if not e.is_uncertain]
 
-    # Apply confidence filter.
-    mock_entities = [e for e in mock_entities if e.confidence >= request.min_confidence]
+    # Apply confidence threshold.
+    entities = [e for e in entities if e.confidence >= request.min_confidence]
 
-    return mock_entities
+    return entities
 
 
 # ---------------------------------------------------------------------------

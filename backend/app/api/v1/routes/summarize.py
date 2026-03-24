@@ -1,11 +1,12 @@
 """Clinical summarization endpoint.
 
 Generates concise, clinically accurate summaries of free-text clinical notes
-using configurable extractive or abstractive strategies.
+using the extractive TextRank summarizer loaded via the model registry.
 """
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import Annotated
 
@@ -16,60 +17,47 @@ from app.api.schemas.summary import SummarizationRequest, SummarizationResponse
 from app.core.config import Settings, get_settings
 from app.core.exceptions import InferenceError
 from app.db.session import get_db_session
+from app.services.model_registry import get_summarizer
 
 router = APIRouter(tags=["summarization"])
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Placeholder inference helper
+# Inference helper — delegates to the real ML model
 # ---------------------------------------------------------------------------
-
-_DETAIL_WORD_TARGETS: dict[str, int] = {
-    "brief": 50,
-    "standard": 150,
-    "detailed": 300,
-}
 
 
 def _run_summarization(request: SummarizationRequest) -> SummarizationResponse:
-    """Placeholder summarization; returns a mock summary.
+    """Run clinical summarization using the model registry.
 
-    Replace with a call to the real summarization model once the ML layer
-    is wired up.
+    Parameters
+    ----------
+    request:
+        Validated summarization request with text and configuration.
+
+    Returns
+    -------
+    SummarizationResponse
+        Generated summary with metadata.
     """
-    original_words = request.text.split()
-    original_word_count = len(original_words)
+    model = get_summarizer()
+    result = model.summarize(request.text, detail_level=request.detail_level)
 
-    # Determine target word count.
-    target_words = request.max_length_words or _DETAIL_WORD_TARGETS.get(request.detail_level, 150)
-    target_words = max(target_words, request.min_length_words or 5)
-
-    # Naively take the first N words as a placeholder extractive summary.
-    summary_words = original_words[:target_words]
-    summary_text = " ".join(summary_words)
-    if len(original_words) > target_words:
-        summary_text += "..."
-
-    summary_word_count = len(summary_words)
-    compression_ratio = round(original_word_count / summary_word_count, 2) if summary_word_count else 1.0
-
-    key_points: list[str] | None = None
-    if request.include_key_points:
-        key_points = [
-            "[Placeholder key point 1 — wire up real model]",
-            "[Placeholder key point 2 — wire up real model]",
-        ]
+    original_wc = len(request.text.split())
+    summary_wc = len(result.summary.split())
+    compression = round(original_wc / summary_wc, 2) if summary_wc else 1.0
 
     return SummarizationResponse(
-        summary=f"[Placeholder summary] {summary_text}",
-        key_points=key_points,
-        original_word_count=original_word_count,
-        summary_word_count=summary_word_count,
-        compression_ratio=compression_ratio,
+        summary=result.summary,
+        key_points=result.key_findings if request.include_key_points else None,
+        original_word_count=original_wc,
+        summary_word_count=summary_wc,
+        compression_ratio=compression,
         summary_type="extractive",
-        model_name=request.model,
-        model_version="1.0.0",
-        processing_time_ms=0.0,
+        model_name=model.model_name,
+        model_version=model.version,
+        processing_time_ms=0.0,  # Overwritten by route handler.
     )
 
 

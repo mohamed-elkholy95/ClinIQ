@@ -1,13 +1,15 @@
 """Full-pipeline analysis endpoint.
 
 Orchestrates NER, ICD-10 prediction, clinical summarisation, and risk scoring
-into a single HTTP call. Individual stage results are aggregated into one
-AnalysisResponse and the invocation is written to the audit trail.
+into a single HTTP call using real ML models from the model registry.
+Individual stage results are aggregated into one AnalysisResponse and the
+invocation is written to the audit trail.
 """
 
 from __future__ import annotations
 
 import hashlib
+import logging
 import time
 from typing import Annotated
 
@@ -27,100 +29,157 @@ from app.api.schemas.summary import SummarizationResponse
 from app.core.config import Settings, get_settings
 from app.core.exceptions import DocumentProcessingError
 from app.db.session import get_db_session
+from app.services.model_registry import (
+    get_icd_model,
+    get_ner_model,
+    get_risk_scorer,
+    get_summarizer,
+)
 
 router = APIRouter(tags=["analysis"])
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Placeholder pipeline stage helpers
-# Replace with real ML service calls once the model layer is ready.
+# Real pipeline stage helpers
 # ---------------------------------------------------------------------------
 
 
-def _mock_ner(text: str, min_confidence: float) -> list[EntityResponse]:
-    """Return placeholder NER entities."""
+def _run_ner(text: str, min_confidence: float) -> list[EntityResponse]:
+    """Extract clinical entities using the NER model.
+
+    Parameters
+    ----------
+    text:
+        Raw clinical document text.
+    min_confidence:
+        Minimum confidence threshold for returned entities.
+
+    Returns
+    -------
+    list[EntityResponse]
+    """
+    model = get_ner_model()
+    raw = model.extract_entities(text)
     return [
         EntityResponse(
-            text="chest pain",
-            entity_type="SYMPTOM",
-            start_char=0,
-            end_char=10,
-            confidence=0.92,
-            normalized_text="chest pain",
-            umls_cui="C0008031",
-            is_negated=False,
-            is_uncertain=False,
-        ),
-        EntityResponse(
-            text="hypertension",
-            entity_type="DISEASE",
-            start_char=15,
-            end_char=27,
-            confidence=0.88,
-            normalized_text="Hypertension",
-            umls_cui="C0020538",
-            is_negated=False,
-            is_uncertain=False,
-        ),
+            text=e.text,
+            entity_type=e.entity_type,
+            start_char=e.start_char,
+            end_char=e.end_char,
+            confidence=e.confidence,
+            normalized_text=e.normalized_text,
+            umls_cui=e.umls_cui,
+            is_negated=e.is_negated,
+            is_uncertain=e.is_uncertain,
+        )
+        for e in raw
+        if e.confidence >= min_confidence
     ]
 
 
-def _mock_icd(text: str, top_k: int, min_confidence: float) -> list[ICDCodeResponse]:
-    """Return placeholder ICD-10 predictions."""
-    all_codes = [
+def _run_icd(text: str, top_k: int, min_confidence: float) -> list[ICDCodeResponse]:
+    """Predict ICD-10 codes using the ICD classifier.
+
+    Parameters
+    ----------
+    text:
+        Raw clinical document text.
+    top_k:
+        Maximum number of predictions to return.
+    min_confidence:
+        Minimum confidence threshold.
+
+    Returns
+    -------
+    list[ICDCodeResponse]
+    """
+    model = get_icd_model()
+    result = model.predict(text, top_k=top_k)
+    return [
         ICDCodeResponse(
-            code="R07.9",
-            description="Chest pain, unspecified",
-            confidence=0.87,
-            chapter="Symptoms, signs and abnormal clinical and laboratory findings",
-            category="R07",
-            contributing_text=["chest pain"],
-        ),
-        ICDCodeResponse(
-            code="I25.10",
-            description="Atherosclerotic heart disease of native coronary artery without angina pectoris",
-            confidence=0.61,
-            chapter="Diseases of the circulatory system",
-            category="I25",
-            contributing_text=None,
-        ),
+            code=p.code,
+            description=p.description,
+            confidence=p.confidence,
+            chapter=p.chapter,
+            category=p.category,
+            contributing_text=p.contributing_text,
+        )
+        for p in result.predictions
+        if p.confidence >= min_confidence
     ]
-    return [c for c in all_codes if c.confidence >= min_confidence][:top_k]
 
 
-def _mock_summary(text: str, detail_level: str) -> SummarizationResponse:
-    """Return a placeholder clinical summary."""
-    word_count = len(text.split())
-    truncated = text[:100].rstrip()
+def _run_summary(text: str, detail_level: str) -> SummarizationResponse:
+    """Generate a clinical summary using the extractive summarizer.
+
+    Parameters
+    ----------
+    text:
+        Raw clinical document text.
+    detail_level:
+        One of 'brief', 'standard', 'detailed'.
+
+    Returns
+    -------
+    SummarizationResponse
+    """
+    model = get_summarizer()
+    result = model.summarize(text, detail_level=detail_level)
+
+    original_wc = len(text.split())
+    summary_wc = len(result.summary.split())
+    compression = round(original_wc / summary_wc, 2) if summary_wc else 1.0
+
     return SummarizationResponse(
-        summary=f"[Placeholder summary] {truncated}...",
-        key_points=["Placeholder key point 1", "Placeholder key point 2"],
-        original_word_count=word_count,
-        summary_word_count=15,
-        compression_ratio=round(word_count / 15, 2) if word_count else 1.0,
+        summary=result.summary,
+        key_points=result.key_findings,
+        original_word_count=original_wc,
+        summary_word_count=summary_wc,
+        compression_ratio=compression,
         summary_type="extractive",
-        model_name="textrank",
-        model_version="1.0.0",
+        model_name=model.model_name,
+        model_version=model.version,
         processing_time_ms=0.0,
     )
 
 
-def _mock_risk(text: str) -> RiskSummary:
-    """Return a placeholder risk assessment."""
+def _run_risk(text: str) -> RiskSummary:
+    """Score clinical risk using the rule-based risk scorer.
+
+    Parameters
+    ----------
+    text:
+        Raw clinical document text.
+
+    Returns
+    -------
+    RiskSummary
+    """
+    model = get_risk_scorer()
+    assessment = model.assess_risk(text)
+
+    top_factors = [
+        RiskFactorResponse(
+            name=f.name,
+            description=f.description,
+            weight=f.weight,
+            value=f.score,
+            source="derived",
+            evidence=None,
+        )
+        for f in assessment.factors[:5]
+        if f.score > 0
+    ]
+
     return RiskSummary(
-        score=0.55,
-        category="moderate",
-        top_factors=[
-            RiskFactorResponse(
-                name="placeholder_factor",
-                description="Placeholder risk factor — wire up real risk model.",
-                weight=0.5,
-                value=0.5,
-                source="text",
-                evidence=None,
-            )
-        ],
-        recommendations=["Placeholder recommendation — wire up real risk model."],
+        score=round(assessment.overall_score / 100.0, 4),
+        category="critical" if assessment.overall_score >= 80
+                 else "high" if assessment.overall_score >= 60
+                 else "moderate" if assessment.overall_score >= 40
+                 else "low",
+        top_factors=top_factors,
+        recommendations=assessment.recommendations,
     )
 
 
@@ -210,26 +269,26 @@ async def run_analysis(
         # --- NER stage ---
         if cfg.ner.enabled:
             t0 = time.monotonic()
-            entities = _mock_ner(payload.text, cfg.ner.min_confidence)
+            entities = _run_ner(payload.text, cfg.ner.min_confidence)
             ner_ms = (time.monotonic() - t0) * 1000
 
         # --- ICD-10 prediction stage ---
         if cfg.icd.enabled:
             t0 = time.monotonic()
-            icd_codes = _mock_icd(payload.text, cfg.icd.top_k, cfg.icd.min_confidence)
+            icd_codes = _run_icd(payload.text, cfg.icd.top_k, cfg.icd.min_confidence)
             icd_ms = (time.monotonic() - t0) * 1000
 
         # --- Summarisation stage ---
         if cfg.summary.enabled:
             t0 = time.monotonic()
-            summary = _mock_summary(payload.text, cfg.summary.detail_level)
+            summary = _run_summary(payload.text, cfg.summary.detail_level)
             summary_ms = (time.monotonic() - t0) * 1000
             summary.processing_time_ms = summary_ms
 
         # --- Risk scoring stage ---
         if cfg.risk.enabled:
             t0 = time.monotonic()
-            risk_result = _mock_risk(payload.text)
+            risk_result = _run_risk(payload.text)
             risk_ms = (time.monotonic() - t0) * 1000
 
         total_ms = (time.monotonic() - wall_start) * 1000

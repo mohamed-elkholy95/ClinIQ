@@ -575,3 +575,186 @@ class HierarchicalICDClassifier(BaseICDClassifier):
     def predict_batch(self, texts: list[str], top_k: int = 10) -> list[ICDPredictionResult]:
         """Predict for batch of texts."""
         return [self.predict(text, top_k) for text in texts]
+
+
+# ---------------------------------------------------------------------------
+# Rule-based ICD-10 classifier — works without a trained model
+# ---------------------------------------------------------------------------
+
+# Maps keyword/phrase patterns to (ICD code, description, base confidence).
+_ICD_RULES: list[tuple[list[str], str, str, float]] = [
+    # Cardiovascular
+    (["hypertension", "high blood pressure", "htn", "elevated bp"],
+     "I10", "Essential (primary) hypertension", 0.82),
+    (["myocardial infarction", "heart attack", "mi ", "stemi", "nstemi", "st-segment elevation"],
+     "I21.9", "Acute myocardial infarction, unspecified", 0.85),
+    (["atrial fibrillation", "afib", "a-fib", "a fib"],
+     "I48.91", "Unspecified atrial fibrillation", 0.80),
+    (["heart failure", "chf", "congestive heart"],
+     "I50.9", "Heart failure, unspecified", 0.78),
+    (["chest pain"],
+     "R07.9", "Chest pain, unspecified", 0.72),
+    (["coronary artery disease", "cad", "atherosclerotic heart"],
+     "I25.10", "Atherosclerotic heart disease of native coronary artery", 0.80),
+    # Endocrine / metabolic
+    (["type 2 diabetes", "type ii diabetes", "t2dm", "dm2", "diabetes mellitus type 2"],
+     "E11.9", "Type 2 diabetes mellitus without complications", 0.84),
+    (["type 1 diabetes", "type i diabetes", "t1dm", "dm1", "iddm"],
+     "E10.9", "Type 1 diabetes mellitus without complications", 0.84),
+    (["hyperlipidemia", "dyslipidemia", "high cholesterol", "hypercholesterolemia"],
+     "E78.5", "Hyperlipidemia, unspecified", 0.76),
+    (["hypothyroidism", "low thyroid"],
+     "E03.9", "Hypothyroidism, unspecified", 0.78),
+    # Respiratory
+    (["copd", "chronic obstructive pulmonary", "emphysema"],
+     "J44.1", "COPD with acute exacerbation", 0.75),
+    (["pneumonia"],
+     "J18.9", "Pneumonia, unspecified organism", 0.73),
+    (["asthma"],
+     "J45.909", "Unspecified asthma, uncomplicated", 0.74),
+    # Renal
+    (["chronic kidney disease", "ckd", "renal failure", "kidney failure"],
+     "N18.9", "Chronic kidney disease, unspecified", 0.72),
+    (["acute kidney injury", "aki", "acute renal failure"],
+     "N17.9", "Acute kidney failure, unspecified", 0.76),
+    # Neurological
+    (["cerebrovascular accident", "stroke", "cva"],
+     "I63.9", "Cerebral infarction, unspecified", 0.79),
+    (["seizure", "epilepsy"],
+     "G40.909", "Epilepsy, unspecified, not intractable", 0.71),
+    # GI
+    (["gerd", "gastroesophageal reflux", "acid reflux"],
+     "K21.0", "GERD with esophagitis", 0.74),
+    # Musculoskeletal
+    (["low back pain", "lumbago", "lumbar pain"],
+     "M54.5", "Low back pain", 0.77),
+    # Mental
+    (["major depressive", "depression", "mdd"],
+     "F32.9", "Major depressive disorder, single episode, unspecified", 0.68),
+    (["anxiety", "generalized anxiety"],
+     "F41.9", "Anxiety disorder, unspecified", 0.66),
+    # Infectious
+    (["urinary tract infection", "uti"],
+     "N39.0", "Urinary tract infection, site not specified", 0.78),
+    (["sepsis", "septicemia"],
+     "A41.9", "Sepsis, unspecified organism", 0.82),
+    # General
+    (["obesity", "obese", "bmi >30", "bmi > 30"],
+     "E66.9", "Obesity, unspecified", 0.70),
+    (["anemia", "low hemoglobin", "low hgb"],
+     "D64.9", "Anemia, unspecified", 0.69),
+]
+
+
+class RuleBasedICDClassifier(BaseICDClassifier):
+    """Keyword / pattern-based ICD-10 classifier.
+
+    Designed as a zero-dependency baseline that works without a trained
+    sklearn or transformer model.  Scans the input text for known clinical
+    phrases and maps them to the most likely ICD-10-CM codes with a
+    heuristic confidence score.  Useful as a fallback when no trained model
+    artefact is available.
+
+    Parameters
+    ----------
+    model_name:
+        Identifier for logging and API responses.
+    version:
+        Semantic version string.
+    """
+
+    def __init__(
+        self,
+        model_name: str = "rule-based-icd",
+        version: str = "1.0.0",
+    ) -> None:
+        super().__init__(model_name, version)
+        self._compiled_rules: list[tuple[list[str], str, str, float]] = []
+
+    def load(self) -> None:
+        """Compile the keyword lookup table."""
+        # We normalise keywords to lower-case at load time so inference only
+        # needs to lower-case the input text once.
+        self._compiled_rules = [
+            ([kw.lower() for kw in keywords], code, desc, conf)
+            for keywords, code, desc, conf in _ICD_RULES
+        ]
+        self._is_loaded = True
+        logger.info("Loaded RuleBasedICDClassifier v%s (%d rules)", self.version, len(self._compiled_rules))
+
+    def predict(self, text: str, top_k: int = 10) -> ICDPredictionResult:
+        """Predict ICD-10 codes by scanning *text* for known clinical phrases.
+
+        Parameters
+        ----------
+        text:
+            Raw clinical document text.
+        top_k:
+            Maximum number of predictions to return.
+
+        Returns
+        -------
+        ICDPredictionResult
+        """
+        import time as _time
+
+        self.ensure_loaded()
+        start = _time.time()
+
+        text_lower = text.lower()
+        predictions: list[ICDCodePrediction] = []
+
+        for keywords, code, description, base_conf in self._compiled_rules:
+            matched_keywords: list[str] = []
+            for kw in keywords:
+                if kw in text_lower:
+                    matched_keywords.append(kw)
+
+            if matched_keywords:
+                # Boost confidence slightly when multiple synonyms match.
+                confidence = min(1.0, base_conf + 0.03 * (len(matched_keywords) - 1))
+                predictions.append(
+                    ICDCodePrediction(
+                        code=code,
+                        description=description,
+                        confidence=round(confidence, 4),
+                        chapter=get_chapter_for_code(code),
+                        category=None,
+                        contributing_text=matched_keywords,
+                    )
+                )
+
+        # Deduplicate by code (keep highest confidence).
+        seen: dict[str, ICDCodePrediction] = {}
+        for pred in predictions:
+            if pred.code not in seen or pred.confidence > seen[pred.code].confidence:
+                seen[pred.code] = pred
+        predictions = list(seen.values())
+
+        predictions.sort(key=lambda p: p.confidence, reverse=True)
+        predictions = predictions[:top_k]
+
+        elapsed_ms = (_time.time() - start) * 1000
+
+        return ICDPredictionResult(
+            predictions=predictions,
+            processing_time_ms=elapsed_ms,
+            model_name=self.model_name,
+            model_version=self.version,
+        )
+
+    def predict_batch(self, texts: list[str], top_k: int = 10) -> list[ICDPredictionResult]:
+        """Predict ICD-10 codes for a batch of documents.
+
+        Parameters
+        ----------
+        texts:
+            List of clinical document texts.
+        top_k:
+            Maximum predictions per document.
+
+        Returns
+        -------
+        list[ICDPredictionResult]
+        """
+        return [self.predict(text, top_k) for text in texts]

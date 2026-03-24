@@ -1,11 +1,13 @@
 """Clinical risk scoring endpoint.
 
-Scores patient risk across multiple clinical domains (readmission, mortality,
-sepsis, falls, etc.) based on free-text clinical notes.
+Scores patient risk across multiple clinical domains (medication, diagnostic
+complexity, follow-up urgency) based on free-text clinical notes using the
+rule-based risk scorer from the model registry.
 """
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import Annotated
 
@@ -16,86 +18,97 @@ from app.api.schemas.risk import RiskFactorResponse, RiskScoreRequest, RiskScore
 from app.core.config import Settings, get_settings
 from app.core.exceptions import InferenceError
 from app.db.session import get_db_session
+from app.services.model_registry import get_risk_scorer
 
 router = APIRouter(tags=["risk"])
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Placeholder inference helper
+# Inference helper — delegates to the real ML model
 # ---------------------------------------------------------------------------
-
-_CATEGORY_DESCRIPTIONS: dict[str, str] = {
-    "medication": "Medication-related risks including polypharmacy and high-risk drug interactions",
-    "cardiovascular": "Cardiovascular risks including acute cardiac conditions and hypertension",
-    "infection": "Infection-related risks including immunosuppression and sepsis indicators",
-    "surgical": "Surgical and procedural complication risks",
-    "follow_up": "Follow-up compliance and care-transition risks",
-}
 
 
 def _score_to_category(score: float) -> str:
-    """Map a numeric score to a qualitative category label."""
-    if score >= 0.8:
+    """Map a 0-100 numeric score to a qualitative category label.
+
+    Parameters
+    ----------
+    score:
+        Risk score on a 0-100 scale.
+
+    Returns
+    -------
+    str
+        One of 'critical', 'high', 'moderate', or 'low'.
+    """
+    if score >= 80:
         return "critical"
-    if score >= 0.6:
+    if score >= 60:
         return "high"
-    if score >= 0.4:
+    if score >= 40:
         return "moderate"
     return "low"
 
 
 def _run_risk_scoring(request: RiskScoreRequest) -> RiskScoreResponse:
-    """Placeholder risk scoring; returns mock scores.
+    """Run risk scoring using the model registry.
 
-    Replace with a call to the real risk model once the ML layer is wired.
+    Parameters
+    ----------
+    request:
+        Validated risk score request with text and optional filters.
+
+    Returns
+    -------
+    RiskScoreResponse
+        Risk assessment with per-category scores, factors, and recommendations.
     """
-    category_scores: dict[str, float] = {
-        "medication": 0.45,
-        "cardiovascular": 0.60,
-        "infection": 0.25,
-        "surgical": 0.10,
-        "follow_up": 0.35,
-    }
+    model = get_risk_scorer()
+    assessment = model.assess_risk(request.text)
 
-    # Apply any caller-supplied weight overrides (placeholder — weights don't
-    # affect the mock scores yet).
-    if request.category_weights:
-        # Validate keys; unknown keys are ignored for now.
-        pass
+    # Convert ML-layer RiskFactor objects to API schema.
+    # The ML model's category field (e.g. "medication_risk") maps to the API's
+    # source Literal; we use "derived" as the default since these are all
+    # rule-derived factors.
+    risk_factors = [
+        RiskFactorResponse(
+            name=f.name,
+            description=f.description,
+            weight=f.weight,
+            value=f.score,
+            source="derived",
+            evidence=None,
+        )
+        for f in assessment.factors
+        if f.score > 0
+    ]
 
-    # Filter to requested domains.
+    # Protective factors are those with a negative effective weight (i.e. they
+    # reduce risk).  For the rule-based scorer all factors are risk-additive,
+    # so this list is typically empty.
+    protective_factors: list[RiskFactorResponse] = []
+
+    # Build category_scores from the assessment.
+    category_scores: dict[str, float] = dict(assessment.category_scores)
+
+    # Filter to requested domains if specified.
     if request.risk_domains:
         category_scores = {k: v for k, v in category_scores.items() if k in request.risk_domains}
 
-    overall = round(sum(category_scores.values()) / len(category_scores), 4) if category_scores else 0.0
+    overall = assessment.overall_score
     overall_category = _score_to_category(overall)
 
-    risk_factors = [
-        RiskFactorResponse(
-            name="placeholder_cardiovascular_factor",
-            description="Placeholder cardiovascular risk factor — wire up real model.",
-            weight=0.6,
-            value=0.6,
-            source="text",
-            evidence=None,
-        )
-    ]
-    protective_factors: list[RiskFactorResponse] = []
-    recommendations = [
-        "Placeholder recommendation — wire up real risk model.",
-        "Consider specialist review for elevated cardiovascular category score.",
-    ]
-
     return RiskScoreResponse(
-        score=overall,
+        score=round(overall / 100.0, 4),  # Normalise 0-100 → 0-1 for API.
         category=overall_category,  # type: ignore[arg-type]
-        category_scores=category_scores,
+        category_scores={k: round(v / 100.0, 4) for k, v in category_scores.items()},
         risk_factors=risk_factors,
         protective_factors=protective_factors,
-        recommendations=recommendations,
-        model_name="rule-based-risk",
-        model_version="1.0.0",
-        processing_time_ms=0.0,
+        recommendations=assessment.recommendations,
+        model_name=model.model_name,
+        model_version=model.version,
+        processing_time_ms=0.0,  # Overwritten by route handler.
     )
 
 
