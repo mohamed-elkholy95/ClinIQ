@@ -8,6 +8,16 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 13 (2026-03-24)
+- [x] **Test coverage pushed from 96% to 97%** (4142 statements, 114 missed) — 47 new tests across 4 modules:
+  - `test_deps_get_current_user.py` (12 tests) — JWT auth (valid/invalid/missing-sub/user-not-found/inactive), API key auth (valid/not-found/hash-mismatch/orphaned-user), no-credentials, get_current_active_user (active/inactive)
+  - `test_pipeline_dental.py` (20 tests) — _run_dental (assessment populated, entities, perio risk score, CDT codes, recommendations, model metadata, without perio assessor, failure capture, dental disabled), load error handling (single/multiple failures, ensure_loaded idempotency), _components/_collect_model_versions helpers, batch edge cases
+  - `test_rate_limit_redis.py` (10 tests) — Redis sliding-window _check_redis (within/over/exact limit, pipeline operations), in-memory fallback edges, _get_client_key (API key precedence, X-Forwarded-For, client host, unknown)
+  - `test_configure_logging.py` (5 tests) — JSON/console format, default params, JSONRenderer/ConsoleRenderer processor selection
+- [x] **Bug fix: CDT_CODES import error** — `pipeline.py` `_run_dental` attempted module-level `from app.ml.dental.model import CDT_CODES` but CDT_CODES is a class attribute; replaced with runtime attribute access and reverse-lookup
+- [x] **Coverage highlights**: deps.py 53%→100%, pipeline.py 82%→100%, rate_limit.py 81%→99%
+- [x] **Total test suite: 1126 passing** (backend: 1126, frontend: 113), 0 failures
+
 #### Post-PRD Enhancements — Session 12 (2026-03-24)
 - [x] **Test coverage pushed from 90% to 96%** (4139 statements, 185 missed) — 64 new tests across 5 modules:
   - `test_transformer_icd.py` (19 tests) — TransformerICDClassifier (load success/failure/no-id2label, predict with sigmoid, top_k limiting, low-confidence filtering, chapter population, error propagation, unknown label indices), sliding-window long-document handling (trigger condition, max-pooling aggregation), batch predict (count, averaged timing, error), HierarchicalICDClassifier (load delegation, two-stage chapter→code dispatch, missing chapter graceful skip, confidence sorting, batch delegation)
