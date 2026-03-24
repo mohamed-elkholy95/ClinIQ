@@ -8,13 +8,13 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer
+from app.middleware.rate_limit import RateLimitMiddleware
 
-from app.api.v1.routes import analyze, batch, health, icd, ner, risk, summarize
+from app.api.v1.routes import api_router
 from app.core.config import get_settings
 from app.core.exceptions import ClinIQError
 from app.db.session import close_db, init_db
-from app.ml.pipeline import get_pipeline
+from app.middleware.logging import configure_logging
 
 # Configure logging
 logging.basicConfig(
@@ -38,14 +38,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as e:
         logger.warning(f"Database initialization skipped: {e}")
 
-    # Preload ML models (optional - can be lazy loaded)
-    if settings.environment == "production":
-        try:
-            pipeline = get_pipeline()
-            pipeline.load()
-            logger.info("ML models preloaded")
-        except Exception as e:
-            logger.warning(f"Model preloading skipped: {e}")
+    # Configure structured logging
+    configure_logging(settings.log_level, settings.log_format)
 
     logger.info("ClinIQ API started successfully")
 
@@ -159,16 +153,11 @@ def _error_code_to_http_status(error_code: str) -> int:
     return mapping.get(error_code, 500)
 
 
-# Include routers
-api_prefix = settings.api_v1_prefix
+# Add rate limiting middleware
+app.add_middleware(RateLimitMiddleware, redis_url=settings.redis_url)
 
-app.include_router(health.router, prefix=api_prefix)
-app.include_router(analyze.router, prefix=api_prefix)
-app.include_router(ner.router, prefix=api_prefix)
-app.include_router(icd.router, prefix=api_prefix)
-app.include_router(summarize.router, prefix=api_prefix)
-app.include_router(risk.router, prefix=api_prefix)
-app.include_router(batch.router, prefix=api_prefix)
+# Include routers
+app.include_router(api_router, prefix=settings.api_v1_prefix)
 
 
 # Root endpoint
