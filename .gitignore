@@ -58,3 +58,4 @@ minio_data/
 # Project
 AGENTS.md
 backend/.coverage
+.coverage

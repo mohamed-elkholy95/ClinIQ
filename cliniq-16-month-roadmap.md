@@ -8,6 +8,16 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 12 (2026-03-24)
+- [x] **Test coverage pushed from 90% to 96%** (4139 statements, 185 missed) — 64 new tests across 5 modules:
+  - `test_transformer_icd.py` (19 tests) — TransformerICDClassifier (load success/failure/no-id2label, predict with sigmoid, top_k limiting, low-confidence filtering, chapter population, error propagation, unknown label indices), sliding-window long-document handling (trigger condition, max-pooling aggregation), batch predict (count, averaged timing, error), HierarchicalICDClassifier (load delegation, two-stage chapter→code dispatch, missing chapter graceful skip, confidence sorting, batch delegation)
+  - `test_shap_explainer_advanced.py` (16 tests) — TokenSHAPExplainer real SHAP path (binary shap_values, multi-class shap_values with best-class selection, vectorizer caching, no-background vectorizer, KernelExplainer caching, zero-background baseline, decision_function sigmoid fallback), AttentionExplainer (explain returns SHAPExplanation, special token exclusion, mean-layer aggregation, max-head aggregation, no-attentions graceful fallback, predicted_value from logits, sub-word accumulation, torch ImportError, top_positive_features populated)
+  - `test_metrics_collector_advanced.py` (14 tests) — ModelMetrics Prometheus init (success/failure/disabled), Prometheus record paths (inference, batch, error), fallback collect (empty, after recording, batch size), Prometheus collect (success, exception→empty, namespace filtering), _InferenceTimer context manager (records inference, records error on exception)
+  - `test_db_session.py` (6 tests) — get_db_session (yields session + commits, rollback on exception), get_db_context (commits on success, rollback on exception), init_db (creates tables), close_db (disposes engine)
+  - `test_main_lifespan.py` (9 tests) — lifespan (app starts with lifespan, handles DB init failure), exception handlers (NOT_FOUND→404, VALIDATION_ERROR→400, AUTH→401, unknown→500, all 12 codes mapped), process-time middleware (X-Process-Time header), root endpoint (returns app info)
+- [x] **Updated README** — coverage badge 89% → 96%
+- [x] **Total test suite: 1079 passing** (backend: 1079, frontend: 113), 0 failures
+
 #### Post-PRD Enhancements — Session 11 (2026-03-24)
 - [x] **Test coverage pushed from 78% to 89%** (4148 statements, 439 missed) — 94 new tests across 5 modules:
   - `test_sklearn_icd_classifier.py` (26 tests) — SklearnICDClassifier (load empty/from file/failure, predict with predict_proba/decision_function, batch predict, ensure_loaded), TransformerICDClassifier (load mocks), HierarchicalICDClassifier (dispatch, no-match, batch, load), ICDCodePrediction/ICDPredictionResult dataclasses, get_chapter_for_code helper (13 ICD-10 chapter lookups + edge cases)
