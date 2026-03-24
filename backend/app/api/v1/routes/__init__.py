@@ -1,0 +1,52 @@
+"""API v1 router registry.
+
+Imports every sub-router and mounts it onto a single ``api_router`` that is
+registered with the FastAPI application in ``app/main.py``:
+
+    app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+All sub-routers are included without an additional prefix here; each module
+declares its own path strings (e.g. ``/health``, ``/analyze``, ``/ner``).
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+from app.api.v1.routes.analyze import router as analyze_router
+from app.api.v1.routes.auth import router as auth_router
+from app.api.v1.routes.batch import router as batch_router
+from app.api.v1.routes.health import router as health_router
+from app.api.v1.routes.icd import router as icd_router
+from app.api.v1.routes.models import router as models_router
+from app.api.v1.routes.ner import router as ner_router
+from app.api.v1.routes.risk import router as risk_router
+from app.api.v1.routes.summarize import router as summarize_router
+
+# ---------------------------------------------------------------------------
+# Build the combined v1 router
+# ---------------------------------------------------------------------------
+
+api_router = APIRouter()
+
+# Infrastructure / meta endpoints
+api_router.include_router(health_router)   # GET  /health, /health/live, /health/ready
+
+# Core NLP inference endpoints
+api_router.include_router(analyze_router)  # POST /analyze
+api_router.include_router(ner_router)      # POST /ner
+api_router.include_router(icd_router)      # POST /icd-predict, GET /icd-codes/{code}
+api_router.include_router(summarize_router)  # POST /summarize
+api_router.include_router(risk_router)     # POST /risk-score
+
+# Async batch processing
+api_router.include_router(batch_router)    # POST /batch, GET /batch/{job_id}
+
+# Model registry
+api_router.include_router(models_router)   # GET  /models, GET /models/{model_name}
+
+# Authentication & user management
+api_router.include_router(auth_router)     # POST /auth/token, /auth/register, /auth/api-keys
+                                            # GET  /auth/me
+
+__all__ = ["api_router"]
