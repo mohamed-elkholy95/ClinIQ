@@ -8,6 +8,14 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 7 (2026-03-24)
+- [x] **114 new unit tests** across 3 new test modules (~920 lines):
+  - `test_rule_based_icd.py` (55 tests) — RuleBasedICDClassifier keyword-matching predictions for 15+ ICD-10 codes (I10, E11.9, J44.1, N18.9, etc.), synonym confidence boosting, deduplication, batch predict, top_k limiting, edge cases (empty text, no matches, very long docs, case insensitivity)
+  - `test_extractive_summarizer.py` (30 tests) — TextRank pipeline full inference, detail-level behaviour (brief < standard < detailed), key findings extraction and clinical term filtering, Assessment/Plan section weighting, cosine similarity matrix correctness, PageRank convergence properties, edge cases (empty, single sentence, whitespace)
+  - `test_main_app.py` (29 tests) — route registration verification for all 9 API endpoint groups, error-code-to-HTTP-status mapping (12 known codes + unknown fallback), FastAPI app metadata, root endpoint response format
+- [x] **Bug fix: missing DentalAssessment and PeriodontalRiskAssessor** — pipeline.py imported `DentalAssessment` and `PeriodontalRiskAssessor` from `dental/model.py` but they didn't exist; added `DentalAssessment` dataclass (composite dental pipeline result) and `PeriodontalRiskAssessor` adapter class wrapping `PeriodontalRiskAssessment` with load/ensure_loaded lifecycle
+- [x] **Bug fix: SummaryResult → SummarizationResult** — fixed stale import alias in `test_api.py` and corrected `conftest.py` mock_summarizer to use the actual `SummarizationResult` fields (key_findings, detail_level, sentence counts)
+
 #### Post-PRD Enhancements — Session 6 (2026-03-24)
 - [x] **100% docstring coverage** — Added module docstrings to all 17 `__init__.py` files, function docstrings to middleware dispatch methods, RBAC `check_role`, Pydantic validators, Alembic migration functions, retry decorator internals, metrics collector primitives, and test conftest overrides. Verified via full AST scan: zero public functions or modules without docstrings
 - [x] **Python 3.12+ compatibility** — Replaced deprecated `datetime.utcnow()` with `datetime.now(UTC)` in Pydantic schema defaults (`common.py`, `batch.py`)
