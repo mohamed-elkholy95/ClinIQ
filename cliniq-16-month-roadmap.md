@@ -8,6 +8,13 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 3 (2026-03-24)
+- [x] **Expanded test coverage** — 4 new test modules (1200 lines) for previously untested ML infrastructure:
+  - `test_feature_engineering.py` — ClinicalFeatureExtractor (TF-IDF + custom clinical features), BagOfWordsExtractor, keyword detection, empty input handling
+  - `test_drift_detector.py` — PSI computation (numeric + categorical), TextDistributionMonitor (reference freezing, distribution shift), PredictionMonitor (confidence + label drift, multi-model independence)
+  - `test_metrics_collector.py` — Fallback histogram/counter/gauge primitives, ModelMetrics (inference recording, error tracking, batch sizes, ms→s conversion), inference timer context manager
+  - `test_shap_explainer.py` — SHAPExplanation dataclass, format_explanation (highlighted segments, direction labeling, attribution filtering), TokenSHAPExplainer fallback path
+
 #### Post-PRD Enhancements — Session 2 (2026-03-24)
 - [x] **Expanded test coverage** — 6 new test modules (738 lines) for previously untested code:
   - `test_model_registry.py` — lazy loading, singleton caching, thread safety (barrier test), reset, functional smoke tests
