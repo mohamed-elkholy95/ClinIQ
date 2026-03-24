@@ -18,6 +18,7 @@ Design decisions:
       still benefit from user context when auth is present.
 """
 
+from collections.abc import Callable
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -124,7 +125,7 @@ async def get_current_superuser(
     return current_user
 
 
-def require_role(allowed_roles: list[str]):
+def require_role(allowed_roles: list[str]) -> Callable:
     """Dependency factory for role-based access control."""
 
     async def check_role(

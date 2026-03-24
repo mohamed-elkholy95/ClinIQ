@@ -27,7 +27,7 @@ celery_app.conf.update(
 
 
 @celery_app.task(bind=True, name="cliniq.process_batch")
-def process_batch_task(self, job_id: str, documents: list[dict], config: dict):
+def process_batch_task(self, job_id: str, documents: list[dict], config: dict) -> dict:
     """Process a batch of clinical documents.
 
     This task runs NER, ICD-10 prediction, summarization, and risk scoring
@@ -82,6 +82,6 @@ def process_batch_task(self, job_id: str, documents: list[dict], config: dict):
 
 
 @celery_app.task(name="cliniq.health_check")
-def health_check():
+def health_check() -> dict:
     """Simple health check task for worker monitoring."""
     return {"status": "healthy", "worker": "cliniq"}

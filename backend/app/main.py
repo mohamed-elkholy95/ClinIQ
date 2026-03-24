@@ -3,6 +3,7 @@
 import logging
 import time
 from contextlib import asynccontextmanager
+from collections.abc import Callable
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request, Response
@@ -96,7 +97,7 @@ app.add_middleware(
 
 # Request timing middleware
 @app.middleware("http")
-async def add_process_time_header(request: Request, call_next) -> Response:
+async def add_process_time_header(request: Request, call_next: Callable) -> Response:
     """Add processing time header to responses."""
     start_time = time.time()
     response = await call_next(request)
