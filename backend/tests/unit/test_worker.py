@@ -105,14 +105,15 @@ class TestProcessBatchTask:
             import app.worker as worker_mod
             importlib.reload(worker_mod)
 
-            mock_self = MagicMock()
             documents = [
                 {"document_id": "doc1", "text": "Patient has chest pain."},
                 {"document_id": "doc2", "text": "Routine follow-up visit."},
             ]
             config = {"enable_ner": True, "enable_icd": True}
 
-            result = worker_mod.process_batch_task(mock_self, "job-123", documents, config)
+            # For bound Celery tasks, mock update_state on the task object itself
+            worker_mod.process_batch_task.update_state = MagicMock()
+            result = worker_mod.process_batch_task.run("job-123", documents, config)
 
             assert result["job_id"] == "job-123"
             assert result["total"] == 2
@@ -138,13 +139,13 @@ class TestProcessBatchTask:
             import app.worker as worker_mod
             importlib.reload(worker_mod)
 
-            mock_self = MagicMock()
             documents = [
                 {"document_id": "doc1", "text": "Good note."},
                 {"document_id": "doc2", "text": "Bad note."},
             ]
 
-            result = worker_mod.process_batch_task(mock_self, "job-456", documents, {})
+            worker_mod.process_batch_task.update_state = MagicMock()
+            result = worker_mod.process_batch_task.run("job-456", documents, {})
 
             assert result["results"][0]["status"] == "completed"
             assert result["results"][1]["status"] == "failed"
@@ -165,14 +166,15 @@ class TestProcessBatchTask:
             import app.worker as worker_mod
             importlib.reload(worker_mod)
 
-            mock_self = MagicMock()
             documents = [
                 {"document_id": f"doc{i}", "text": f"Note {i}."} for i in range(3)
             ]
 
-            worker_mod.process_batch_task(mock_self, "job-789", documents, {})
+            mock_update = MagicMock()
+            worker_mod.process_batch_task.update_state = mock_update
+            worker_mod.process_batch_task.run("job-789", documents, {})
 
-            assert mock_self.update_state.call_count == 3
-            last_call = mock_self.update_state.call_args
+            assert mock_update.call_count == 3
+            last_call = mock_update.call_args
             assert last_call.kwargs["meta"]["current"] == 3
             assert last_call.kwargs["meta"]["total"] == 3

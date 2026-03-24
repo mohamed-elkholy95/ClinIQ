@@ -216,8 +216,12 @@ class TestTokenSHAPExplainerFallback:
         assert "c" in result
 
 
+import builtins as _real_builtins
+
+_original_import = _real_builtins.__import__
+
 def _mock_import_no_shap(name, *args, **kwargs):
     """Mock import that raises ImportError for 'shap'."""
     if name == "shap":
         raise ImportError("No module named 'shap'")
-    return __builtins__.__import__(name, *args, **kwargs)  # type: ignore[attr-defined]
+    return _original_import(name, *args, **kwargs)

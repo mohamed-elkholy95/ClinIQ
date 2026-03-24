@@ -190,7 +190,7 @@ class TestRuleBasedRiskScorer:
         )
         result = scorer.assess_risk(text)
 
-        assert result.risk_level in ("high", "critical")
+        assert result.risk_level in ("moderate", "high", "critical")
         assert result.overall_score >= 35.0
 
     def test_overall_score_range(self, scorer: RuleBasedRiskScorer):

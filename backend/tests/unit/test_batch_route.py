@@ -103,7 +103,7 @@ class TestSubmitBatchJob:
         mock_delay = MagicMock()
 
         with patch(
-            "app.api.v1.routes.batch.process_batch_task",
+            "app.worker.process_batch_task",
             MagicMock(delay=mock_delay),
         ):
             result = await submit_batch_job(payload, mock_db, mock_settings)
@@ -132,12 +132,12 @@ class TestSubmitBatchJob:
         mock_db.add = MagicMock()
         mock_settings = MagicMock()
 
-        with patch("app.api.v1.routes.batch.process_batch_task", MagicMock(delay=MagicMock())):
+        with patch("app.worker.process_batch_task", MagicMock(delay=MagicMock())):
             result_3 = await submit_batch_job(payload_3stages, mock_db, mock_settings)
 
         # 2 docs × 4 stages (+ summary) × 0.5s = 4s
         payload_4stages = _make_batch_payload(doc_count=2, run_summary=True)
-        with patch("app.api.v1.routes.batch.process_batch_task", MagicMock(delay=MagicMock())):
+        with patch("app.worker.process_batch_task", MagicMock(delay=MagicMock())):
             result_4 = await submit_batch_job(payload_4stages, mock_db, mock_settings)
 
         assert result_4.estimated_duration_seconds > result_3.estimated_duration_seconds
@@ -160,7 +160,7 @@ class TestSubmitBatchJob:
         original_delay.side_effect = capture_delay
 
         with patch(
-            "app.api.v1.routes.batch.process_batch_task",
+            "app.worker.process_batch_task",
             MagicMock(delay=original_delay),
         ):
             await submit_batch_job(payload, mock_db, mock_settings)

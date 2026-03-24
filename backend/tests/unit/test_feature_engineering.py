@@ -165,7 +165,7 @@ class TestCustomClinicalFeatures:
     def test_word_count_feature(self, fitted_extractor: ClinicalFeatureExtractor) -> None:
         text = "Patient has chest pain and shortness of breath"
         features = fitted_extractor._extract_custom_features(text)
-        assert features["word_count"] == 9.0
+        assert features["word_count"] == 8.0
 
     def test_urgent_keywords_detected(self, fitted_extractor: ClinicalFeatureExtractor) -> None:
         text = "Urgent: patient needs emergency surgery, stat labs ordered"

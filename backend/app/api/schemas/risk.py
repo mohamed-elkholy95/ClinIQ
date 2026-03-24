@@ -50,6 +50,20 @@ class RiskScoreRequest(BaseModel):
         le=1.0,
         description="Minimum entity confidence required for entity-derived risk factors to be included",
     )
+    risk_domains: list[str] | None = Field(
+        default=None,
+        description=(
+            "Restrict risk scoring to specific clinical domains (e.g. 'cardiovascular', "
+            "'medication_risk'). Omit to score all domains."
+        ),
+    )
+    patient_context: dict[str, str | int | float | bool] | None = Field(
+        default=None,
+        description=(
+            "Optional patient demographics and context (age, gender, comorbidities) "
+            "to augment text-based risk prediction."
+        ),
+    )
 
     model_config = {
         "json_schema_extra": {

@@ -22,10 +22,10 @@ from app.api.v1.deps import get_ml_pipeline, get_superuser
 class TestGetMLPipeline:
     """Tests for the get_ml_pipeline dependency."""
 
-    @patch("app.api.v1.deps.get_summarizer")
-    @patch("app.api.v1.deps.get_risk_scorer")
-    @patch("app.api.v1.deps.get_icd_model")
-    @patch("app.api.v1.deps.get_ner_model")
+    @patch("app.services.model_registry.get_summarizer")
+    @patch("app.services.model_registry.get_risk_scorer")
+    @patch("app.services.model_registry.get_icd_model")
+    @patch("app.services.model_registry.get_ner_model")
     def test_returns_clinical_pipeline(
         self,
         mock_ner: MagicMock,

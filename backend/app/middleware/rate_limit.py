@@ -22,8 +22,9 @@ Design decisions:
 
 import time
 
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import JSONResponse
 
 from app.core.config import get_settings
 
@@ -93,14 +94,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
 
         if not allowed:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Rate limit exceeded",
+                content={"detail": "Rate limit exceeded"},
                 headers={
                     "X-RateLimit-Limit": str(max_requests),
                     "X-RateLimit-Remaining": "0",
                     "X-RateLimit-Reset": str(int(reset_at)),
-                    "Retry-After": str(int(reset_at - time.time())),
+                    "Retry-After": str(max(1, int(reset_at - time.time()))),
                 },
             )
 

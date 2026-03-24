@@ -11,12 +11,16 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     String,
     Text,
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+# Use JSONB on PostgreSQL, fall back to JSON on other dialects (e.g. SQLite for tests).
+PortableJSON = JSON().with_variant(JSONB, "postgresql")
 
 from app.db.session import Base
 
@@ -113,7 +117,7 @@ class Document(Base, TimestampMixin):
     title: Mapped[str | None] = mapped_column(String(500))
     source: Mapped[str | None] = mapped_column(String(100))  # upload, api, batch
     specialty: Mapped[str | None] = mapped_column(String(100))
-    metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, default=dict)
+    metadata_: Mapped[dict | None] = mapped_column("metadata", PortableJSON, default=dict)
     is_processed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Relationships
@@ -126,7 +130,6 @@ class Document(Base, TimestampMixin):
     )
 
     __table_args__ = (
-        Index("ix_documents_content_hash", "content_hash"),
         Index("ix_documents_user_created", "user_id", "created_at"),
     )
 
@@ -156,7 +159,7 @@ class Entity(Base, TimestampMixin):
     confidence: Mapped[float] = mapped_column(Float, nullable=False)
     is_negated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_uncertain: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, default=dict)
+    metadata_: Mapped[dict | None] = mapped_column("metadata", PortableJSON, default=dict)
     model_version: Mapped[str | None] = mapped_column(String(50))
     # Relationships
     document: Mapped["Document"] = relationship("Document", back_populates="entities")
@@ -190,7 +193,7 @@ class Prediction(Base, TimestampMixin):
     # For ICD-10: list of codes with confidence
     # For risk: score and category
     # For summary: the summary text
-    result: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    result: Mapped[dict] = mapped_column(PortableJSON, nullable=False)
     confidence: Mapped[float | None] = mapped_column(Float)
     processing_time_ms: Mapped[int | None] = mapped_column(Integer)
     # Relationships
@@ -243,10 +246,9 @@ class AuditLog(Base):
     user_agent: Mapped[str | None] = mapped_column(String(500))
     status_code: Mapped[int | None] = mapped_column(Integer)
     response_time_ms: Mapped[int | None] = mapped_column(Integer)
-    metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, default=dict)
+    metadata_: Mapped[dict | None] = mapped_column("metadata", PortableJSON, default=dict)
 
     __table_args__ = (
-        Index("ix_audit_log_timestamp", "timestamp"),
         Index("ix_audit_log_user_action", "user_id", "action"),
         Index("ix_audit_log_action_timestamp", "action", "timestamp"),
     )
@@ -274,7 +276,7 @@ class BatchJob(Base, TimestampMixin):
     total_documents: Mapped[int] = mapped_column(Integer, nullable=False)
     processed_documents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     failed_documents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    pipeline_config: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    pipeline_config: Mapped[dict] = mapped_column(PortableJSON, nullable=False)
     result_file: Mapped[str | None] = mapped_column(String(500))
     error_message: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -297,8 +299,8 @@ class ModelVersion(Base, TimestampMixin):
         String(20), nullable=False, default="staging"
     )  # staging, production, archived
     mlflow_run_id: Mapped[str | None] = mapped_column(String(100))
-    metrics: Mapped[dict | None] = mapped_column(JSONB)
-    config: Mapped[dict | None] = mapped_column(JSONB)
+    metrics: Mapped[dict | None] = mapped_column(PortableJSON)
+    config: Mapped[dict | None] = mapped_column(PortableJSON)
     deployed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deployed_by: Mapped[UUID | None] = mapped_column(UUID(as_uuid=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

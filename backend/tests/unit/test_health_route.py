@@ -128,7 +128,7 @@ class TestProbeModels:
             "risk_scorer": True,
         })
 
-        with patch("app.api.v1.routes.health.registry_health", mock_health):
+        with patch("app.services.model_registry.health_check", mock_health):
             result = await _probe_models()
 
         assert result["ner"] == "loaded"
@@ -145,7 +145,7 @@ class TestProbeModels:
             "risk_scorer": False,
         })
 
-        with patch("app.api.v1.routes.health.registry_health", mock_health):
+        with patch("app.services.model_registry.health_check", mock_health):
             result = await _probe_models()
 
         assert result["_status"] == "not_loaded"
@@ -161,7 +161,7 @@ class TestProbeModels:
             "risk_scorer": False,
         })
 
-        with patch("app.api.v1.routes.health.registry_health", mock_health):
+        with patch("app.services.model_registry.health_check", mock_health):
             result = await _probe_models()
 
         assert result["_status"] == "loaded"

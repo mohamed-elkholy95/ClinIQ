@@ -250,11 +250,23 @@ class TestCreateAPIKey:
     @pytest.mark.asyncio
     async def test_create_api_key_success(self) -> None:
         """Authenticated user can create an API key."""
+        import uuid as _uuid
+        from datetime import datetime, timezone
+
         user = _make_user()
         settings = _make_settings()
 
+        _fake_id = _uuid.uuid4()
+        _fake_now = datetime.now(timezone.utc)
+
         mock_db = AsyncMock()
-        mock_db.add = MagicMock()
+
+        def _add_side_effect(obj):
+            """Simulate DB server-assigned defaults on the APIKey instance."""
+            obj.id = _fake_id
+            obj.created_at = _fake_now
+
+        mock_db.add = MagicMock(side_effect=_add_side_effect)
         mock_db.flush = AsyncMock()
 
         payload = APIKeyCreate(name="test-key", rate_limit=100)
