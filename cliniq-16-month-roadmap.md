@@ -8,6 +8,21 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 8 (2026-03-24)
+- [x] **Resolved all 35 test failures** — full suite now passes: **829 tests passing, 0 failures, 0 errors** (+ 40 SDK tests passing separately)
+- [x] **Production bug fixes** (4 fixes in application code):
+  - Replaced PostgreSQL-only `JSONB` columns with portable `JSON().with_variant(JSONB, "postgresql")` — enables SQLite test compatibility without compromising PostgreSQL production performance
+  - Removed duplicate index definitions (`ix_audit_log_timestamp`, `ix_documents_content_hash`) that caused schema creation failures on SQLite
+  - Fixed rate-limit middleware: return `JSONResponse` for 429 instead of `raise HTTPException` (Starlette's `BaseHTTPMiddleware` cannot propagate raised `HTTPException` as proper responses)
+  - Added missing `risk_domains` and `patient_context` fields to `RiskScoreRequest` schema (route handler referenced them but the Pydantic model lacked them)
+- [x] **Test infrastructure fixes** (14 test files, 11 categories of fixes):
+  - Fixed bcrypt/passlib compatibility (downgraded bcrypt to 4.0.1)
+  - Corrected 6 wrong mock patch targets (patching source modules, not import aliases)
+  - Fixed Celery bound-task invocation in worker tests (`task.run()` not `__wrapped__`)
+  - Stabilised PSI drift tests with seeded RNG and larger sample sizes
+  - Rewrote integration test suite with correct constructor signatures and endpoint paths
+  - Fixed `__builtins__` import mock for SHAP explainer fallback tests
+
 #### Post-PRD Enhancements — Session 7 (2026-03-24)
 - [x] **114 new unit tests** across 3 new test modules (~920 lines):
   - `test_rule_based_icd.py` (55 tests) — RuleBasedICDClassifier keyword-matching predictions for 15+ ICD-10 codes (I10, E11.9, J44.1, N18.9, etc.), synonym confidence boosting, deduplication, batch predict, top_k limiting, edge cases (empty text, no matches, very long docs, case insensitivity)
