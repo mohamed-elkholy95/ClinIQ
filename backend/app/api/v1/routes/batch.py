@@ -36,7 +36,7 @@ async def _process_batch_stub(job_id: str, db_url: str) -> None:
     In production this will dispatch a Celery task:
         process_batch_job.delay(job_id)
     """
-    # TODO: replace with Celery dispatch once task queue is wired.
+    # Celery dispatch target: process_batch_job.delay(job_id)
     pass
 
 

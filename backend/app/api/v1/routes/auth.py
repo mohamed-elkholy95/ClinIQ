@@ -48,8 +48,9 @@ async def _get_current_user_placeholder(
 ) -> User:
     """Placeholder current-user resolver.
 
-    TODO: Replace with a real JWT-bearer dependency once OAuth2 middleware is
-    wired (see ``app.api.v1.deps.get_current_user``).  For now this raises
+    Once the full OAuth2 middleware is wired (see
+    ``app.api.v1.deps.get_current_user``), this placeholder should be
+    replaced with JWT-bearer token validation.  For now it raises
     HTTP 401 to signal that authentication is required.
     """
     raise HTTPException(

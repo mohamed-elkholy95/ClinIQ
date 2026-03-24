@@ -14,7 +14,7 @@ from app.core.config import Settings, get_settings
 from app.db.models import Base, User
 from app.db.session import get_db_session
 from app.main import app
-from app.ml.pipeline import MLPipeline
+from app.ml.pipeline import ClinicalPipeline
 
 
 # Test settings
@@ -187,12 +187,12 @@ def mock_icd_model() -> MagicMock:
 @pytest.fixture
 def mock_summarizer() -> MagicMock:
     """Mock summarizer."""
-    from app.ml.summarization.model import SummaryResult
+    from app.ml.summarization.model import SummarizationResult
 
     summarizer = MagicMock()
     summarizer.is_loaded = True
     summarizer.version = "1.0.0"
-    summarizer.summarize.return_value = SummaryResult(
+    summarizer.summarize.return_value = SummarizationResult(
         summary="Patient presents with diabetes managed with metformin.",
         original_length=100,
         summary_length=50,
@@ -210,9 +210,9 @@ def mock_pipeline(
     mock_ner_model: MagicMock,
     mock_icd_model: MagicMock,
     mock_summarizer: MagicMock,
-) -> MLPipeline:
+) -> ClinicalPipeline:
     """Provide mock ML pipeline."""
-    pipeline = MLPipeline()
+    pipeline = ClinicalPipeline()
     pipeline._ner_model = mock_ner_model
     pipeline._icd_model = mock_icd_model
     pipeline._summarizer = mock_summarizer

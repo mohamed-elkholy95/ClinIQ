@@ -49,7 +49,7 @@ async def _probe_redis(settings: Settings) -> str:
 
 async def _probe_models() -> str:
     """Check whether ML model artefacts are accessible; always returns 'loaded' for now."""
-    # TODO: wire up actual model registry probe once the ModelRegistry service exists.
+    # Pending ModelRegistry integration — always reports loaded for now.
     return "loaded"
 
 

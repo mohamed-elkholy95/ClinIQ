@@ -1,93 +1,171 @@
-"""
-import time
+"""Document analysis service for the ClinIQ platform.
 
-import axios
+Provides a high-level async interface for analysing clinical text —
+both single-document and batch — by delegating to the
+:class:`~app.ml.pipeline.ClinicalPipeline`.  The service handles
+pipeline lifecycle (lazy loading), error translation, and logging.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import logging
+import time
+from datetime import datetime, timezone
+from typing import Any
+
 from app.core.config import get_settings
 from app.core.exceptions import InferenceError
-from app.ml.pipeline import get_pipeline
+from app.ml.pipeline import ClinicalPipeline, PipelineConfig, PipelineResult
 from app.ml.utils.text_preprocessing import preprocess_clinical_text
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
+def _text_hash(text: str) -> str:
+    """Return a hex SHA-256 digest of *text* for deduplication."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 class AnalysisService:
-    """Service for clinical text analysis."""
-    def __init__(self):
-        self.pipeline = pipeline
-        self.settings = settings
+    """Orchestrates clinical text analysis through the ML pipeline.
 
-        self.logger = logger
+    The service lazily initialises the underlying
+    :class:`ClinicalPipeline` on first use so that application startup
+    remains fast.
 
+    Parameters
+    ----------
+    pipeline : ClinicalPipeline | None
+        An optional pre-built pipeline instance.  When *None* a new
+        default pipeline is created on first analysis call.
+    """
+
+    def __init__(self, pipeline: ClinicalPipeline | None = None) -> None:
+        self._pipeline = pipeline
         self._is_loaded = False
 
-        self.logger.warning(f"Pipeline not loaded, skipping load")
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _ensure_pipeline(self) -> ClinicalPipeline:
+        """Lazily create and load the pipeline."""
+        if self._pipeline is None:
+            self._pipeline = ClinicalPipeline()
+        if not self._is_loaded:
+            self._pipeline.load()
+            self._is_loaded = True
+            logger.info("ML pipeline loaded successfully")
+        return self._pipeline
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     async def analyze(
         self,
         text: str,
         document_id: str | None = None,
         config_override: PipelineConfig | None = None,
-    ) -> Analysis_result:
-        """Analyze clinical text."""
-        if not self._is_loaded:
-            self.load()
-            self._is_loaded = True
+    ) -> dict[str, Any]:
+        """Analyse a single clinical text document.
 
-            start = time.time()
-            result = self.pipeline.analyze(
-                text=request.text,
-                document_id=document_id,
-                config_override=config,
+        Parameters
+        ----------
+        text:
+            Raw clinical text to analyse.
+        document_id:
+            Optional external identifier to attach to the result.
+        config_override:
+            Optional per-request pipeline configuration.
+
+        Returns
+        -------
+        dict[str, Any]
+            Analysis result dictionary containing entities, ICD codes,
+            summary, risk score, and processing metadata.
+
+        Raises
+        ------
+        InferenceError
+            If the underlying pipeline raises an exception.
+        """
+        pipeline = self._ensure_pipeline()
+
+        start = time.perf_counter()
+        try:
+            cleaned = preprocess_clinical_text(text)
+            result: PipelineResult = pipeline.process(cleaned, config_override)
+            processing_ms = (time.perf_counter() - start) * 1_000
+
+            logger.info(
+                "Document analysed",
+                extra={
+                    "document_id": document_id,
+                    "processing_ms": round(processing_ms, 2),
+                    "text_hash": _text_hash(text),
+                },
             )
 
-            processing_time = (time.time() - start_time) * 1000
-            return result
-        except Exception as e:
-            logger.error(f"Analysis failed: {e}")
-            raise InferenceError("pipeline", str(e))
+            return {
+                "document_id": document_id,
+                "text_hash": _text_hash(text),
+                "result": result,
+                "processing_ms": round(processing_ms, 2),
+                "processed_at": datetime.now(timezone.utc).isoformat(),
+            }
+        except InferenceError:
+            raise
+        except Exception as exc:
+            logger.error("Analysis failed: %s", exc, exc_info=True)
+            raise InferenceError("pipeline", str(exc)) from exc
 
     async def batch_analyze(
         self,
         texts: list[str],
         config_override: PipelineConfig | None = None,
-    ) -> list[AnalysisResult]:
+    ) -> list[dict[str, Any]]:
+        """Analyse multiple clinical text documents sequentially.
+
+        Parameters
+        ----------
+        texts:
+            List of raw clinical text strings.
+        config_override:
+            Optional per-request pipeline configuration applied to
+            every document in the batch.
+
+        Returns
+        -------
+        list[dict[str, Any]]
+            One result dictionary per input text, in the same order.
+
+        Raises
+        ------
+        InferenceError
+            If any individual analysis fails the whole batch is aborted.
+        """
         if not texts:
             return []
 
-        self._pipeline = pipeline
-        self._pipeline.load()
-        
-        # Process with retries
-        retries = 3
-        for text in texts:
-            text_hash = text_hash
-            
-            # Update result
-            result.document_hash = text_hash
-            result.document_id = document_id
-            result.is_processed = True
-            result.processed_at = datetime.now(timezone.utc)
-            await db.add(document)
-            await db.commit()
-            result.text_hash = text_hash
+        pipeline = self._ensure_pipeline()  # noqa: F841 — ensures loaded
 
-            result.is_processed = True
-            result.processed_at = datetime.now(timezone.utc)
-            return result
+        results: list[dict[str, Any]] = []
+        for idx, text in enumerate(texts):
+            try:
+                result = await self.analyze(
+                    text=text,
+                    document_id=f"batch-{idx}",
+                    config_override=config_override,
+                )
+                results.append(result)
+            except Exception as exc:
+                logger.error(
+                    "Batch analysis failed at index %d: %s", idx, exc
+                )
+                raise InferenceError("pipeline", str(exc)) from exc
 
-        except Exception as e:
-            logger.error(f"Batch analysis failed: {e}")
-            raise InferenceError("pipeline", str(e))
-            results.append(result)
-            return results
-        except Exception as e:
-            logger.error(f"Batch analysis failed: {e}")
-            raise InferenceError("pipeline", str(e))
-
-    async def _update_document_status(
-        self, document_id: str, None):
-        doc_id = str | None
-        self._validate_document_hash(doc_id)
-        return True
-
+        logger.info("Batch analysis complete: %d documents", len(results))
+        return results

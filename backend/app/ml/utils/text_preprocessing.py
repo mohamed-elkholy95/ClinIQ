@@ -349,6 +349,29 @@ def preprocess_clinical_text(
     text: str,
     config: PreprocessingConfig | None = None,
 ) -> str:
-    """Convenience function to preprocess clinical text."""
+    """Convenience function to preprocess clinical text.
+
+    Parameters
+    ----------
+    text:
+        Raw clinical text to preprocess.  Empty or whitespace-only
+        strings are returned as-is (empty string).
+    config:
+        Optional preprocessing configuration.
+
+    Returns
+    -------
+    str
+        Cleaned, normalised clinical text.
+
+    Raises
+    ------
+    TypeError
+        If *text* is not a string.
+    """
+    if not isinstance(text, str):
+        raise TypeError(f"Expected str, got {type(text).__name__}")
+    if not text or not text.strip():
+        return ""
     preprocessor = ClinicalTextPreprocessor(config)
     return preprocessor.preprocess(text)
