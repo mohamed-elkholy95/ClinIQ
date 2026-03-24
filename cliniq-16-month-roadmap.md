@@ -8,6 +8,15 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 4 (2026-03-24)
+- [x] **Bug fix: broken `deps.py` imports** — `MLPipeline` and `get_pipeline` never existed in the pipeline module; replaced with `ClinicalPipeline` and wired to model registry singletons (`get_ner_model`, `get_icd_model`, `get_summarizer`, `get_risk_scorer`)
+- [x] **Expanded test coverage** — 4 new test modules (1,200+ lines):
+  - `test_risk_scorer.py` — RiskFactor/RiskScore dataclasses, text/entity/ICD factor extraction, category scoring, overall score calculation, risk level thresholds, recommendation generation, end-to-end scoring (high/low-risk, empty text, custom weights)
+  - `test_analysis_service.py` — document storage with SHA-256 hashing, entity persistence with field mapping, prediction storage, audit logging, mark_document_processed
+  - `test_deps.py` — ClinicalPipeline construction from model registry, superuser gate authorization
+  - `test_worker.py` — Celery process_batch_task (success, partial failure, progress updates), health_check task
+- [x] **React ErrorBoundary component** — class-based error boundary with retry button, dark mode support, expandable error details, and optional `onError` callback for external reporting; wired into App.tsx root
+
 #### Post-PRD Enhancements — Session 3 (2026-03-24)
 - [x] **Expanded test coverage** — 4 new test modules (1200 lines) for previously untested ML infrastructure:
   - `test_feature_engineering.py` — ClinicalFeatureExtractor (TF-IDF + custom clinical features), BagOfWordsExtractor, keyword detection, empty input handling
