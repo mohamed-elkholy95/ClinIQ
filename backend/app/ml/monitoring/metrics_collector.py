@@ -42,6 +42,7 @@ class _SimpleHistogram:
         self._count: int = 0
 
     def observe(self, value: float) -> None:
+        """Record a single observation into the appropriate bucket."""
         self._sum += value
         self._count += 1
         for i, upper in enumerate(self._buckets):
@@ -51,6 +52,7 @@ class _SimpleHistogram:
         self._bucket_counts[-1] += 1
 
     def to_dict(self) -> dict[str, Any]:
+        """Export histogram state as a Prometheus-compatible dictionary."""
         return {
             "count": self._count,
             "sum": round(self._sum, 6),
@@ -62,32 +64,42 @@ class _SimpleHistogram:
 
 
 class _SimpleCounter:
+    """Monotonically increasing counter (in-memory Prometheus fallback)."""
+
     def __init__(self) -> None:
         self._value: float = 0.0
 
     def inc(self, amount: float = 1.0) -> None:
+        """Increment the counter by *amount* (default 1)."""
         self._value += amount
 
     @property
     def value(self) -> float:
+        """Return the current counter value."""
         return self._value
 
 
 class _SimpleGauge:
+    """Gauge that can be set, incremented, or decremented (in-memory fallback)."""
+
     def __init__(self) -> None:
         self._value: float = 0.0
 
     def set(self, value: float) -> None:
+        """Set the gauge to an absolute *value*."""
         self._value = value
 
     def inc(self, amount: float = 1.0) -> None:
+        """Increment the gauge by *amount* (default 1)."""
         self._value += amount
 
     def dec(self, amount: float = 1.0) -> None:
+        """Decrement the gauge by *amount* (default 1)."""
         self._value -= amount
 
     @property
     def value(self) -> float:
+        """Return the current gauge value."""
         return self._value
 
 

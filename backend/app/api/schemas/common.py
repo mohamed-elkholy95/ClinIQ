@@ -1,6 +1,6 @@
 """Common response models shared across all API endpoints."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
@@ -46,7 +46,7 @@ class ErrorResponse(BaseModel):
         description="Unique request identifier for tracing",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="UTC timestamp of the error",
     )
 
@@ -152,7 +152,7 @@ class HealthResponse(BaseModel):
     version: str = Field(description="Application version string")
     environment: str = Field(description="Deployment environment: development | staging | production")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="UTC timestamp of the health check",
     )
     dependencies: dict[str, str] = Field(

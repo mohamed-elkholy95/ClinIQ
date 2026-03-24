@@ -108,6 +108,7 @@ async def admin_user(db_session: AsyncSession) -> User:
 def client(db_session: AsyncSession, test_user: User) -> TestClient:
     """Provide test client with database override."""
     async def override_get_db():
+        """Yield the test database session instead of creating a new one."""
         yield db_session
 
     app.dependency_overrides[get_db_session] = override_get_db
@@ -122,6 +123,7 @@ def client(db_session: AsyncSession, test_user: User) -> TestClient:
 async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Provide async test client."""
     async def override_get_db():
+        """Yield the test database session instead of creating a new one."""
         yield db_session
 
     app.dependency_overrides[get_db_session] = override_get_db

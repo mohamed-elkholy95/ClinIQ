@@ -130,6 +130,11 @@ def require_role(allowed_roles: list[str]):
     async def check_role(
         current_user: User = Depends(get_current_active_user),
     ) -> User:
+        """Verify the authenticated user holds one of the *allowed_roles*.
+
+        Superusers bypass the role check. Raises 403 Forbidden when the
+        user's role is not in the allowed set.
+        """
         if current_user.role not in allowed_roles and not current_user.is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

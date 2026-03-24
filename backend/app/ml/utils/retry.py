@@ -64,8 +64,11 @@ def retry(
     """
 
     def decorator(func: F) -> F:
+        """Wrap *func* with retry logic and return the decorated callable."""
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Execute the wrapped function, retrying on transient failures."""
             last_exc: BaseException | None = None
             for attempt in range(1, max_attempts + 1):
                 try:

@@ -67,6 +67,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        """Intercept each request to enforce per-client rate limits.
+
+        Bypasses health and documentation endpoints. Uses Redis sliding-window
+        counts when available, falling back to an in-memory store otherwise.
+        Returns 429 Too Many Requests when the limit is exceeded.
+        """
         # Skip rate limiting for health checks and docs
         if request.url.path in ("/api/v1/health", "/docs", "/openapi.json", "/health"):
             return await call_next(request)

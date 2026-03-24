@@ -166,6 +166,7 @@ class AnalysisRequest(BaseModel):
 
     @model_validator(mode="after")
     def at_least_one_stage_enabled(self) -> "AnalysisRequest":
+        """Ensure at least one pipeline stage (NER, ICD, summary, risk) is enabled."""
         cfg = self.config
         if not any([cfg.ner.enabled, cfg.icd.enabled, cfg.summary.enabled, cfg.risk.enabled]):
             raise ValueError("At least one pipeline stage must be enabled")

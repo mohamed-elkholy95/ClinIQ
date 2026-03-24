@@ -1,6 +1,6 @@
 """Batch processing request and response schemas."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
@@ -107,6 +107,7 @@ class BatchRequest(BaseModel):
 
     @model_validator(mode="after")
     def at_least_one_stage_enabled(self) -> "BatchRequest":
+        """Ensure the batch request enables at least one ML pipeline stage."""
         p = self.pipeline
         if not any([p.run_ner, p.run_icd, p.run_summary, p.run_risk]):
             raise ValueError("At least one pipeline stage must be enabled in the batch config")
@@ -200,7 +201,7 @@ class BatchSubmitResponse(BaseModel):
         description="Rough ETA for job completion in seconds, if available",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="UTC timestamp when the job was accepted",
     )
 

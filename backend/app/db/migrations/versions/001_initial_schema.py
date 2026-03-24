@@ -17,6 +17,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    """Create the initial database schema (users, documents, predictions, entities, icd_codes, audit_log)."""
     op.create_table(
         "users",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
@@ -210,6 +211,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Drop all tables created by the initial schema migration."""
     op.drop_table("model_versions")
     op.drop_table("batch_jobs")
     op.drop_table("audit_log")

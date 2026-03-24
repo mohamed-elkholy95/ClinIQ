@@ -16,6 +16,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        """Attach a unique request ID, log start/finish, and measure latency.
+
+        Adds ``X-Request-ID`` and ``X-Process-Time`` response headers for
+        downstream tracing and performance monitoring.
+        """
         request_id = str(uuid.uuid4())
         start_time = time.time()
 
