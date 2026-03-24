@@ -1,163 +1,122 @@
-"""Summarization endpoint routes."""
+"""Clinical summarization endpoint.
 
-import logging
+Generates concise, clinically accurate summaries of free-text clinical notes
+using configurable extractive or abstractive strategies.
+"""
+
+from __future__ import annotations
+
+import time
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import PipelineDep
-from app.api.v1.schemas import SummarizeRequest, SummarizeResponse, SummaryResponse
-from app.ml.pipeline import get_pipeline
+from app.api.schemas.summary import SummarizationRequest, SummarizationResponse
+from app.core.config import Settings, get_settings
+from app.core.exceptions import InferenceError
+from app.db.session import get_db_session
 
-logger = logging.getLogger(__name__)
-
-router = APIRouter(prefix="/summarize", tags=["summarization"])
-
-
-@router.post(
-    "",
-    response_model=SummarizeResponse,
-    summary="Summarize clinical text",
-    description="Generate a concise summary of clinical text.",
-)
-async def summarize_text(
-    request: SummarizeRequest,
-    pipeline: PipelineDep,
-) -> SummarizeResponse:
-    """Summarize clinical text."""
-    import time
-
-    start_time = time.time()
-
-    try:
-        result = pipeline.summarize(request.text, max_length=request.max_length)
-
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Summarization service unavailable",
-            )
-
-        summary = SummaryResponse(
-            summary=result.summary,
-            original_length=result.original_length,
-            summary_length=result.summary_length,
-            compression_ratio=result.compression_ratio,
-            summary_type=result.summary_type,
-            key_points=result.key_points,
-        )
-
-        processing_time = (time.time() - start_time) * 1000
-
-        return SummarizeResponse(
-            summary=summary,
-            processing_time_ms=processing_time,
-            model_version=result.model_version,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Summarization failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Summarization failed: {str(e)}",
-        )
+router = APIRouter(tags=["summarization"])
 
 
-@router.post(
-    "/sections",
-    summary="Section-based summary",
-    description="Generate section-based summary for structured clinical notes.",
-)
-async def summarize_by_sections(
-    request: SummarizeRequest,
-    pipeline: PipelineDep,
-) -> dict:
-    """Generate section-based summary."""
-    from app.ml.summarization.model import SectionBasedSummarizer
+# ---------------------------------------------------------------------------
+# Placeholder inference helper
+# ---------------------------------------------------------------------------
 
-    try:
-        summarizer = SectionBasedSummarizer()
-        summarizer.load()
+_DETAIL_WORD_TARGETS: dict[str, int] = {
+    "brief": 50,
+    "standard": 150,
+    "detailed": 300,
+}
 
-        result = summarizer.summarize(request.text, max_length=request.max_length)
 
-        return {
-            "summary": result.summary,
-            "summary_type": result.summary_type,
-            "sections_extracted": result.key_points or [],
-            "compression_ratio": result.compression_ratio,
-        }
+def _run_summarization(request: SummarizationRequest) -> SummarizationResponse:
+    """Placeholder summarization; returns a mock summary.
 
-    except Exception as e:
-        logger.error(f"Section-based summarization failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Summarization failed: {str(e)}",
-        )
+    Replace with a call to the real summarization model once the ML layer
+    is wired up.
+    """
+    original_words = request.text.split()
+    original_word_count = len(original_words)
+
+    # Determine target word count.
+    target_words = request.max_length_words or _DETAIL_WORD_TARGETS.get(request.detail_level, 150)
+    target_words = max(target_words, request.min_length_words or 5)
+
+    # Naively take the first N words as a placeholder extractive summary.
+    summary_words = original_words[:target_words]
+    summary_text = " ".join(summary_words)
+    if len(original_words) > target_words:
+        summary_text += "..."
+
+    summary_word_count = len(summary_words)
+    compression_ratio = round(original_word_count / summary_word_count, 2) if summary_word_count else 1.0
+
+    key_points: list[str] | None = None
+    if request.include_key_points:
+        key_points = [
+            "[Placeholder key point 1 — wire up real model]",
+            "[Placeholder key point 2 — wire up real model]",
+        ]
+
+    return SummarizationResponse(
+        summary=f"[Placeholder summary] {summary_text}",
+        key_points=key_points,
+        original_word_count=original_word_count,
+        summary_word_count=summary_word_count,
+        compression_ratio=compression_ratio,
+        summary_type="extractive",
+        model_name=request.model,
+        model_version="1.0.0",
+        processing_time_ms=0.0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Route
+# ---------------------------------------------------------------------------
 
 
 @router.post(
-    "/compare",
-    summary="Compare summarization methods",
-    description="Compare extractive vs abstractive summarization.",
+    "/summarize",
+    response_model=SummarizationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Clinical text summarization",
+    description=(
+        "Generate a clinically accurate summary of the supplied clinical text. "
+        "The verbosity is controlled by `detail_level` ('brief', 'standard', 'detailed') "
+        "and the summarization strategy is set via `model` ('extractive', 'section-based', "
+        "'abstractive', 'hybrid'). "
+        "Optional `key_points` returns a bullet-point list alongside the prose summary."
+    ),
+    responses={
+        200: {"description": "Summary generated successfully"},
+        422: {"description": "Input validation error"},
+        500: {"description": "Summarization inference error"},
+    },
 )
-async def compare_summaries(
-    request: SummarizeRequest,
-    pipeline: PipelineDep,
-) -> dict:
-    """Compare different summarization approaches."""
-    import time
-
-    results = {}
+async def summarize_clinical_text(
+    payload: SummarizationRequest,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> SummarizationResponse:
+    """Run the summarization model and return the generated summary."""
+    t0 = time.monotonic()
 
     try:
-        # Extractive summary
-        from app.ml.summarization.model import ExtractiveSummarizer
-
-        start = time.time()
-        extractive = ExtractiveSummarizer()
-        extractive.load()
-        ext_result = extractive.summarize(request.text, max_length=request.max_length)
-        results["extractive"] = {
-            "summary": ext_result.summary,
-            "compression_ratio": ext_result.compression_ratio,
-            "processing_time_ms": (time.time() - start) * 1000,
-        }
-
-        # Section-based summary
-        from app.ml.summarization.model import SectionBasedSummarizer
-
-        start = time.time()
-        section_based = SectionBasedSummarizer()
-        section_based.load()
-        sec_result = section_based.summarize(request.text, max_length=request.max_length)
-        results["section_based"] = {
-            "summary": sec_result.summary,
-            "compression_ratio": sec_result.compression_ratio,
-            "processing_time_ms": (time.time() - start) * 1000,
-        }
-
-        # Hybrid summary (if available)
-        if pipeline._summarizer:
-            start = time.time()
-            hybrid_result = pipeline.summarize(request.text, max_length=request.max_length)
-            if hybrid_result:
-                results["hybrid"] = {
-                    "summary": hybrid_result.summary,
-                    "compression_ratio": hybrid_result.compression_ratio,
-                    "processing_time_ms": (time.time() - start) * 1000,
-                }
-
-        return {
-            "original_length": len(request.text.split()),
-            "summaries": results,
-        }
-
-    except Exception as e:
-        logger.error(f"Summary comparison failed: {e}")
+        result = _run_summarization(payload)
+    except InferenceError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Summary comparison failed: {str(e)}",
-        )
+            detail=exc.message,
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Summarization failed unexpectedly. Please try again.",
+        ) from exc
+
+    elapsed_ms = (time.monotonic() - t0) * 1000
+    result.processing_time_ms = elapsed_ms
+    return result

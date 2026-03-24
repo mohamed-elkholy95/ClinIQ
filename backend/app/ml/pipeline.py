@@ -1,410 +1,467 @@
-"""Unified ML pipeline orchestrating all models."""
+"""ML pipeline orchestrator for the ClinIQ platform.
 
-import asyncio
+Coordinates NER, ICD-10 classification, summarization, risk scoring, and
+dental analysis into a single :class:`ClinicalPipeline` that supports both
+single-document and batch processing.  Each component is optional and loaded
+lazily; failures in individual components produce partial results rather than
+aborting the whole pipeline.
+"""
+
+from __future__ import annotations
+
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal
 
-from app.core.config import get_settings
 from app.core.exceptions import InferenceError, ModelLoadError
-from app.ml.icd.model import BaseICDClassifier, ICDPredictionResult, TransformerICDClassifier
-from app.ml.ner.model import BaseNERModel, CompositeNERModel, Entity, RuleBasedNERModel
-from app.ml.risk.scorer import RiskScore, RiskScorer
-from app.ml.summarization.model import (
-    BaseSummarizer,
-    ExtractiveSummarizer,
-    HybridSummarizer,
-    SummaryResult,
-)
+from app.ml.dental.model import DentalAssessment, DentalNERModel, PeriodontalRiskAssessor
+from app.ml.icd.model import BaseICDClassifier, ICDPredictionResult
+from app.ml.ner.model import BaseNERModel, Entity
+from app.ml.risk.model import BaseRiskScorer, RiskAssessment
+from app.ml.summarization.model import BaseSummarizer, SummarizationResult
+
+if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
+
+# ---------------------------------------------------------------------------
+# Configuration & result data classes
+# ---------------------------------------------------------------------------
 
 
 @dataclass
 class PipelineConfig:
-    """Configuration for the ML pipeline."""
+    """Per-invocation configuration for :class:`ClinicalPipeline`.
+
+    Attributes
+    ----------
+    enable_ner:
+        Run the NER component.
+    enable_icd:
+        Run the ICD-10 classification component.
+    enable_summarization:
+        Run the summarization component.
+    enable_risk:
+        Run the risk scoring component.
+    enable_dental:
+        Run the dental NLP component.
+    confidence_threshold:
+        Minimum confidence for NER entities to be included in results.
+    top_k_icd:
+        Number of top ICD-10 predictions to return.
+    detail_level:
+        Summarization detail level (``"brief"``, ``"standard"``, ``"detailed"``).
+    """
 
     enable_ner: bool = True
     enable_icd: bool = True
     enable_summarization: bool = True
     enable_risk: bool = True
-
-    # Model settings
-    ner_model: str = "composite"
-    icd_model: str = "transformer"
-    summarizer_model: str = "hybrid"
-
-    # Output settings
-    max_icd_codes: int = 10
-    summary_max_length: int = 150
-    include_confidence: bool = True
-
-    # Performance settings
-    parallel_inference: bool = True
-    cache_results: bool = True
+    enable_dental: bool = False
+    confidence_threshold: float = 0.5
+    top_k_icd: int = 10
+    detail_level: Literal["brief", "standard", "detailed"] = "standard"
 
 
 @dataclass
-class AnalysisResult:
-    """Complete analysis result from the pipeline."""
+class PipelineResult:
+    """Complete result produced by :class:`ClinicalPipeline.process`.
 
-    document_id: str | None = None
-    text_hash: str = ""
+    Attributes
+    ----------
+    document_id:
+        Caller-supplied document identifier (may be ``None``).
+    entities:
+        NER-extracted :class:`~app.ml.ner.model.Entity` objects filtered by
+        ``confidence_threshold``.
+    icd_predictions:
+        Top-k ICD-10 predictions as serialisable dicts.
+    summary:
+        :class:`~app.ml.summarization.model.SummarizationResult`, or ``None``
+        if summarization was disabled or failed.
+    risk_assessment:
+        :class:`~app.ml.risk.model.RiskAssessment`, or ``None``.
+    dental_assessment:
+        :class:`~app.ml.dental.model.DentalAssessment`, or ``None``.
+    processing_time_ms:
+        Total wall-clock time for the pipeline call.
+    model_versions:
+        Mapping of component name to version string.
+    component_errors:
+        Mapping of component name to error message for any components that
+        failed (partial-result mode).
+    """
 
-    # Component results
+    document_id: str | None
     entities: list[Entity] = field(default_factory=list)
     icd_predictions: list[dict[str, Any]] = field(default_factory=list)
-    summary: SummaryResult | None = None
-    risk_score: RiskScore | None = None
-
-    # Metadata
+    summary: SummarizationResult | None = None
+    risk_assessment: RiskAssessment | None = None
+    dental_assessment: DentalAssessment | None = None
     processing_time_ms: float = 0.0
-    component_times_ms: dict[str, float] = field(default_factory=dict)
     model_versions: dict[str, str] = field(default_factory=dict)
-    pipeline_config: dict[str, bool] = field(default_factory=dict)
+    component_errors: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary representation."""
+        """Return a JSON-serialisable representation."""
         return {
             "document_id": self.document_id,
-            "text_hash": self.text_hash,
             "entities": [e.to_dict() for e in self.entities],
             "icd_predictions": self.icd_predictions,
             "summary": self.summary.to_dict() if self.summary else None,
-            "risk_score": self.risk_score.to_dict() if self.risk_score else None,
+            "risk_assessment": self.risk_assessment.to_dict()
+            if self.risk_assessment
+            else None,
+            "dental_assessment": self.dental_assessment.to_dict()
+            if self.dental_assessment
+            else None,
             "processing_time_ms": self.processing_time_ms,
-            "component_times_ms": self.component_times_ms,
             "model_versions": self.model_versions,
-            "pipeline_config": self.pipeline_config,
+            "component_errors": self.component_errors,
         }
 
 
-class MLPipeline:
-    """Unified ML pipeline for clinical text analysis."""
+# ---------------------------------------------------------------------------
+# ClinicalPipeline
+# ---------------------------------------------------------------------------
 
-    def __init__(self, config: PipelineConfig | None = None):
-        self.config = config or PipelineConfig()
 
-        # Initialize models (lazy loading)
-        self._ner_model: BaseNERModel | None = None
-        self._icd_model: BaseICDClassifier | None = None
-        self._summarizer: BaseSummarizer | None = None
-        self._risk_scorer: RiskScorer | None = None
+class ClinicalPipeline:
+    """Orchestrates all ClinIQ ML models for end-to-end clinical text analysis.
 
-        self._is_loaded = False
+    Models are injected via the constructor and loaded lazily on first use.
+    Any component may be ``None``; in that case the corresponding output field
+    in :class:`PipelineResult` remains ``None``.
+
+    Parameters
+    ----------
+    ner_model:
+        A :class:`~app.ml.ner.model.BaseNERModel` instance.
+    icd_classifier:
+        A :class:`~app.ml.icd.model.BaseICDClassifier` instance.
+    summarizer:
+        A :class:`~app.ml.summarization.model.BaseSummarizer` instance.
+    risk_scorer:
+        A :class:`~app.ml.risk.model.BaseRiskScorer` instance.
+    dental_model:
+        A :class:`~app.ml.dental.model.DentalNERModel` instance.  When
+        provided together with a :class:`~app.ml.dental.model.PeriodontalRiskAssessor`
+        the full dental assessment is produced.
+
+    Example
+    -------
+    >>> pipeline = ClinicalPipeline(
+    ...     ner_model=RuleBasedNERModel(),
+    ...     risk_scorer=RuleBasedRiskScorer(),
+    ...     summarizer=ExtractiveSummarizer(),
+    ... )
+    >>> result = pipeline.process(text, PipelineConfig(enable_dental=False))
+    """
+
+    def __init__(
+        self,
+        ner_model: BaseNERModel | None = None,
+        icd_classifier: BaseICDClassifier | None = None,
+        summarizer: BaseSummarizer | None = None,
+        risk_scorer: BaseRiskScorer | None = None,
+        dental_model: DentalNERModel | None = None,
+        perio_assessor: PeriodontalRiskAssessor | None = None,
+    ) -> None:
+        self._ner_model = ner_model
+        self._icd_classifier = icd_classifier
+        self._summarizer = summarizer
+        self._risk_scorer = risk_scorer
+        self._dental_model = dental_model
+        self._perio_assessor = perio_assessor
+        self._is_loaded: bool = False
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
 
     def load(self) -> None:
-        """Load all enabled models."""
-        logger.info("Loading ML pipeline models...")
+        """Eagerly load all non-None components."""
+        logger.info("Loading ClinicalPipeline components …")
         start_time = time.time()
+        errors: list[str] = []
 
-        try:
-            if self.config.enable_ner:
-                self._load_ner_model()
+        for name, component in self._components():
+            try:
+                component.ensure_loaded()
+                logger.debug("Loaded component: %s", name)
+            except Exception as exc:
+                logger.error("Failed to load component '%s': %s", name, exc)
+                errors.append(f"{name}: {exc}")
 
-            if self.config.enable_icd:
-                self._load_icd_model()
+        self._is_loaded = True
+        elapsed = (time.time() - start_time) * 1000
+        logger.info("ClinicalPipeline loaded in %.1f ms (errors: %d)", elapsed, len(errors))
+        if errors:
+            logger.warning("Component load errors: %s", "; ".join(errors))
 
-            if self.config.enable_summarization:
-                self._load_summarizer()
-
-            if self.config.enable_risk:
-                self._load_risk_scorer()
-
-            self._is_loaded = True
-            load_time = time.time() - start_time
-            logger.info(f"ML pipeline loaded in {load_time:.2f}s")
-
-        except Exception as e:
-            logger.error(f"Failed to load ML pipeline: {e}")
-            raise ModelLoadError("pipeline", str(e))
-
-    def _load_ner_model(self) -> None:
-        """Load NER model."""
-        if self.config.ner_model == "composite":
-            # Composite model with rule-based and transformer
-            rule_based = RuleBasedNERModel()
-            self._ner_model = CompositeNERModel(
-                models=[rule_based],
-                voting="union",
-            )
-        else:
-            self._ner_model = RuleBasedNERModel()
-
-        self._ner_model.load()
-        logger.info("Loaded NER model")
-
-    def _load_icd_model(self) -> None:
-        """Load ICD-10 classifier."""
-        if self.config.icd_model == "transformer":
-            self._icd_model = TransformerICDClassifier(
-                device="cpu",  # Use "cuda" if GPU available
-            )
-        else:
-            self._icd_model = TransformerICDClassifier()
-
-        self._icd_model.load()
-        logger.info("Loaded ICD-10 classifier")
-
-    def _load_summarizer(self) -> None:
-        """Load summarizer."""
-        if self.config.summarizer_model == "hybrid":
-            self._summarizer = HybridSummarizer()
-        else:
-            self._summarizer = ExtractiveSummarizer()
-
-        self._summarizer.load()
-        logger.info("Loaded summarizer")
-
-    def _load_risk_scorer(self) -> None:
-        """Load risk scorer."""
-        self._risk_scorer = RiskScorer()
-        logger.info("Loaded risk scorer")
-
+    @property
     def is_loaded(self) -> bool:
-        """Check if pipeline is loaded."""
+        """``True`` after :meth:`load` has been called."""
         return self._is_loaded
 
-    def analyze(
-        self,
-        text: str,
-        document_id: str | None = None,
-        config_override: PipelineConfig | None = None,
-    ) -> AnalysisResult:
-        """Analyze clinical text through the full pipeline."""
-        config = config_override or self.config
-
+    def ensure_loaded(self) -> None:
+        """Load if not yet loaded."""
         if not self._is_loaded:
             self.load()
 
-        start_time = time.time()
-        result = AnalysisResult(
-            document_id=document_id,
-            pipeline_config={
-                "ner": config.enable_ner,
-                "icd": config.enable_icd,
-                "summarization": config.enable_summarization,
-                "risk": config.enable_risk,
-            },
+    # ------------------------------------------------------------------
+    # Public interface
+    # ------------------------------------------------------------------
+
+    def process(
+        self,
+        text: str,
+        config: PipelineConfig | None = None,
+        document_id: str | None = None,
+    ) -> PipelineResult:
+        """Run the full pipeline on *text*.
+
+        Each enabled component is executed independently.  Failures are
+        captured in :attr:`PipelineResult.component_errors` and do not
+        abort the remaining components.
+
+        Parameters
+        ----------
+        text:
+            Raw clinical document text.
+        config:
+            Pipeline configuration; defaults to :class:`PipelineConfig`.
+        document_id:
+            Optional caller-supplied identifier included in the result.
+
+        Returns
+        -------
+        PipelineResult
+        """
+        self.ensure_loaded()
+        cfg = config or PipelineConfig()
+        pipeline_start = time.time()
+
+        result = PipelineResult(document_id=document_id)
+
+        # --- 1. NER ---
+        if cfg.enable_ner and self._ner_model is not None:
+            result = self._run_ner(text, cfg, result)
+
+        # --- 2. ICD-10 ---
+        if cfg.enable_icd and self._icd_classifier is not None:
+            result = self._run_icd(text, cfg, result)
+
+        # --- 3. Summarization ---
+        if cfg.enable_summarization and self._summarizer is not None:
+            result = self._run_summarization(text, cfg, result)
+
+        # --- 4. Risk scoring (can use NER and ICD outputs) ---
+        if cfg.enable_risk and self._risk_scorer is not None:
+            result = self._run_risk(text, cfg, result)
+
+        # --- 5. Dental analysis ---
+        if cfg.enable_dental and self._dental_model is not None:
+            result = self._run_dental(text, cfg, result)
+
+        # Populate model version metadata
+        result.model_versions = self._collect_model_versions()
+        result.processing_time_ms = (time.time() - pipeline_start) * 1000
+
+        logger.debug(
+            "ClinicalPipeline.process completed in %.1f ms (document_id=%s)",
+            result.processing_time_ms,
+            document_id,
         )
-
-        # Compute text hash
-        import hashlib
-
-        result.text_hash = hashlib.sha256(text.encode()).hexdigest()[:16]
-
-        try:
-            if config.parallel_inference:
-                # Run components in parallel where possible
-                self._analyze_parallel(text, result, config)
-            else:
-                # Run sequentially
-                self._analyze_sequential(text, result, config)
-
-        except Exception as e:
-            logger.error(f"Pipeline analysis failed: {e}")
-            raise InferenceError("pipeline", str(e))
-
-        result.processing_time_ms = (time.time() - start_time) * 1000
-
-        # Record model versions
-        if self._ner_model:
-            result.model_versions["ner"] = self._ner_model.version
-        if self._icd_model:
-            result.model_versions["icd"] = self._icd_model.version
-        if self._summarizer:
-            result.model_versions["summarizer"] = self._summarizer.version
-        if self._risk_scorer:
-            result.model_versions["risk"] = self._risk_scorer.version
-
         return result
 
-    def _analyze_sequential(
-        self,
-        text: str,
-        result: AnalysisResult,
-        config: PipelineConfig,
-    ) -> None:
-        """Run analysis sequentially."""
-        # NER
-        if config.enable_ner and self._ner_model:
-            start = time.time()
-            result.entities = self._ner_model.extract_entities(text)
-            result.component_times_ms["ner"] = (time.time() - start) * 1000
-
-        # ICD-10
-        if config.enable_icd and self._icd_model:
-            start = time.time()
-            icd_result = self._icd_model.predict(text, top_k=config.max_icd_codes)
-            result.icd_predictions = [p.to_dict() for p in icd_result.predictions]
-            result.component_times_ms["icd"] = icd_result.processing_time_ms
-
-        # Summarization
-        if config.enable_summarization and self._summarizer:
-            start = time.time()
-            result.summary = self._summarizer.summarize(
-                text,
-                max_length=config.summary_max_length,
-            )
-            result.component_times_ms["summarization"] = result.summary.processing_time_ms
-
-        # Risk scoring (depends on NER and ICD)
-        if config.enable_risk and self._risk_scorer:
-            start = time.time()
-            result.risk_score = self._risk_scorer.calculate_risk(
-                text,
-                entities=result.entities,
-                icd_predictions=result.icd_predictions,
-            )
-            result.component_times_ms["risk"] = result.risk_score.processing_time_ms
-
-    def _analyze_parallel(
-        self,
-        text: str,
-        result: AnalysisResult,
-        config: PipelineConfig,
-    ) -> None:
-        """Run independent components in parallel using asyncio."""
-        import asyncio
-
-        async def run_async():
-            tasks = []
-
-            # NER, ICD, and Summarization are independent
-            if config.enable_ner and self._ner_model:
-                tasks.append(self._run_ner_async(text))
-            else:
-                tasks.append(asyncio.sleep(0, result=None))
-
-            if config.enable_icd and self._icd_model:
-                tasks.append(self._run_icd_async(text, config.max_icd_codes))
-            else:
-                tasks.append(asyncio.sleep(0, result=None))
-
-            if config.enable_summarization and self._summarizer:
-                tasks.append(self._run_summarizer_async(text, config.summary_max_length))
-            else:
-                tasks.append(asyncio.sleep(0, result=None))
-
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            # Process NER result
-            if results[0] and not isinstance(results[0], Exception):
-                result.entities, result.component_times_ms["ner"] = results[0]
-
-            # Process ICD result
-            if results[1] and not isinstance(results[1], Exception):
-                icd_result = results[1]
-                result.icd_predictions = [p.to_dict() for p in icd_result.predictions]
-                result.component_times_ms["icd"] = icd_result.processing_time_ms
-
-            # Process summarization result
-            if results[2] and not isinstance(results[2], Exception):
-                result.summary, result.component_times_ms["summarization"] = results[2]
-
-            # Risk scoring depends on above results
-            if config.enable_risk and self._risk_scorer:
-                start = time.time()
-                result.risk_score = self._risk_scorer.calculate_risk(
-                    text,
-                    entities=result.entities,
-                    icd_predictions=result.icd_predictions,
-                )
-                result.component_times_ms["risk"] = (time.time() - start) * 1000
-
-        asyncio.run(run_async())
-
-    async def _run_ner_async(self, text: str) -> tuple[list[Entity], float]:
-        """Run NER in async context."""
-        import asyncio
-
-        loop = asyncio.get_event_loop()
-        start = time.time()
-        entities = await loop.run_in_executor(None, self._ner_model.extract_entities, text)
-        elapsed = (time.time() - start) * 1000
-        return entities, elapsed
-
-    async def _run_icd_async(self, text: str, top_k: int) -> ICDPredictionResult:
-        """Run ICD prediction in async context."""
-        import asyncio
-
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, self._icd_model.predict, text, top_k)
-
-    async def _run_summarizer_async(
-        self, text: str, max_length: int
-    ) -> tuple[SummaryResult, float]:
-        """Run summarization in async context."""
-        import asyncio
-
-        loop = asyncio.get_event_loop()
-        start = time.time()
-        summary = await loop.run_in_executor(
-            None, self._summarizer.summarize, text, max_length
-        )
-        elapsed = (time.time() - start) * 1000
-        return summary, elapsed
-
-    def analyze_batch(
+    def process_batch(
         self,
         texts: list[str],
-        document_ids: list[str] | None = None,
-    ) -> list[AnalysisResult]:
-        """Analyze multiple documents."""
-        results = []
-        doc_ids = document_ids or [None] * len(texts)
+        config: PipelineConfig | None = None,
+        document_ids: list[str | None] | None = None,
+    ) -> list[PipelineResult]:
+        """Process a list of documents sequentially.
+
+        Parameters
+        ----------
+        texts:
+            List of raw clinical document texts.
+        config:
+            Shared pipeline configuration for all documents.
+        document_ids:
+            Optional list of identifiers aligned with *texts*.
+
+        Returns
+        -------
+        list[PipelineResult]
+        """
+        self.ensure_loaded()
+        doc_ids: list[str | None] = document_ids or [None] * len(texts)
+        results: list[PipelineResult] = []
 
         for text, doc_id in zip(texts, doc_ids):
-            result = self.analyze(text, document_id=doc_id)
+            result = self.process(text, config=config, document_id=doc_id)
             results.append(result)
 
         return results
 
-    # Convenience methods for single-component analysis
+    # ------------------------------------------------------------------
+    # Component runners (each returns a (possibly updated) PipelineResult)
+    # ------------------------------------------------------------------
 
-    def extract_entities(self, text: str) -> list[Entity]:
-        """Extract entities only."""
-        if not self._is_loaded:
-            self.load()
-        if self._ner_model:
-            return self._ner_model.extract_entities(text)
-        return []
+    def _run_ner(
+        self, text: str, cfg: PipelineConfig, result: PipelineResult
+    ) -> PipelineResult:
+        try:
+            self._ner_model.ensure_loaded()  # type: ignore[union-attr]
+            entities = self._ner_model.extract_entities(text)  # type: ignore[union-attr]
+            # Filter by confidence threshold
+            result.entities = [
+                e for e in entities if e.confidence >= cfg.confidence_threshold
+            ]
+            logger.debug("NER extracted %d entities", len(result.entities))
+        except Exception as exc:
+            logger.error("NER component failed: %s", exc)
+            result.component_errors["ner"] = str(exc)
+        return result
 
-    def predict_icd_codes(self, text: str, top_k: int = 10) -> list[dict[str, Any]]:
-        """Predict ICD-10 codes only."""
-        if not self._is_loaded:
-            self.load()
-        if self._icd_model:
-            result = self._icd_model.predict(text, top_k=top_k)
-            return [p.to_dict() for p in result.predictions]
-        return []
+    def _run_icd(
+        self, text: str, cfg: PipelineConfig, result: PipelineResult
+    ) -> PipelineResult:
+        try:
+            self._icd_classifier.ensure_loaded()  # type: ignore[union-attr]
+            icd_result: ICDPredictionResult = self._icd_classifier.predict(  # type: ignore[union-attr]
+                text, top_k=cfg.top_k_icd
+            )
+            result.icd_predictions = [p.to_dict() for p in icd_result.predictions]
+            logger.debug("ICD-10 produced %d predictions", len(result.icd_predictions))
+        except Exception as exc:
+            logger.error("ICD component failed: %s", exc)
+            result.component_errors["icd"] = str(exc)
+        return result
 
-    def summarize(self, text: str, max_length: int = 150) -> SummaryResult | None:
-        """Generate summary only."""
-        if not self._is_loaded:
-            self.load()
-        if self._summarizer:
-            return self._summarizer.summarize(text, max_length=max_length)
-        return None
+    def _run_summarization(
+        self, text: str, cfg: PipelineConfig, result: PipelineResult
+    ) -> PipelineResult:
+        try:
+            self._summarizer.ensure_loaded()  # type: ignore[union-attr]
+            result.summary = self._summarizer.summarize(  # type: ignore[union-attr]
+                text, detail_level=cfg.detail_level
+            )
+            logger.debug("Summarization produced %d-char summary", len(result.summary.summary))
+        except Exception as exc:
+            logger.error("Summarization component failed: %s", exc)
+            result.component_errors["summarization"] = str(exc)
+        return result
 
-    def calculate_risk(self, text: str) -> RiskScore | None:
-        """Calculate risk score only."""
-        if not self._is_loaded:
-            self.load()
-        if self._risk_scorer:
-            return self._risk_scorer.calculate_risk(text)
-        return None
+    def _run_risk(
+        self, text: str, cfg: PipelineConfig, result: PipelineResult
+    ) -> PipelineResult:
+        try:
+            self._risk_scorer.ensure_loaded()  # type: ignore[union-attr]
+            icd_codes = [
+                p.get("code") for p in result.icd_predictions if p.get("code")
+            ]
+            result.risk_assessment = self._risk_scorer.assess_risk(  # type: ignore[union-attr]
+                text,
+                entities=result.entities or None,
+                icd_codes=icd_codes or None,
+            )
+            logger.debug(
+                "Risk assessment: %.1f (%s)",
+                result.risk_assessment.overall_score,
+                result.risk_assessment.risk_level,
+            )
+        except Exception as exc:
+            logger.error("Risk scoring component failed: %s", exc)
+            result.component_errors["risk"] = str(exc)
+        return result
 
+    def _run_dental(
+        self, text: str, cfg: PipelineConfig, result: PipelineResult
+    ) -> PipelineResult:
+        try:
+            self._dental_model.ensure_loaded()  # type: ignore[union-attr]
+            dental_entities = self._dental_model.extract_entities(text)  # type: ignore[union-attr]
 
-# Singleton instance for the application
-_pipeline_instance: MLPipeline | None = None
+            # Periodontal risk (if assessor is available)
+            perio_data: dict[str, Any] = {}
+            perio_score = 0.0
+            perio_classification = "Unknown"
+            recommendations: list[str] = []
+            if self._perio_assessor is not None:
+                self._perio_assessor.ensure_loaded()
+                perio_data = self._perio_assessor.assess(text, entities=dental_entities)
+                perio_score = perio_data.get("risk_score", 0.0)
+                perio_classification = perio_data.get("classification", "Unknown")
+                recommendations = perio_data.get("recommendations", [])
 
+            # Collect CDT codes from entities
+            from app.ml.dental.model import CDT_CODES
 
-def get_pipeline() -> MLPipeline:
-    """Get or create the ML pipeline singleton."""
-    global _pipeline_instance
-    if _pipeline_instance is None:
-        _pipeline_instance = MLPipeline()
-    return _pipeline_instance
+            suggested_cdt: dict[str, str] = {}
+            for ent in dental_entities:
+                cdt = ent.metadata.get("cdt_code")
+                if cdt and cdt in CDT_CODES:
+                    suggested_cdt[cdt] = CDT_CODES[cdt]
+
+            result.dental_assessment = DentalAssessment(
+                entities=dental_entities,
+                periodontal_risk_score=perio_score,
+                periodontal_classification=perio_classification,
+                cdt_codes=suggested_cdt,
+                recommendations=recommendations,
+                processing_time_ms=perio_data.get("processing_time_ms", 0.0),
+                model_name=self._dental_model.model_name,
+                model_version=self._dental_model.version,
+            )
+            logger.debug(
+                "Dental NER extracted %d entities; perio score=%.1f",
+                len(dental_entities),
+                perio_score,
+            )
+        except Exception as exc:
+            logger.error("Dental component failed: %s", exc)
+            result.component_errors["dental"] = str(exc)
+        return result
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _components(self) -> list[tuple[str, Any]]:
+        """Return (name, component) for all non-None components that have
+        ``ensure_loaded``."""
+        pairs: list[tuple[str, Any]] = []
+        if self._ner_model is not None:
+            pairs.append(("ner", self._ner_model))
+        if self._icd_classifier is not None:
+            pairs.append(("icd", self._icd_classifier))
+        if self._summarizer is not None:
+            pairs.append(("summarizer", self._summarizer))
+        if self._risk_scorer is not None:
+            pairs.append(("risk", self._risk_scorer))
+        if self._dental_model is not None:
+            pairs.append(("dental", self._dental_model))
+        if self._perio_assessor is not None:
+            pairs.append(("perio", self._perio_assessor))
+        return pairs
+
+    def _collect_model_versions(self) -> dict[str, str]:
+        """Collect version strings from all loaded components."""
+        versions: dict[str, str] = {}
+        component_map: list[tuple[str, Any]] = [
+            ("ner", self._ner_model),
+            ("icd", self._icd_classifier),
+            ("summarizer", self._summarizer),
+            ("risk", self._risk_scorer),
+            ("dental", self._dental_model),
+            ("perio", self._perio_assessor),
+        ]
+        for name, component in component_map:
+            if component is not None and hasattr(component, "version"):
+                versions[name] = component.version
+        return versions
