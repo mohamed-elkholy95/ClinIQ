@@ -8,6 +8,14 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 6 (2026-03-24)
+- [x] **100% docstring coverage** — Added module docstrings to all 17 `__init__.py` files, function docstrings to middleware dispatch methods, RBAC `check_role`, Pydantic validators, Alembic migration functions, retry decorator internals, metrics collector primitives, and test conftest overrides. Verified via full AST scan: zero public functions or modules without docstrings
+- [x] **Python 3.12+ compatibility** — Replaced deprecated `datetime.utcnow()` with `datetime.now(UTC)` in Pydantic schema defaults (`common.py`, `batch.py`)
+- [x] **Complete type annotations** — Added return type hints to `process_batch_task`, `health_check`, `require_role`, and `add_process_time_header`; zero untyped public function signatures remaining
+- [x] **SDK test suite** — 40 new tests (~680 lines) across 2 modules:
+  - `test_models.py` — Entity, ICDPrediction, Summary, RiskAssessment, BatchJob dataclasses; `AnalysisResult.from_dict` factory (empty, null, partial, full responses)
+  - `test_client.py` — ClinIQClient init, all endpoint methods (analyze, NER, ICD, summarize, risk, batch submit/status/wait, health, models, login), pipeline flag forwarding, HTTP error propagation (404, 500), context manager lifecycle
+
 #### Post-PRD Enhancements — Session 5 (2026-03-24)
 - [x] **Wired real Celery dispatch to batch route** — `_process_batch_stub` replaced with `process_batch_task.delay()` from `worker.py`; documents are serialised to JSON-safe dicts for the task payload
 - [x] **Wired real JWT auth to auth routes** — replaced `_get_current_user_placeholder` (which always raised 401) with the real `get_current_user` dependency from `deps.py` that validates JWT tokens and API keys
