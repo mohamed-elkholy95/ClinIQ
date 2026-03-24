@@ -1,502 +1,637 @@
-"""Clinical Text Summarization models."""
+"""Clinical text summarization models.
+
+Provides extractive (TextRank + clinical relevance weighting) and abstractive
+(HuggingFace BART/T5 wrapper) summarizers that accept a ``detail_level``
+parameter to control output length.
+"""
+
+from __future__ import annotations
 
 import logging
+import math
+import re
+import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any
-
-import numpy as np
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Literal
 
 from app.core.exceptions import InferenceError, ModelLoadError
 from app.ml.utils.text_preprocessing import ClinicalTextPreprocessor
 
+if TYPE_CHECKING:
+    pass
+
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Target fraction of original sentences to include at each detail level
+_DETAIL_RATIO: dict[str, float] = {
+    "brief": 0.15,
+    "standard": 0.30,
+    "detailed": 0.50,
+}
+
+# Hard upper bounds on sentence count per detail level
+_DETAIL_SENTENCE_CAP: dict[str, int] = {
+    "brief": 5,
+    "standard": 12,
+    "detailed": 25,
+}
+
+# Min/max token lengths for abstractive generation per detail level
+_ABSTRACTIVE_LENGTHS: dict[str, tuple[int, int]] = {
+    "brief": (30, 80),
+    "standard": (80, 200),
+    "detailed": (150, 400),
+}
+
+# Maximum tokens fed to an abstractive model in one pass (leaves room for
+# special tokens and generation overhead)
+_CHUNK_MAX_TOKENS = 900
+
+# Section names that carry elevated clinical weight during summarisation
+_HIGH_PRIORITY_SECTIONS = frozenset(
+    {
+        "assessment",
+        "plan",
+        "impression",
+        "assessment and plan",
+        "a/p",
+        "chief_complaint",
+        "chief complaint",
+        "cc",
+    }
+)
+
+# Patterns that mark sentences as clinically important
+_CLINICAL_IMPORTANCE_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"\b(?:diagnosis|diagnosed|impression)\b",
+        r"\b(?:treatment|therapy|plan|prescrib|recommend)\b",
+        r"\b(?:significant|critical|urgent|emergent|stat|acute)\b",
+        r"\b(?:increased|elevated|decreased|abnormal|positive)\b",
+        r"\b(?:medication|drug|dose|dosage|mg|mcg)\b",
+        r"\b(?:follow.?up|refer(?:ral)?|consult)\b",
+        r"\b(?:procedure|surgery|operation|biopsy)\b",
+        r"\b(?:allerg(?:y|ic)|reaction|contraindic)\b",
+    ]
+]
+
+
+# ---------------------------------------------------------------------------
+# Data classes
+# ---------------------------------------------------------------------------
 
 
 @dataclass
-class SummaryResult:
-    """Result of summarization."""
+class SummarizationResult:
+    """Result of a summarization operation.
+
+    Attributes
+    ----------
+    summary:
+        The generated summary text.
+    key_findings:
+        A short list of the most clinically significant sentences / findings
+        extracted from the original document.
+    detail_level:
+        The requested detail level that produced this result.
+    processing_time_ms:
+        Wall-clock time for inference in milliseconds.
+    model_name:
+        Identifier of the model that produced this result.
+    model_version:
+        Version string of the model.
+    sentence_count_original:
+        Number of sentences in the source document.
+    sentence_count_summary:
+        Number of sentences in the produced summary.
+    metadata:
+        Optional free-form metadata dict (e.g. chunk_count for abstractive).
+    """
 
     summary: str
-    original_length: int
-    summary_length: int
-    compression_ratio: float
+    key_findings: list[str]
+    detail_level: Literal["brief", "standard", "detailed"]
     processing_time_ms: float
     model_name: str
     model_version: str
-    summary_type: str  # "extractive" or "abstractive"
-    key_points: list[str] | None = None
+    sentence_count_original: int = 0
+    sentence_count_summary: int = 0
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary."""
+        """Return a JSON-serialisable dictionary."""
         return {
             "summary": self.summary,
-            "original_length": self.original_length,
-            "summary_length": self.summary_length,
-            "compression_ratio": self.compression_ratio,
+            "key_findings": self.key_findings,
+            "detail_level": self.detail_level,
             "processing_time_ms": self.processing_time_ms,
             "model_name": self.model_name,
             "model_version": self.model_version,
-            "summary_type": self.summary_type,
-            "key_points": self.key_points,
+            "sentence_count_original": self.sentence_count_original,
+            "sentence_count_summary": self.sentence_count_summary,
+            "metadata": self.metadata,
         }
 
 
-class BaseSummarizer(ABC):
-    """Abstract base class for summarizers."""
+# ---------------------------------------------------------------------------
+# Abstract base
+# ---------------------------------------------------------------------------
 
-    def __init__(self, model_name: str, version: str = "1.0.0"):
+
+class BaseSummarizer(ABC):
+    """Abstract base class for all clinical text summarizers."""
+
+    def __init__(self, model_name: str, version: str = "1.0.0") -> None:
         self.model_name = model_name
         self.version = version
-        self._is_loaded = False
-        self.preprocessor = ClinicalTextPreprocessor()
+        self._is_loaded: bool = False
 
     @abstractmethod
     def load(self) -> None:
-        """Load the model."""
+        """Load the model into memory."""
         ...
 
     @abstractmethod
     def summarize(
         self,
         text: str,
-        max_length: int = 150,
-        min_length: int = 30,
-    ) -> SummaryResult:
-        """Generate summary of clinical text."""
+        detail_level: Literal["brief", "standard", "detailed"] = "standard",
+    ) -> SummarizationResult:
+        """Summarise *text* at the requested *detail_level*."""
         ...
 
     @property
     def is_loaded(self) -> bool:
-        """Check if model is loaded."""
+        """``True`` if the model has been loaded."""
         return self._is_loaded
 
     def ensure_loaded(self) -> None:
-        """Ensure model is loaded."""
+        """Call :meth:`load` if the model is not yet loaded."""
         if not self._is_loaded:
             self.load()
 
+    # ------------------------------------------------------------------
+    # Shared utilities
+    # ------------------------------------------------------------------
+
+    def _target_sentence_count(
+        self,
+        total: int,
+        detail_level: Literal["brief", "standard", "detailed"],
+    ) -> int:
+        """Return how many sentences the summary should contain."""
+        ratio = _DETAIL_RATIO[detail_level]
+        target = max(1, math.ceil(total * ratio))
+        return min(target, _DETAIL_SENTENCE_CAP[detail_level])
+
+    def _extract_key_findings(
+        self,
+        sentences: list[str],
+        top_n: int = 5,
+    ) -> list[str]:
+        """Return the *top_n* sentences most likely to be key clinical findings."""
+        scored: list[tuple[float, str]] = []
+        for sent in sentences:
+            score = sum(
+                1.0 for pat in _CLINICAL_IMPORTANCE_PATTERNS if pat.search(sent)
+            )
+            if score > 0:
+                scored.append((score, sent))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [s for _, s in scored[:top_n]]
+
+
+# ---------------------------------------------------------------------------
+# ExtractiveSummarizer  –  TextRank + clinical relevance weighting
+# ---------------------------------------------------------------------------
+
 
 class ExtractiveSummarizer(BaseSummarizer):
-    """Extractive summarization using TextRank-like algorithm."""
+    """TextRank-based extractive summariser with clinical relevance weighting.
+
+    Algorithm:
+    1. Segment the document into sentences with :class:`ClinicalTextPreprocessor`.
+    2. Compute a TF-IDF matrix over the sentence vocabulary (sklearn
+       ``TfidfVectorizer``).
+    3. Build a sentence-similarity graph from pairwise cosine similarities of
+       the TF-IDF vectors.
+    4. Assign a clinical importance *bias* score to each node.  Sentences from
+       Assessment / Plan sections and those matching ``_CLINICAL_IMPORTANCE_PATTERNS``
+       receive higher bias.
+    5. Run personalised PageRank until convergence.
+    6. Select the top-ranked sentences and emit them in their original
+       document order.
+    """
 
     def __init__(
         self,
-        model_name: str = "textrank",
+        model_name: str = "extractive-textrank",
         version: str = "1.0.0",
         damping: float = 0.85,
-        max_iterations: int = 100,
-    ):
+        max_iter: int = 100,
+        convergence_threshold: float = 1e-4,
+    ) -> None:
         super().__init__(model_name, version)
         self.damping = damping
-        self.max_iterations = max_iterations
+        self.max_iter = max_iter
+        self.convergence_threshold = convergence_threshold
+        self._preprocessor = ClinicalTextPreprocessor()
+        self._vectorizer: Any = None  # sklearn TfidfVectorizer; created at load()
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
 
     def load(self) -> None:
-        """Load resources (minimal for extractive)."""
-        import nltk
-
+        """Initialise the TF-IDF vectorizer (no disk I/O required)."""
         try:
-            nltk.data.find("tokenizers/punkt")
-        except LookupError:
-            nltk.download("punkt", quiet=True)
+            from sklearn.feature_extraction.text import TfidfVectorizer
 
-        try:
-            nltk.data.find("corpora/stopwords")
-        except LookupError:
-            nltk.download("stopwords", quiet=True)
-
-        self._is_loaded = True
-        logger.info(f"Loaded extractive summarizer: {self.model_name}")
-
-    def summarize(
-        self,
-        text: str,
-        max_length: int = 150,
-        min_length: int = 30,
-    ) -> SummaryResult:
-        """Generate extractive summary."""
-        import time
-
-        self.ensure_loaded()
-        import nltk
-
-        start_time = time.time()
-
-        # Preprocess
-        preprocessed = self.preprocessor.preprocess(text)
-        sentences = nltk.sent_tokenize(preprocessed)
-
-        if len(sentences) <= 2:
-            return SummaryResult(
-                summary=preprocessed,
-                original_length=len(text.split()),
-                summary_length=len(preprocessed.split()),
-                compression_ratio=1.0,
-                processing_time_ms=(time.time() - start_time) * 1000,
-                model_name=self.model_name,
-                model_version=self.version,
-                summary_type="extractive",
+            self._vectorizer = TfidfVectorizer(
+                ngram_range=(1, 2),
+                stop_words="english",
+                max_features=5000,
+                sublinear_tf=True,
             )
-
-        # Build similarity matrix
-        similarity_matrix = self._build_similarity_matrix(sentences)
-
-        # Apply PageRank-like algorithm
-        scores = self._textrank(similarity_matrix)
-
-        # Select top sentences
-        ranked_sentences = sorted(
-            ((scores[i], s, i) for i, s in enumerate(sentences)),
-            reverse=True,
-        )
-
-        # Build summary with length constraint
-        summary_sentences = []
-        current_length = 0
-
-        for score, sentence, original_idx in ranked_sentences:
-            sentence_length = len(sentence.split())
-            if current_length + sentence_length <= max_length:
-                summary_sentences.append((original_idx, sentence))
-                current_length += sentence_length
-
-        # Sort by original position for coherence
-        summary_sentences.sort(key=lambda x: x[0])
-        summary = " ".join(s[1] for s in summary_sentences)
-
-        # Extract key points (top 3 sentences by score)
-        key_points = [s for _, s, _ in ranked_sentences[:3]]
-
-        processing_time = (time.time() - start_time) * 1000
-        original_length = len(text.split())
-        summary_length = len(summary.split())
-
-        return SummaryResult(
-            summary=summary,
-            original_length=original_length,
-            summary_length=summary_length,
-            compression_ratio=original_length / summary_length if summary_length > 0 else 1.0,
-            processing_time_ms=processing_time,
-            model_name=self.model_name,
-            model_version=self.version,
-            summary_type="extractive",
-            key_points=key_points,
-        )
-
-    def _build_similarity_matrix(self, sentences: list[str]) -> np.ndarray:
-        """Build sentence similarity matrix."""
-        import nltk
-        from nltk.corpus import stopwords
-        from nltk.tokenize import word_tokenize
-
-        try:
-            stop_words = set(stopwords.words("english"))
-        except LookupError:
-            nltk.download("stopwords", quiet=True)
-            stop_words = set(stopwords.words("english"))
-
-        n = len(sentences)
-        similarity_matrix = np.zeros((n, n))
-
-        # Tokenize and clean sentences
-        tokenized = []
-        for sentence in sentences:
-            words = word_tokenize(sentence.lower())
-            words = [w for w in words if w.isalnum() and w not in stop_words]
-            tokenized.append(words)
-
-        # Compute similarity using overlap coefficient
-        for i in range(n):
-            for j in range(i + 1, n):
-                if not tokenized[i] or not tokenized[j]:
-                    continue
-
-                set_i = set(tokenized[i])
-                set_j = set(tokenized[j])
-
-                intersection = len(set_i & set_j)
-                min_len = min(len(set_i), len(set_j))
-
-                if min_len > 0:
-                    similarity = intersection / min_len
-                    similarity_matrix[i][j] = similarity
-                    similarity_matrix[j][i] = similarity
-
-        return similarity_matrix
-
-    def _textrank(self, similarity_matrix: np.ndarray) -> np.ndarray:
-        """Apply TextRank algorithm to similarity matrix."""
-        n = len(similarity_matrix)
-
-        # Normalize rows
-        for i in range(n):
-            row_sum = similarity_matrix[i].sum()
-            if row_sum > 0:
-                similarity_matrix[i] /= row_sum
-
-        # Initialize scores uniformly
-        scores = np.ones(n) / n
-
-        # Power iteration
-        for _ in range(self.max_iterations):
-            new_scores = (1 - self.damping) / n + self.damping * similarity_matrix.T @ scores
-            if np.abs(new_scores - scores).sum() < 1e-4:
-                break
-            scores = new_scores
-
-        return scores
-
-
-class SectionBasedSummarizer(BaseSummarizer):
-    """Summarizer that extracts key sections from clinical notes."""
-
-    # Priority order for clinical sections
-    SECTION_PRIORITY = [
-        "chief_complaint",
-        "hpi",
-        "assessment",
-        "plan",
-        "pmh",
-        "pe",
-        "ros",
-        "labs",
-        "medications",
-        "allergies",
-        "fh",
-        "sh",
-    ]
-
-    def __init__(
-        self,
-        model_name: str = "section-based",
-        version: str = "1.0.0",
-        max_section_length: int = 100,
-    ):
-        super().__init__(model_name, version)
-        self.max_section_length = max_section_length
-
-    def load(self) -> None:
-        """Load resources."""
-        self._is_loaded = True
-        logger.info(f"Loaded section-based summarizer: {self.model_name}")
-
-    def summarize(
-        self,
-        text: str,
-        max_length: int = 150,
-        min_length: int = 30,
-    ) -> SummaryResult:
-        """Generate summary based on section extraction."""
-        import time
-
-        start_time = time.time()
-
-        # Detect sections
-        sections = self.preprocessor.detect_sections(text)
-        section_map = {s.name: s for s in sections}
-
-        # Extract priority sections
-        summary_parts = []
-        current_length = 0
-        key_points = []
-
-        for section_name in self.SECTION_PRIORITY:
-            if section_name in section_map:
-                section = section_map[section_name]
-                section_text = section.content
-
-                # Truncate if needed
-                words = section_text.split()
-                if len(words) > self.max_section_length:
-                    section_text = " ".join(words[: self.max_section_length]) + "..."
-
-                section_words = len(section_text.split())
-
-                if current_length + section_words <= max_length:
-                    summary_parts.append(f"[{section_name.upper()}] {section_text}")
-                    current_length += section_words
-
-                    if len(key_points) < 3:
-                        key_points.append(section_text[:100] + "...")
-
-        summary = "\n\n".join(summary_parts)
-
-        processing_time = (time.time() - start_time) * 1000
-        original_length = len(text.split())
-        summary_length = len(summary.split())
-
-        return SummaryResult(
-            summary=summary,
-            original_length=original_length,
-            summary_length=summary_length,
-            compression_ratio=original_length / summary_length if summary_length > 0 else 1.0,
-            processing_time_ms=processing_time,
-            model_name=self.model_name,
-            model_version=self.version,
-            summary_type="extractive",
-            key_points=key_points,
-        )
-
-
-class AbstractiveSummarizer(BaseSummarizer):
-    """Abstractive summarization using transformer models."""
-
-    def __init__(
-        self,
-        model_name: str = "facebook/bart-base",
-        version: str = "1.0.0",
-        model_path: str | None = None,
-        device: str = "cpu",
-    ):
-        super().__init__(model_name, version)
-        self.model_path = model_path
-        self.device = device
-        self.tokenizer: Any = None
-        self.model: Any = None
-
-    def load(self) -> None:
-        """Load the transformer model."""
-        try:
-            import torch
-            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-
-            model_path = self.model_path or self.model_name
-
-            self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
-            self.model.to(self.device)
-            self.model.eval()
-
             self._is_loaded = True
-            logger.info(f"Loaded abstractive summarizer: {model_path}")
+            logger.info("Loaded ExtractiveSummarizer v%s", self.version)
+        except Exception as exc:
+            raise ModelLoadError(self.model_name, str(exc)) from exc
 
-        except Exception as e:
-            raise ModelLoadError(self.model_name, str(e))
+    # ------------------------------------------------------------------
+    # Inference
+    # ------------------------------------------------------------------
 
     def summarize(
         self,
         text: str,
-        max_length: int = 150,
-        min_length: int = 30,
-    ) -> SummaryResult:
-        """Generate abstractive summary."""
-        import time
+        detail_level: Literal["brief", "standard", "detailed"] = "standard",
+    ) -> SummarizationResult:
+        """Summarise *text* using biased TextRank.
 
+        Parameters
+        ----------
+        text:
+            Raw clinical document text.
+        detail_level:
+            ``"brief"``, ``"standard"``, or ``"detailed"`` – controls the
+            fraction of sentences retained.
+
+        Returns
+        -------
+        SummarizationResult
+        """
         self.ensure_loaded()
-        import torch
-
         start_time = time.time()
 
         try:
-            # Preprocess
-            preprocessed = self.preprocessor.preprocess(text)
+            cleaned = self._preprocessor.preprocess(text)
+            sentences = self._preprocessor.segment_sentences(cleaned)
+            sentences = [s.strip() for s in sentences if len(s.strip()) > 15]
 
-            # Tokenize
-            inputs = self.tokenizer(
-                preprocessed,
-                return_tensors="pt",
-                truncation=True,
-                max_length=1024,
-                padding=True,
-            )
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            if not sentences:
+                return self._empty_result(text, detail_level, start_time)
 
-            # Generate
-            with torch.no_grad():
-                summary_ids = self.model.generate(
-                    **inputs,
-                    max_length=max_length,
-                    min_length=min_length,
-                    num_beams=4,
-                    early_stopping=True,
-                    no_repeat_ngram_size=3,
+            if len(sentences) == 1:
+                processing_time = (time.time() - start_time) * 1000
+                return SummarizationResult(
+                    summary=sentences[0],
+                    key_findings=sentences[:1],
+                    detail_level=detail_level,
+                    processing_time_ms=processing_time,
+                    model_name=self.model_name,
+                    model_version=self.version,
+                    sentence_count_original=1,
+                    sentence_count_summary=1,
                 )
 
-            # Decode
-            summary = self.tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+            # Build TF-IDF similarity matrix
+            tfidf_matrix = self._vectorizer.fit_transform(sentences).toarray()
+            sim_matrix = self._cosine_similarity_matrix(tfidf_matrix)
+
+            # Compute per-sentence clinical bias
+            bias = self._compute_bias_scores(sentences, cleaned)
+
+            # Run personalised PageRank
+            scores = self._pagerank(sim_matrix, bias)
+
+            # Select top-k sentences, restore original order
+            target = self._target_sentence_count(len(sentences), detail_level)
+            top_indices = sorted(
+                range(len(sentences)),
+                key=lambda i: scores[i],
+                reverse=True,
+            )[:target]
+            selected_indices = sorted(top_indices)
+
+            summary_sentences = [sentences[i] for i in selected_indices]
+            summary = " ".join(summary_sentences)
+            key_findings = self._extract_key_findings(sentences)
 
             processing_time = (time.time() - start_time) * 1000
-            original_length = len(text.split())
-            summary_length = len(summary.split())
+            logger.debug(
+                "ExtractiveSummarizer: %d -> %d sentences in %.1f ms",
+                len(sentences),
+                len(summary_sentences),
+                processing_time,
+            )
 
-            return SummaryResult(
+            return SummarizationResult(
                 summary=summary,
-                original_length=original_length,
-                summary_length=summary_length,
-                compression_ratio=original_length / summary_length if summary_length > 0 else 1.0,
+                key_findings=key_findings,
+                detail_level=detail_level,
                 processing_time_ms=processing_time,
                 model_name=self.model_name,
                 model_version=self.version,
-                summary_type="abstractive",
+                sentence_count_original=len(sentences),
+                sentence_count_summary=len(summary_sentences),
             )
 
-        except Exception as e:
-            raise InferenceError(self.model_name, str(e))
+        except Exception as exc:
+            raise InferenceError(self.model_name, str(exc)) from exc
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _cosine_similarity_matrix(self, matrix: Any) -> Any:
+        """Return the pairwise cosine similarity matrix for *matrix* rows."""
+        import numpy as np
+
+        norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+        norms = np.where(norms == 0, 1.0, norms)
+        normalised = matrix / norms
+        return normalised @ normalised.T
+
+    def _compute_bias_scores(
+        self, sentences: list[str], full_text: str
+    ) -> Any:
+        """Return a per-sentence bias vector for personalised PageRank.
+
+        Bias is elevated for sentences that:
+        * belong to Assessment / Plan sections
+        * match ``_CLINICAL_IMPORTANCE_PATTERNS``
+        """
+        import numpy as np
+
+        sections = self._preprocessor.detect_sections(full_text)
+        section_spans = [(s.start_char, s.end_char, s.name) for s in sections]
+
+        bias = np.ones(len(sentences))
+        search_start = 0
+
+        for idx, sent in enumerate(sentences):
+            # Pattern-based importance score
+            pattern_score = sum(
+                1.0 for pat in _CLINICAL_IMPORTANCE_PATTERNS if pat.search(sent)
+            )
+            bias[idx] += pattern_score * 0.2
+
+            # Section-based boost: locate sentence in original text
+            pos = full_text.find(sent, search_start)
+            if pos != -1:
+                search_start = pos
+                for sec_start, sec_end, sec_name in section_spans:
+                    if sec_start <= pos < sec_end:
+                        if sec_name in _HIGH_PRIORITY_SECTIONS:
+                            bias[idx] += 1.5
+                        break
+
+        # Re-scale so bias sums to len(sentences), preserving PageRank properties
+        total = bias.sum()
+        if total > 0:
+            bias = bias * (len(sentences) / total)
+        return bias
+
+    def _pagerank(self, sim_matrix: Any, bias: Any) -> Any:
+        """Run personalised PageRank on the sentence similarity graph."""
+        import numpy as np
+
+        n = sim_matrix.shape[0]
+
+        # Remove self-loops and row-normalise
+        np.fill_diagonal(sim_matrix, 0.0)
+        row_sums = sim_matrix.sum(axis=1, keepdims=True)
+        row_sums = np.where(row_sums == 0, 1.0, row_sums)
+        transition = sim_matrix / row_sums
+
+        # Normalise bias to a probability vector
+        bias_norm = bias / bias.sum() if bias.sum() > 0 else np.full(n, 1.0 / n)
+
+        scores = np.full(n, 1.0 / n)
+        for _ in range(self.max_iter):
+            new_scores = (
+                (1 - self.damping) * bias_norm
+                + self.damping * transition.T @ scores
+            )
+            delta = float(np.abs(new_scores - scores).sum())
+            scores = new_scores
+            if delta < self.convergence_threshold:
+                break
+
+        return scores
+
+    def _empty_result(
+        self,
+        text: str,
+        detail_level: Literal["brief", "standard", "detailed"],
+        start_time: float,
+    ) -> SummarizationResult:
+        return SummarizationResult(
+            summary=text[:500] if text else "",
+            key_findings=[],
+            detail_level=detail_level,
+            processing_time_ms=(time.time() - start_time) * 1000,
+            model_name=self.model_name,
+            model_version=self.version,
+        )
 
 
-class HybridSummarizer(BaseSummarizer):
-    """Combines extractive and abstractive summarization."""
+# ---------------------------------------------------------------------------
+# AbstractiveSummarizer  –  HuggingFace BART / T5 wrapper
+# ---------------------------------------------------------------------------
+
+
+class AbstractiveSummarizer(BaseSummarizer):
+    """HuggingFace BART/T5 abstractive summarizer for clinical text.
+
+    Long documents are split into overlapping chunks that fit within the
+    model's context window.  Each chunk is summarised independently.  When
+    the concatenated partial summaries are still too long, a second
+    summarisation pass is applied (hierarchical / two-stage approach).
+
+    Parameters
+    ----------
+    model_name:
+        HuggingFace model identifier or path (default ``facebook/bart-large-cnn``).
+    version:
+        Semantic version string.
+    model_path:
+        Optional local path; overrides *model_name* if provided.
+    device:
+        ``"cpu"`` or ``"cuda"``.
+    chunk_overlap_tokens:
+        Number of overlapping tokens between adjacent chunks to preserve
+        context at chunk boundaries.
+    """
 
     def __init__(
         self,
-        extractive: BaseSummarizer | None = None,
-        abstractive: BaseSummarizer | None = None,
-        model_name: str = "hybrid",
+        model_name: str = "facebook/bart-large-cnn",
         version: str = "1.0.0",
-    ):
+        model_path: str | None = None,
+        device: str = "cpu",
+        chunk_overlap_tokens: int = 50,
+    ) -> None:
         super().__init__(model_name, version)
-        self.extractive = extractive or ExtractiveSummarizer()
-        self.abstractive = abstractive
+        self.model_path = model_path
+        self.device = device
+        self.chunk_overlap_tokens = chunk_overlap_tokens
+        self._pipeline: Any = None
+        self._tokenizer: Any = None
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
 
     def load(self) -> None:
-        """Load sub-models."""
-        self.extractive.load()
-        if self.abstractive:
-            self.abstractive.load()
-        self._is_loaded = True
+        """Download / load the HuggingFace summarization pipeline."""
+        try:
+            from transformers import AutoTokenizer, pipeline
+
+            path = self.model_path or self.model_name
+            self._tokenizer = AutoTokenizer.from_pretrained(path)
+            self._pipeline = pipeline(
+                "summarization",
+                model=path,
+                tokenizer=self._tokenizer,
+                device=0 if self.device == "cuda" else -1,
+                framework="pt",
+            )
+            self._is_loaded = True
+            logger.info("Loaded AbstractiveSummarizer: %s", path)
+        except Exception as exc:
+            raise ModelLoadError(self.model_name, str(exc)) from exc
+
+    # ------------------------------------------------------------------
+    # Inference
+    # ------------------------------------------------------------------
 
     def summarize(
         self,
         text: str,
-        max_length: int = 150,
-        min_length: int = 30,
-    ) -> SummaryResult:
-        """Generate hybrid summary."""
-        import time
+        detail_level: Literal["brief", "standard", "detailed"] = "standard",
+    ) -> SummarizationResult:
+        """Generate an abstractive summary, chunking long documents as needed.
 
+        Parameters
+        ----------
+        text:
+            Raw clinical document text.
+        detail_level:
+            Controls ``min_length`` / ``max_length`` passed to the model.
+
+        Returns
+        -------
+        SummarizationResult
+        """
+        self.ensure_loaded()
         start_time = time.time()
 
-        # First get extractive summary
-        extractive_result = self.extractive.summarize(text, max_length=max_length * 2)
+        try:
+            preprocessor = ClinicalTextPreprocessor()
+            cleaned = preprocessor.preprocess(text)
 
-        if not self.abstractive:
-            return extractive_result
+            min_len, max_len = _ABSTRACTIVE_LENGTHS[detail_level]
+            chunks = self._chunk_text(cleaned)
 
-        # Then apply abstractive to extractive result
-        if len(extractive_result.summary.split()) > max_length:
-            abstractive_result = self.abstractive.summarize(
-                extractive_result.summary,
-                max_length=max_length,
-                min_length=min_length,
+            if len(chunks) == 1:
+                raw_summary = self._summarize_chunk(chunks[0], min_len, max_len)
+            else:
+                # Summarise each chunk, then optionally do a second pass
+                partial_summaries = [
+                    self._summarize_chunk(
+                        chunk,
+                        max(10, min_len // len(chunks)),
+                        max_len,
+                    )
+                    for chunk in chunks
+                ]
+                combined = " ".join(partial_summaries)
+                combined_tokens = len(self._tokenizer.encode(combined))
+                if combined_tokens > _CHUNK_MAX_TOKENS:
+                    raw_summary = self._summarize_chunk(combined, min_len, max_len)
+                else:
+                    raw_summary = combined
+
+            sentences = preprocessor.segment_sentences(cleaned)
+            key_findings = self._extract_key_findings(sentences)
+
+            processing_time = (time.time() - start_time) * 1000
+            logger.debug(
+                "AbstractiveSummarizer: completed in %.1f ms (%d chunk(s))",
+                processing_time,
+                len(chunks),
             )
-            final_summary = abstractive_result.summary
-            summary_type = "hybrid"
-        else:
-            final_summary = extractive_result.summary
-            summary_type = "extractive"
 
-        processing_time = (time.time() - start_time) * 1000
-        original_length = len(text.split())
-        summary_length = len(final_summary.split())
+            return SummarizationResult(
+                summary=raw_summary,
+                key_findings=key_findings,
+                detail_level=detail_level,
+                processing_time_ms=processing_time,
+                model_name=self.model_name,
+                model_version=self.version,
+                sentence_count_original=len(sentences),
+                sentence_count_summary=len(
+                    preprocessor.segment_sentences(raw_summary)
+                ),
+                metadata={"chunk_count": len(chunks)},
+            )
 
-        return SummaryResult(
-            summary=final_summary,
-            original_length=original_length,
-            summary_length=summary_length,
-            compression_ratio=original_length / summary_length if summary_length > 0 else 1.0,
-            processing_time_ms=processing_time,
-            model_name=self.model_name,
-            model_version=self.version,
-            summary_type=summary_type,
-            key_points=extractive_result.key_points,
+        except Exception as exc:
+            raise InferenceError(self.model_name, str(exc)) from exc
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _chunk_text(self, text: str) -> list[str]:
+        """Split *text* into overlapping token-bounded chunks."""
+        token_ids: list[int] = self._tokenizer.encode(
+            text, add_special_tokens=False
         )
+        if len(token_ids) <= _CHUNK_MAX_TOKENS:
+            return [text]
+
+        chunks: list[str] = []
+        step = _CHUNK_MAX_TOKENS - self.chunk_overlap_tokens
+        for start in range(0, len(token_ids), step):
+            chunk_ids = token_ids[start : start + _CHUNK_MAX_TOKENS]
+            chunk_text = self._tokenizer.decode(chunk_ids, skip_special_tokens=True)
+            chunks.append(chunk_text)
+            if start + _CHUNK_MAX_TOKENS >= len(token_ids):
+                break
+
+        logger.debug(
+            "AbstractiveSummarizer: split into %d chunks", len(chunks)
+        )
+        return chunks
+
+    def _summarize_chunk(
+        self, chunk: str, min_length: int, max_length: int
+    ) -> str:
+        """Run the HuggingFace pipeline on a single text chunk."""
+        result = self._pipeline(
+            chunk,
+            min_length=min_length,
+            max_length=max_length,
+            do_sample=False,
+            truncation=True,
+        )
+        return result[0]["summary_text"]
