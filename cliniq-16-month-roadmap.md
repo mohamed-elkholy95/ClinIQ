@@ -6,7 +6,18 @@
 
 ### Build Status (2026-03-24)
 
-All phases are **COMPLETE**:
+All phases are **COMPLETE**.
+
+#### Post-PRD Hardening (2026-03-24)
+- [x] Fixed broken `document_service.py` (syntax errors, bad imports, mismatched variables)
+- [x] Fixed test `conftest.py` (wrong class names: MLPipeline→ClinicalPipeline, SummaryResult→SummarizationResult)
+- [x] Removed bare TODO comments from route stubs
+- [x] Added input validation to `preprocess_clinical_text()` (type checks, empty-string handling)
+- [x] Added `retry.py` — configurable retry decorator with exponential back-off and jitter for inference calls
+- [x] Added `validation.py` — pre-inference text validation (length, encoding, null bytes, noise ratio)
+- [x] Full test suites for both new utility modules
+
+#### Phase Completion Summary:
 
 - [x] **Phase 0** — Foundation: Project structure, Docker Compose, FastAPI backend, database schema, Alembic migrations, API routes, ML model skeletons, middleware, Dockerfile, Makefile, CI/CD
 - [x] **Phase 1** — Core ML: Text preprocessing, feature engineering, TF-IDF baselines, scispaCy NER, rule-based NER, ICD-10 classifiers (sklearn + transformer), evaluation metrics
