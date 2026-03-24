@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cliniq-api
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-api
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cliniq-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
