@@ -16,6 +16,14 @@ All phases are **COMPLETE**.
 - [x] Added `retry.py` — configurable retry decorator with exponential back-off and jitter for inference calls
 - [x] Added `validation.py` — pre-inference text validation (length, encoding, null bytes, noise ratio)
 - [x] Full test suites for both new utility modules
+- [x] **Wired real ML models to all API routes** — replaced all mock/placeholder inference stubs
+  - Added `model_registry.py` — thread-safe singleton for lazy-loading and caching ML models
+  - Added `RuleBasedICDClassifier` — 25 keyword/pattern rules for ICD-10 prediction
+  - NER route → RuleBasedNERModel (pattern matching + negation/uncertainty detection)
+  - ICD route → RuleBasedICDClassifier (keyword matching + synonym boosting)
+  - Summarize route → ExtractiveSummarizer (TF-IDF TextRank + biased sentence scoring)
+  - Risk route → RuleBasedRiskScorer (medication, diagnostic complexity, follow-up urgency)
+  - Full-pipeline `/analyze` route → all four real model stages
 
 #### Phase Completion Summary:
 
