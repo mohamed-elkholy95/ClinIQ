@@ -87,6 +87,9 @@ training = [
 [project.scripts]
 cliniq = "cliniq.cli:main"
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.black]
 line-length = 100
 target-version = ["py311"]
