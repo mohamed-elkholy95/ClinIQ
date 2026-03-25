@@ -8,14 +8,23 @@ Covers:
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+client: TestClient = None  # type: ignore[assignment]
 
 
 API_PREFIX = "/api/v1"
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _module_client():
+    global client
+    with TestClient(app) as c:
+        client = c
+        yield
 
 
 def _make_request(

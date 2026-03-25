@@ -14,7 +14,33 @@ from app.core.config import Settings
 from app.db.models import Base, User
 from app.db.session import get_db_session
 from app.main import app
+from app.middleware.rate_limit import RateLimitMiddleware
 from app.ml.pipeline import ClinicalPipeline
+
+# ---------------------------------------------------------------------------
+# Rate-limiter reset (global, autouse)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Clear the in-memory rate limiter between tests globally."""
+    obj = app.middleware_stack
+    while obj is not None:
+        if isinstance(obj, RateLimitMiddleware):
+            obj._local_store.clear()
+            break
+        obj = getattr(obj, "app", None)
+
+
+# ---------------------------------------------------------------------------
+# Shared TestClient fixture for route tests
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def app_client():
+    """Provide a TestClient scoped per-test (avoids module-level event loop issues)."""
+    with TestClient(app) as c:
+        yield c
 
 
 # Test settings

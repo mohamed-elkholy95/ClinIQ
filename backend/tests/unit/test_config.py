@@ -9,8 +9,9 @@ class TestSettingsDefaults:
     """Tests for default Settings values."""
 
     @pytest.fixture
-    def settings(self) -> Settings:
-        """Provide a default Settings instance."""
+    def settings(self, monkeypatch: pytest.MonkeyPatch) -> Settings:
+        """Provide a default Settings instance with env vars cleared."""
+        monkeypatch.delenv("ENVIRONMENT", raising=False)
         return Settings()
 
     def test_default_app_name(self, settings: Settings):

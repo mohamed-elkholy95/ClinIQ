@@ -10,24 +10,22 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.middleware.rate_limit import RateLimitMiddleware
+
+_test_client: TestClient = None  # type: ignore[assignment]
 
 
-@pytest.fixture(autouse=True)
-def _reset_rate_limiter():
-    """Clear the in-memory rate limiter between tests."""
-    obj = app.middleware_stack
-    while obj is not None:
-        if isinstance(obj, RateLimitMiddleware):
-            obj._local_store.clear()
-            break
-        obj = getattr(obj, "app", None)
+@pytest.fixture(autouse=True, scope="module")
+def _module_client():
+    global _test_client
+    with TestClient(app) as c:
+        _test_client = c
+        yield
 
 
-@pytest.fixture()
+@pytest.fixture
 def client():
-    """Return a FastAPI test client."""
-    return TestClient(app)
+    """Provide the module-level test client as a fixture."""
+    return _test_client
 
 
 # ---------------------------------------------------------------------------
