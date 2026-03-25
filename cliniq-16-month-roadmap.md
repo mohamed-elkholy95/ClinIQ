@@ -8,6 +8,14 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 16 (2026-03-24)
+- [x] **Prometheus /metrics endpoint** — `GET /metrics` serves `prometheus_client` text exposition format (falls back to JSON); `GET /metrics/models` returns per-model inference summary for dashboards
+- [x] **Drift monitoring REST API** — `GET /drift/status` aggregates text-distribution PSI and per-model confidence drift into stable/warning/drifted overall status; `POST /drift/record` for prediction ingestion and back-fill
+- [x] **ONNX Runtime model serving module** (`app.ml.serving.onnx_runtime`) — `OnnxModelServer` with lazy loading, session caching, auto-tokenization (HuggingFace), batch prediction, PyTorch-to-ONNX export helper with dynamic axes
+- [x] **Route registry updated** — metrics and drift routers wired into `api_router` alongside existing health/analyze/ner/icd/summarize/risk/batch/models/auth
+- [x] **41 new tests** across 3 modules: `test_metrics_route.py` (7), `test_drift_route.py` (10), `test_onnx_runtime.py` (24)
+- [x] **Total test suite: 1247 passing** (backend: 1247, frontend: 238), 0 failures
+
 #### Post-PRD Enhancements — Session 15 (2026-03-24)
 - [x] **Frontend page test coverage expanded from 14 to 238 tests** — 125 new tests across 6 new page test modules (~1,230 lines):
   - `DocumentUpload.test.tsx` (22 tests) — text input, file upload zone, Load sample prefill, word count, analyze button enable/disable, simulated analysis delay with fake timers, result rendering (annotated text, entity tags, ICD codes, risk gauge, clinical summary, key findings, processing time)
