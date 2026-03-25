@@ -36,6 +36,7 @@ from app.api.v1.routes.search import router as search_router
 from app.api.v1.routes.stream import router as stream_router
 from app.api.v1.routes.summarize import router as summarize_router
 from app.api.v1.routes.temporal import router as temporal_router
+from app.api.v1.routes.vitals import router as vitals_router
 
 # ---------------------------------------------------------------------------
 # Build the combined v1 router
@@ -80,7 +81,10 @@ api_router.include_router(normalization_router)
 api_router.include_router(sdoh_router)       # POST /sdoh, POST /sdoh/batch, GET /sdoh/domains, GET /sdoh/domains/{name}, GET /sdoh/z-codes
 
 # Comorbidity scoring (Charlson Comorbidity Index)
-api_router.include_router(comorbidity_router)  # POST /comorbidity, POST /comorbidity/batch, GET /comorbidity/categories  # POST /normalize, POST /normalize/batch, GET /normalize/lookup/{cui}, GET /normalize/dictionary/stats
+api_router.include_router(comorbidity_router)
+
+# Vital signs extraction
+api_router.include_router(vitals_router)       # POST /vitals, POST /vitals/batch, GET /vitals/types, GET /vitals/ranges  # POST /comorbidity, POST /comorbidity/batch, GET /comorbidity/categories  # POST /normalize, POST /normalize/batch, GET /normalize/lookup/{cui}, GET /normalize/dictionary/stats
 
 # Async batch processing
 api_router.include_router(batch_router)    # POST /batch, GET /batch/{job_id}
