@@ -1,243 +1,157 @@
 # ClinIQ
 
-**Clinical Intelligence & Query Platform** -- AI-powered clinical NLP that transforms unstructured medical text into structured, actionable intelligence.
+Clinical NLP platform that extracts structured data from unstructured medical text.
 
 [![CI/CD](https://github.com/cliniq/cliniq/actions/workflows/ci.yml/badge.svg)](https://github.com/cliniq/cliniq/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](https://github.com/cliniq/cliniq)
-[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/downloads/release/python-3120/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
----
+## What it does
+
+ClinIQ takes clinical notes and returns structured output: medical entities, ICD-10 codes, summaries, and risk scores. It supports rule-based, scispaCy, and transformer (BioBERT/ClinicalBERT) backends.
+
+**Core capabilities:**
+
+- **Named Entity Recognition** — diseases, symptoms, medications, dosages, procedures, lab values, temporal expressions. Supports negation and uncertainty detection.
+- **ICD-10 Code Prediction** — scikit-learn baselines, transformer classifiers, and hierarchical chapter→code models.
+- **Clinical Text Summarization** — extractive (TextRank) and abstractive (BART/T5) at three detail levels.
+- **Risk Scoring** — medication risk, diagnostic complexity, follow-up urgency with actionable recommendations.
+- **Dental NLP** — tooth numbering (Universal/FDI/Palmer), surface ID, periodontal measurements, CDT codes.
+- **PHI De-identification** — HIPAA Safe Harbor compliant detection and redaction of all 18 identifier categories.
 
 ## Architecture
 
 ```
-                          ClinIQ Platform Architecture
-
-  +-------------+       +-----------------+       +---------------------+
-  |   Clients   |       |   API Gateway   |       |    ML Services      |
-  |             |       |                 |       |                     |
-  | React SPA   +------>+ Nginx / Ingress +------>+ NER (scispaCy /     |
-  | Python SDK  |       | Rate Limiting   |       |      BioBERT)       |
-  | REST / cURL |       | JWT + API Key   |       | ICD-10 Prediction   |
-  +-------------+       +--------+--------+       | Summarization       |
-                                 |                | Risk Scoring        |
-                                 v                | Dental NLP          |
-                        +--------+--------+       +----------+----------+
-                        |  FastAPI (v1)   |                  |
-                        |  Celery Workers |                  |
-                        +--------+--------+                  |
-                                 |                           |
-              +------------------+---------------------------+---+
-              |                  |                               |
-              v                  v                               v
-     +--------+------+  +-------+--------+  +---------+---------+--+
-     |  PostgreSQL   |  |     Redis      |  |  MinIO    | MLflow   |
-     |  (Audit, PHI) |  | (Cache, Queue) |  | (Objects) | (Track)  |
-     +---------------+  +----------------+  +----------+----------+
-              |                  |                       |
-              +------------------+-----------------------+
-                                 |
-                    +------------+------------+
-                    |     Observability       |
-                    |  Prometheus + Grafana   |
-                    +-------------------------+
+  Clients              API Gateway              ML Services
+  ───────              ───────────              ───────────
+  React SPA    ──►   Nginx / Ingress   ──►   NER (scispaCy/BioBERT)
+  Python SDK         Rate Limiting            ICD-10 Prediction
+  REST / cURL        JWT + API Key            Summarization
+                                              Risk Scoring
+                          │                   Dental NLP
+                          ▼
+                   FastAPI + Celery
+                          │
+            ┌─────────────┼─────────────┐
+            ▼             ▼             ▼
+       PostgreSQL       Redis      MinIO / MLflow
+       (Audit, PHI)   (Cache,     (Objects,
+                       Queue)      Tracking)
+                          │
+                          ▼
+                    Prometheus + Grafana
 ```
 
----
-
-## Quick Start
+## Quick start
 
 ```bash
 git clone https://github.com/cliniq/cliniq.git && cd cliniq
 docker compose up -d
-open http://localhost:8000/docs
+open http://localhost:8000/docs    # Swagger UI
+open http://localhost:5173         # React dashboard
 ```
 
-The API documentation is available at `http://localhost:8000/docs` (Swagger UI) or `http://localhost:8000/redoc` (ReDoc). The React dashboard runs at `http://localhost:5173`.
-
----
-
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| **Medical Entity Recognition (NER)** | Extract diseases, symptoms, medications, dosages, procedures, lab values, and temporal expressions from clinical text. Supports rule-based, scispaCy, and transformer (BioBERT) backends with negation and uncertainty detection. |
-| **ICD-10 Code Prediction** | Predict ICD-10 diagnosis codes from clinical narratives using scikit-learn baselines, transformer classifiers (ClinicalBERT), and hierarchical chapter-then-code models. |
-| **Clinical Text Summarization** | Generate concise summaries of clinical notes via extractive (TextRank with clinical relevance weighting) or abstractive (BART/T5) methods. Three detail levels: brief, standard, detailed. |
-| **Risk Scoring** | Assess medication risk, diagnostic complexity, and follow-up urgency. Rule-based scorer with weighted polypharmacy, drug interaction, and ICD chapter analysis. Generates actionable clinical recommendations. |
-| **Dental NLP Module** | Specialized NER for dental records: tooth numbering (Universal, FDI, Palmer), surface identification, periodontal measurements, CDT code prediction, and periodontal risk assessment. |
-| **PHI De-identification** | HIPAA Safe Harbor compliant PHI detection and redaction covering all 18 identifier categories. Three replacement strategies: redact (tag), mask (asterisks), surrogate (synthetic values). Contextual confidence scoring and pluggable custom detectors. |
-
----
-
-## Tech Stack
-
-| Layer | Technologies |
-|-------|-------------|
-| **Backend** | FastAPI, Python 3.11, Pydantic v2, Celery, SQLAlchemy 2.0, Alembic |
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS |
-| **ML** | PyTorch, HuggingFace Transformers, scikit-learn, scispaCy, SHAP |
-| **Data** | PostgreSQL 16, Redis 7, MinIO (S3-compatible), MLflow |
-| **Infrastructure** | Docker Compose, Kubernetes, Nginx, Prometheus, Grafana |
-| **CI/CD** | GitHub Actions, Trivy, Bandit, Ruff, mypy |
-
----
-
-## API Endpoints
+## API
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/v1/analyze` | Full pipeline: NER + ICD + Summary + Risk |
-| `POST` | `/api/v1/ner` | Named entity recognition only |
-| `POST` | `/api/v1/icd-predict` | ICD-10 code prediction only |
-| `POST` | `/api/v1/summarize` | Clinical text summarization only |
-| `POST` | `/api/v1/risk-score` | Risk scoring only |
+| `POST` | `/api/v1/ner` | Named entity recognition |
+| `POST` | `/api/v1/icd-predict` | ICD-10 code prediction |
+| `POST` | `/api/v1/summarize` | Clinical text summarization |
+| `POST` | `/api/v1/risk-score` | Risk scoring |
+| `POST` | `/api/v1/deidentify` | PHI de-identification |
 | `POST` | `/api/v1/batch` | Async batch processing |
-| `GET`  | `/api/v1/batch/{job_id}` | Poll batch job status |
-| `GET`  | `/api/v1/models` | List loaded models |
-| `GET`  | `/api/v1/models/{name}` | Model details |
-| `POST` | `/api/v1/deidentify` | PHI de-identification (single text) |
-| `POST` | `/api/v1/deidentify/batch` | Batch PHI de-identification |
-| `GET`  | `/api/v1/health` | Health check (liveness + readiness) |
-| `POST` | `/api/v1/auth/token` | Obtain JWT access token |
-| `POST` | `/api/v1/auth/register` | Register new user |
-| `POST` | `/api/v1/auth/api-keys` | Generate API key |
-| `GET`  | `/api/v1/auth/me` | Current user info |
+| `GET`  | `/api/v1/batch/{job_id}` | Batch job status |
+| `GET`  | `/api/v1/health` | Health check |
+| `POST` | `/api/v1/auth/token` | Obtain JWT token |
 
-See the full [API Reference](docs/api/api-reference.md) for request/response schemas and examples.
+Full reference: [docs/api/api-reference.md](docs/api/api-reference.md)
 
----
+## Tech stack
 
-## Project Structure
+| Layer | Technologies |
+|-------|-------------|
+| Backend | FastAPI, Python 3.11+, Pydantic v2, Celery, SQLAlchemy 2.0 |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
+| ML | PyTorch, HuggingFace Transformers, scikit-learn, scispaCy |
+| Data | PostgreSQL 16, Redis 7, MinIO, MLflow |
+| Infra | Docker Compose, Kubernetes, Nginx, Prometheus, Grafana |
+| CI | GitHub Actions, Ruff, mypy, Trivy, Bandit |
+
+## Development
+
+### Prerequisites
+
+- Docker + Docker Compose v2+
+- Python 3.11+
+- Node.js 20+ (frontend)
+
+### Setup
+
+```bash
+cp backend/.env.example backend/.env
+
+# Start infrastructure
+docker compose up -d postgres redis minio
+
+# Backend
+cd backend
+pip install -e ".[dev]"
+alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Frontend (separate terminal)
+cd frontend
+npm install && npm run dev
+```
+
+### Testing
+
+```bash
+# Backend tests
+cd backend
+pytest tests/ -v                          # all tests
+pytest tests/unit/ -v                     # unit only
+pytest tests/ -v --cov=app --cov-report=term-missing  # with coverage
+
+# SDK tests
+cd sdk
+pytest tests/ -v
+
+# Linting
+ruff check backend/
+```
+
+## Project structure
 
 ```
 ClinIQ/
 ├── backend/
 │   ├── app/
-│   │   ├── api/
-│   │   │   ├── schemas/          # Pydantic request/response models
-│   │   │   └── v1/routes/        # FastAPI route handlers
-│   │   ├── core/                 # Config, security, exceptions
-│   │   ├── db/                   # SQLAlchemy models, sessions, migrations
-│   │   ├── middleware/           # Auth, rate limiting, logging
-│   │   ├── ml/
-│   │   │   ├── dental/           # Dental NLP module
-│   │   │   ├── explainability/   # SHAP explainers
-│   │   │   ├── icd/              # ICD-10 classifiers
-│   │   │   ├── monitoring/       # Drift detection, metrics
-│   │   │   ├── ner/              # Named entity recognition
-│   │   │   ├── risk/             # Risk scoring
-│   │   │   ├── summarization/    # Text summarization
-│   │   │   └── utils/            # Preprocessing, features, metrics
-│   │   ├── services/             # Business logic services
-│   │   ├── main.py               # FastAPI application entry point
-│   │   └── worker.py             # Celery worker
-│   ├── tests/
-│   │   ├── unit/                 # Unit tests
-│   │   ├── integration/          # API integration tests
-│   │   ├── ml/                   # ML model smoke tests
-│   │   └── load/                 # Locust load tests
-│   ├── Dockerfile
-│   └── pyproject.toml
-├── frontend/
-│   ├── src/
-│   │   ├── components/           # Reusable UI components
-│   │   ├── pages/                # Dashboard, EntityViewer, ICDResults, etc.
-│   │   ├── hooks/                # React hooks (useAnalysis, useDocuments)
-│   │   ├── services/             # API client
-│   │   └── types/                # TypeScript type definitions
-│   └── vite.config.ts
-├── infra/
-│   ├── grafana/                  # Dashboard provisioning
-│   ├── k8s/                      # Kubernetes manifests
-│   ├── nginx/                    # Reverse proxy config
-│   └── prometheus/               # Metrics collection config
-├── docs/                         # Documentation (you are here)
-├── docker-compose.yml            # Development environment
-├── docker-compose.prod.yml       # Production environment
-├── Makefile                      # Development commands
-└── .github/workflows/ci.yml     # CI/CD pipeline
+│   │   ├── api/              # Routes, schemas, dependencies
+│   │   ├── core/             # Config, security, exceptions
+│   │   ├── db/               # SQLAlchemy models, migrations
+│   │   ├── middleware/        # Auth, rate limiting, logging
+│   │   ├── ml/               # NER, ICD, summarization, risk, dental, de-id
+│   │   └── services/         # Business logic
+│   └── tests/
+├── frontend/                 # React SPA
+├── sdk/                      # Python client SDK
+├── infra/                    # K8s, Nginx, Prometheus configs
+├── docs/                     # Architecture, API ref, model cards
+└── docker-compose.yml
 ```
-
----
-
-## Development Setup
-
-### Prerequisites
-
-- Docker and Docker Compose v2+
-- Python 3.11+
-- Node.js 20+ (for frontend)
-- Make (optional, for convenience commands)
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/cliniq/cliniq.git
-cd cliniq
-
-# Copy environment configuration
-cp backend/.env.example backend/.env
-
-# Start infrastructure services
-docker compose up -d postgres redis minio
-
-# Install backend dependencies
-cd backend
-pip install -e ".[dev]"
-
-# Run database migrations
-alembic upgrade head
-
-# Start the API server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# (In a separate terminal) Start the frontend
-cd frontend
-npm install
-npm run dev
-```
-
-Or use Make shortcuts:
-
-```bash
-make dev          # Start infrastructure + API server
-make frontend     # Start frontend dev server (separate terminal)
-make dev-all      # Start everything via Docker Compose
-```
-
----
-
-## Testing
-
-```bash
-make test              # Run all tests
-make test-unit         # Unit tests only
-make test-integration  # Integration tests (requires running services)
-make test-ml           # ML model smoke tests
-make test-cov          # Tests with HTML coverage report
-make lint              # Ruff linter
-make typecheck         # mypy type checking
-make quality           # Lint + typecheck
-make loadtest          # Locust load tests (interactive browser UI)
-```
-
----
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) -- System design, data flows, and ADRs
-- [API Reference](docs/api/api-reference.md) -- Endpoints, schemas, and examples
-- [Model Cards](docs/ml/) -- NER, ICD-10, and summarization model documentation
-- [Evaluation Report](docs/ml/evaluation-report.md) -- Model performance metrics
-- [Local Setup](docs/deployment/local-setup.md) -- Developer environment guide
-- [Production Guide](docs/deployment/production-guide.md) -- Deployment and operations
-- [HIPAA Compliance](docs/security/hipaa-compliance.md) -- Security architecture
-
----
+- [Architecture](docs/architecture.md)
+- [API Reference](docs/api/api-reference.md)
+- [Model Cards](docs/ml/)
+- [Local Setup](docs/deployment/local-setup.md)
+- [Production Guide](docs/deployment/production-guide.md)
+- [HIPAA Compliance](docs/security/hipaa-compliance.md)
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
