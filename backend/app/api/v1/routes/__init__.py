@@ -15,6 +15,7 @@ from fastapi import APIRouter
 
 from app.api.v1.routes.analyze import router as analyze_router
 from app.api.v1.routes.auth import router as auth_router
+from app.api.v1.routes.classify import router as classify_router
 from app.api.v1.routes.deidentify import router as deidentify_router
 from app.api.v1.routes.batch import router as batch_router
 from app.api.v1.routes.drift import router as drift_router
@@ -50,6 +51,9 @@ api_router.include_router(summarize_router)  # POST /summarize
 api_router.include_router(risk_router)     # POST /risk-score
 api_router.include_router(relations_router)  # POST /relations, GET /relations/types
 api_router.include_router(temporal_router)   # POST /temporal, GET /temporal/frequency-map
+
+# Document classification
+api_router.include_router(classify_router)   # POST /classify, POST /classify/batch, GET /classify/types
 
 # PHI de-identification
 api_router.include_router(deidentify_router)  # POST /deidentify, POST /deidentify/batch
