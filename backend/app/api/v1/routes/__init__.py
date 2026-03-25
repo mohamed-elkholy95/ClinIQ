@@ -16,8 +16,10 @@ from fastapi import APIRouter
 from app.api.v1.routes.analyze import router as analyze_router
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.batch import router as batch_router
+from app.api.v1.routes.drift import router as drift_router
 from app.api.v1.routes.health import router as health_router
 from app.api.v1.routes.icd import router as icd_router
+from app.api.v1.routes.metrics import router as metrics_router
 from app.api.v1.routes.models import router as models_router
 from app.api.v1.routes.ner import router as ner_router
 from app.api.v1.routes.risk import router as risk_router
@@ -31,6 +33,8 @@ api_router = APIRouter()
 
 # Infrastructure / meta endpoints
 api_router.include_router(health_router)   # GET  /health, /health/live, /health/ready
+api_router.include_router(metrics_router)  # GET  /metrics, /metrics/models
+api_router.include_router(drift_router)    # GET  /drift/status, POST /drift/record
 
 # Core NLP inference endpoints
 api_router.include_router(analyze_router)  # POST /analyze
