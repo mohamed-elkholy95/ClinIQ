@@ -15,6 +15,7 @@ from fastapi import APIRouter
 
 from app.api.v1.routes.analyze import router as analyze_router
 from app.api.v1.routes.auth import router as auth_router
+from app.api.v1.routes.deidentify import router as deidentify_router
 from app.api.v1.routes.batch import router as batch_router
 from app.api.v1.routes.drift import router as drift_router
 from app.api.v1.routes.health import router as health_router
@@ -45,6 +46,9 @@ api_router.include_router(ner_router)      # POST /ner
 api_router.include_router(icd_router)      # POST /icd-predict, GET /icd-codes/{code}
 api_router.include_router(summarize_router)  # POST /summarize
 api_router.include_router(risk_router)     # POST /risk-score
+
+# PHI de-identification
+api_router.include_router(deidentify_router)  # POST /deidentify, POST /deidentify/batch
 
 # Async batch processing
 api_router.include_router(batch_router)    # POST /batch, GET /batch/{job_id}
