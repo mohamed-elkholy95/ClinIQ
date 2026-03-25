@@ -31,6 +31,7 @@ from app.api.v1.routes.normalization import router as normalization_router
 from app.api.v1.routes.quality import router as quality_router
 from app.api.v1.routes.relations import router as relations_router
 from app.api.v1.routes.risk import router as risk_router
+from app.api.v1.routes.sdoh import router as sdoh_router
 from app.api.v1.routes.search import router as search_router
 from app.api.v1.routes.stream import router as stream_router
 from app.api.v1.routes.summarize import router as summarize_router
@@ -74,6 +75,9 @@ api_router.include_router(assertions_router)  # POST /assertions, POST /assertio
 
 # Concept normalization / entity linking
 api_router.include_router(normalization_router)
+
+# Social Determinants of Health (SDoH) extraction
+api_router.include_router(sdoh_router)       # POST /sdoh, POST /sdoh/batch, GET /sdoh/domains, GET /sdoh/domains/{name}, GET /sdoh/z-codes
 
 # Comorbidity scoring (Charlson Comorbidity Index)
 api_router.include_router(comorbidity_router)  # POST /comorbidity, POST /comorbidity/batch, GET /comorbidity/categories  # POST /normalize, POST /normalize/batch, GET /normalize/lookup/{cui}, GET /normalize/dictionary/stats
