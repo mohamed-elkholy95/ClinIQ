@@ -31,17 +31,10 @@ jobs:
 
       - name: Install linters
         run: |
-          pip install ruff black isort mypy
+          pip install ruff mypy
 
-      - name: Run Black
-        run: black --check backend/
-        continue-on-error: true
-
-      - name: Run Ruff
+      - name: Run Ruff (lint + import sorting)
         run: ruff check backend/
-
-      - name: Run isort
-        run: isort --check-only backend/
 
       - name: Run mypy
         run: |
