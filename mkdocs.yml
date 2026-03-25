@@ -1,0 +1,64 @@
+site_name: ClinIQ Documentation
+site_description: Clinical NLP platform — structured intelligence from unstructured medical text
+repo_url: https://github.com/mohamed-elkholy95/ClinIQ
+repo_name: mohamed-elkholy95/ClinIQ
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - search.highlight
+
+nav:
+  - Home: README.md
+  - Architecture: architecture.md
+  - API Reference: api/api-reference.md
+  - ML Model Cards:
+      - Named Entity Recognition: ml/model-card-ner.md
+      - ICD-10 Prediction: ml/model-card-icd10.md
+      - Clinical Summarization: ml/model-card-summarization.md
+      - Risk Scoring: ml/model-card-risk-scoring.md
+      - Dental NLP: ml/model-card-dental.md
+      - Assertion Detection: ml/model-card-assertions.md
+      - Clinical Relations: ml/model-card-relations.md
+      - Temporal Extraction: ml/model-card-temporal.md
+      - Medication Extraction: ml/model-card-medications.md
+      - Document Classification: ml/model-card-document-classifier.md
+      - Concept Normalization: ml/model-card-concept-normalization.md
+      - Note Quality Analyzer: ml/model-card-quality-analyzer.md
+      - Comorbidity Index: ml/model-card-comorbidity.md
+      - SDoH Extraction: ml/model-card-sdoh.md
+      - Vital Signs: ml/model-card-vitals.md
+      - De-identification: ml/model-card-deidentification.md
+  - Evaluation Report: ml/evaluation-report.md
+  - Deployment:
+      - Local Setup: deployment/local-setup.md
+      - Production Guide: deployment/production-guide.md
+  - Security:
+      - HIPAA Compliance: security/hipaa-compliance.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - toc:
+      permalink: true
