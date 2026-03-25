@@ -78,6 +78,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.url.path in ("/api/v1/health", "/docs", "/openapi.json", "/health"):
             return await call_next(request)
 
+        # Skip rate limiting in test environment
+        if self.settings.environment == "test":
+            return await call_next(request)
+
         client_key = self._get_client_key(request)
         max_requests = self.settings.rate_limit_requests
         window = self.settings.rate_limit_period

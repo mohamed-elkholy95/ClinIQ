@@ -22,13 +22,12 @@ from app.ml.pipeline import ClinicalPipeline
 
 @pytest.fixture(autouse=True)
 def _test_setup():
-    """Ensure fresh event loop and clear rate limiter before each test."""
-    import asyncio
+    """Clear rate limiter before each test.
 
-    # Always provide a fresh, open event loop for TestClient/anyio
-    asyncio.set_event_loop(asyncio.new_event_loop())
-
-    # Reset rate limiter
+    Rate limiting is also disabled in test environment via config, but we
+    clear the in-memory store to prevent cross-test leakage in dev mode.
+    """
+    # Reset rate limiter in-memory store
     obj = app.middleware_stack
     while obj is not None:
         if isinstance(obj, RateLimitMiddleware):
@@ -37,14 +36,6 @@ def _test_setup():
         obj = getattr(obj, "app", None)
 
     yield
-
-    # Clean up the loop we created
-    try:
-        loop = asyncio.get_event_loop()
-        if not loop.is_closed():
-            loop.close()
-    except RuntimeError:
-        pass
 
 
 # Test settings
@@ -63,17 +54,7 @@ def test_settings() -> Settings:
 
 # Test database engine
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for session-scoped async fixtures."""
-    import asyncio
-
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_engine():
     """Create test database engine."""
     engine = create_async_engine(

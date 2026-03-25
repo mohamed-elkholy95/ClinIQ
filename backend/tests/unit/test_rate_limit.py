@@ -26,6 +26,7 @@ def _make_app_and_client(max_requests: int = 5, window: int = 60):
     class _FakeSettings:
         rate_limit_requests = max_requests
         rate_limit_period = window
+        environment = "development"
 
     patcher = patch("app.middleware.rate_limit.get_settings", return_value=_FakeSettings())
     patcher.start()
