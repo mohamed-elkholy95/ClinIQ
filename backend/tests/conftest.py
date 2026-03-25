@@ -59,7 +59,7 @@ def test_settings() -> Settings:
 # Test database engine
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_engine():
     """Create test database engine."""
     engine = create_async_engine(
