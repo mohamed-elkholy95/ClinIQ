@@ -13,12 +13,12 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hash."""
-    return pwd_context.verify(plain_password[:72], hashed_password)
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password (bcrypt truncates at 72 bytes)."""
-    return pwd_context.hash(password[:72])
+    """Hash a password."""
+    return pwd_context.hash(password)
 
 
 def create_access_token(
@@ -63,10 +63,10 @@ def generate_api_key() -> str:
 
 
 def hash_api_key(api_key: str) -> str:
-    """Hash an API key for storage (truncated to 72 bytes for bcrypt)."""
-    return pwd_context.hash(api_key[:72])
+    """Hash an API key for storage."""
+    return pwd_context.hash(api_key)
 
 
 def verify_api_key(plain_key: str, hashed_key: str) -> bool:
     """Verify an API key against its hash."""
-    return pwd_context.verify(plain_key[:72], hashed_key)
+    return pwd_context.verify(plain_key, hashed_key)

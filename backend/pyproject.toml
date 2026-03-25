@@ -32,6 +32,7 @@ dependencies = [
     # Authentication & Security
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
+    "bcrypt<4.1",
     "python-multipart>=0.0.6",
     # Caching & Task Queue
     "redis>=5.0.0",
@@ -167,6 +168,7 @@ minversion = "7.0"
 addopts = "-ra -q --strict-markers --cov=app --cov-report=term-missing"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests requiring external services",
