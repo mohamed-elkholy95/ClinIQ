@@ -14,6 +14,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1.routes.analyze import router as analyze_router
+from app.api.v1.routes.assertions import router as assertions_router
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.classify import router as classify_router
 from app.api.v1.routes.medications import router as medications_router
@@ -61,6 +62,9 @@ api_router.include_router(medications_router)  # POST /medications, POST /medica
 
 # PHI de-identification
 api_router.include_router(deidentify_router)  # POST /deidentify, POST /deidentify/batch
+
+# Clinical assertion detection
+api_router.include_router(assertions_router)  # POST /assertions, POST /assertions/batch, GET /assertions/statuses, GET /assertions/stats
 
 # Async batch processing
 api_router.include_router(batch_router)    # POST /batch, GET /batch/{job_id}
