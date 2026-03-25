@@ -57,13 +57,7 @@ def compute_classification_metrics(
     average: str = "macro",
 ) -> ClassificationMetrics:
     """Compute classification metrics."""
-    from sklearn.metrics import (
-        accuracy_score,
-        f1_score,
-        hamming_loss,
-        precision_score,
-        recall_score,
-    )
+    from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
     return ClassificationMetrics(
         accuracy=accuracy_score(y_true, y_pred),
@@ -86,13 +80,8 @@ def compute_multilabel_metrics(
     y_pred: NDArray[np.int_],
 ) -> ClassificationMetrics:
     """Compute metrics for multi-label classification (e.g., ICD-10 codes)."""
-    from sklearn.metrics import (
-        accuracy_score,
-        f1_score,
-        hamming_loss as sklearn_hamming_loss,
-        precision_score,
-        recall_score,
-    )
+    from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+    from sklearn.metrics import hamming_loss as sklearn_hamming_loss
 
     metrics = ClassificationMetrics(
         accuracy=accuracy_score(y_true, y_pred),
@@ -223,12 +212,12 @@ def compute_rouge_scores(
         rouge1 = overlap / len(ref_words)  # Recall-focused
 
     # ROUGE-2 (bigrams)
-    ref_bigrams = set(
+    ref_bigrams = {
         tuple(reference.lower().split()[i : i + 2]) for i in range(len(reference.split()) - 1)
-    )
-    hyp_bigrams = set(
+    }
+    hyp_bigrams = {
         tuple(hypothesis.lower().split()[i : i + 2]) for i in range(len(hypothesis.split()) - 1)
-    )
+    }
 
     if len(ref_bigrams) == 0 or len(hyp_bigrams) == 0:
         rouge2 = 0.0

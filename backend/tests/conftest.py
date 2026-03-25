@@ -1,16 +1,16 @@
 """Pytest configuration and fixtures."""
 
 import asyncio
-from typing import AsyncGenerator, Generator
-from unittest.mock import AsyncMock, MagicMock, patch
+from collections.abc import AsyncGenerator, Generator
+from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.core.config import Settings, get_settings
+from app.core.config import Settings
 from app.db.models import Base, User
 from app.db.session import get_db_session
 from app.main import app

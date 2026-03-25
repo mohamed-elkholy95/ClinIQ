@@ -427,9 +427,8 @@ class TransformerReRanker(ReRanker):
         float
             Relevance score in [0, 1].
         """
-        if not self._loaded:
-            if not self._load_model():
-                return self._fallback.score_pair(query, document)
+        if not self._loaded and not self._load_model():
+            return self._fallback.score_pair(query, document)
 
         try:
             # Truncate document to max_length chars to avoid OOM

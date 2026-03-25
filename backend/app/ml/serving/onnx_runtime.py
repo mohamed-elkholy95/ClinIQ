@@ -275,7 +275,7 @@ class OnnxModelServer:
                 reason=f"ONNX Runtime inference failed: {exc}",
             ) from exc
 
-        outputs = dict(zip(self._output_names, raw_outputs))
+        outputs = dict(zip(self._output_names, raw_outputs, strict=False))
 
         logger.debug(
             "ONNX inference complete: model=%s latency=%.2fms",

@@ -13,10 +13,8 @@ from app.ml.search.reranker import (
     ClinicalRuleReRanker,
     ReRankCandidate,
     ReRankedResult,
-    ReRanker,
     TransformerReRanker,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -1,6 +1,6 @@
 """Risk scoring request and response schemas."""
 
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 

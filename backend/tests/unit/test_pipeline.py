@@ -1,16 +1,14 @@
 """Unit tests for the ClinicalPipeline orchestrator."""
 
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from app.ml.icd.model import ICDCodePrediction, ICDPredictionResult
 from app.ml.ner.model import Entity
 from app.ml.pipeline import ClinicalPipeline, PipelineConfig, PipelineResult
-from app.ml.risk.model import RiskAssessment, RiskFactor
+from app.ml.risk.model import RiskAssessment
 from app.ml.summarization.model import SummarizationResult
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

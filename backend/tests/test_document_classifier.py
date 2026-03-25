@@ -14,14 +14,12 @@ from app.ml.classifier.document_classifier import (
     DOCUMENT_KEYWORDS,
     DOCUMENT_SECTION_PATTERNS,
     STRUCTURAL_PROFILES,
-    BaseDocumentClassifier,
     ClassificationResult,
     ClassificationScore,
     DocumentType,
     RuleBasedDocumentClassifier,
     TransformerDocumentClassifier,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

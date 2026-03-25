@@ -8,14 +8,12 @@ AsyncSession to avoid database dependencies.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
 
 from app.services.analysis import AnalysisService
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -81,7 +79,7 @@ class TestStoreDocument:
         self, service: AnalysisService, mock_db: AsyncMock
     ):
         content = "Patient presents with chest pain."
-        doc = await service.store_document(content, title="Note #1")
+        await service.store_document(content, title="Note #1")
 
         # Verify db.add was called
         mock_db.add.assert_called_once()
@@ -100,7 +98,7 @@ class TestStoreDocument:
         self, service: AnalysisService, mock_db: AsyncMock
     ):
         user_id = uuid4()
-        doc = await service.store_document(
+        await service.store_document(
             "text",
             user_id=user_id,
             title="Custom",
@@ -134,7 +132,7 @@ class TestStoreEntities:
         self, service: AnalysisService, mock_db: AsyncMock, sample_entities: list[dict]
     ):
         doc_id = uuid4()
-        result = await service.store_entities(doc_id, sample_entities, model_version="1.0")
+        await service.store_entities(doc_id, sample_entities, model_version="1.0")
 
         # db.add should be called once per entity
         assert mock_db.add.call_count == len(sample_entities)

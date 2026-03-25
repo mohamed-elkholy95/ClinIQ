@@ -1,7 +1,7 @@
 """Common response models shared across all API endpoints."""
 
 from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 

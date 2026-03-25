@@ -10,7 +10,7 @@ import logging
 from datetime import date
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.ml.temporal.extractor import ClinicalTemporalExtractor

@@ -4,7 +4,6 @@ Validates union, intersection, and majority voting when combining
 multiple NER model outputs.
 """
 
-import pytest
 
 from app.ml.ner.model import CompositeNERModel, Entity, RuleBasedNERModel
 

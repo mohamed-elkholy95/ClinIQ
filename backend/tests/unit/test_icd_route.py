@@ -15,13 +15,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.api.v1.routes.icd import (
-    _run_icd_inference,
-    get_icd_code_details,
-    predict_icd_codes,
-)
 from app.api.schemas.icd import ICDPredictionRequest, ICDPredictionResponse
-
+from app.api.v1.routes.icd import _run_icd_inference, get_icd_code_details, predict_icd_codes
 
 # ---------------------------------------------------------------------------
 # Fake stand-ins
@@ -164,6 +159,7 @@ class TestPredictIcdCodes:
     async def test_inference_error_raises_500(self, mock_get: MagicMock) -> None:
         """InferenceError → HTTP 500."""
         from fastapi import HTTPException
+
         from app.core.exceptions import InferenceError
 
         mock_get.return_value = MagicMock(

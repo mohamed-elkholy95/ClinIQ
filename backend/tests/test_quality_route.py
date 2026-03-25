@@ -8,7 +8,6 @@ Covers:
 - Custom expected sections override
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app

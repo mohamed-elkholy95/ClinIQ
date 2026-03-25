@@ -37,8 +37,8 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
-from enum import Enum
+from datetime import date, timedelta
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 # Enums & constants
 # ---------------------------------------------------------------------------
 
-class TemporalType(str, Enum):
+class TemporalType(StrEnum):
     """Category of temporal expression."""
 
     DATE = "date"                # Specific date: "March 15, 2024"
@@ -60,7 +60,7 @@ class TemporalType(str, Enum):
     PERIOD = "period"            # Named period: "postoperative day 3"
 
 
-class TemporalRelation(str, Enum):
+class TemporalRelation(StrEnum):
     """Temporal ordering between two events.
 
     Based on a simplified Allen's interval algebra, matching the

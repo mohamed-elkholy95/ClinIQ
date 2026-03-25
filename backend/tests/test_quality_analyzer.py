@@ -20,17 +20,15 @@ Covers:
 import pytest
 
 from app.ml.quality.analyzer import (
+    DEFAULT_EXPECTED_SECTIONS,
+    KNOWN_SECTION_HEADERS,
     ClinicalNoteQualityAnalyzer,
     Finding,
     FindingSeverity,
     QualityConfig,
     QualityDimension,
-    QualityReport,
     QualityScore,
-    KNOWN_SECTION_HEADERS,
-    DEFAULT_EXPECTED_SECTIONS,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

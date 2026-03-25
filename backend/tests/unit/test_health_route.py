@@ -10,8 +10,6 @@ Tests cover:
 
 from __future__ import annotations
 
-import asyncio
-import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,7 +22,6 @@ from app.api.v1.routes.health import (
     liveness,
     readiness,
 )
-
 
 # ---------------------------------------------------------------------------
 # _probe_database
@@ -87,8 +84,6 @@ class TestProbeRedis:
         with patch.dict("sys.modules", {"redis.asyncio": mock_module, "redis": MagicMock()}):
             with patch("app.api.v1.routes.health.aioredis", mock_module, create=True):
                 # Re-import so the patched module is used.
-                import importlib
-                import app.api.v1.routes.health as health_mod
 
                 # Directly call with patched import inside the function body.
                 result = await _probe_redis(mock_settings)

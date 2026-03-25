@@ -1,7 +1,6 @@
 """Unit tests for evaluation metrics."""
 
 import numpy as np
-import pytest
 
 from app.ml.utils.metrics import (
     ClassificationMetrics,

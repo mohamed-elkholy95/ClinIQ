@@ -15,7 +15,6 @@ from app.ml.monitoring.metrics_collector import (
     _SimpleHistogram,
 )
 
-
 # ---------------------------------------------------------------------------
 # Internal primitives
 # ---------------------------------------------------------------------------
@@ -218,9 +217,8 @@ class TestInferenceTimer:
 
     def test_timer_records_error_on_exception(self) -> None:
         metrics = ModelMetrics(use_prometheus=False)
-        with pytest.raises(ValueError):
-            with metrics.time_inference("err-model", "ner"):
-                raise ValueError("test error")
+        with pytest.raises(ValueError), metrics.time_inference("err-model", "ner"):
+            raise ValueError("test error")
         data = metrics.get_metrics()
         assert data["error_count_total"]["err-model__ValueError"] == 1.0
         # Should NOT record inference latency on error
@@ -229,9 +227,8 @@ class TestInferenceTimer:
 
     def test_timer_does_not_swallow_exception(self) -> None:
         metrics = ModelMetrics(use_prometheus=False)
-        with pytest.raises(RuntimeError, match="boom"):
-            with metrics.time_inference("m"):
-                raise RuntimeError("boom")
+        with pytest.raises(RuntimeError, match="boom"), metrics.time_inference("m"):
+            raise RuntimeError("boom")
 
 
 # ---------------------------------------------------------------------------

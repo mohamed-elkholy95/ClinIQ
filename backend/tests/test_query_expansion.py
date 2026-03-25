@@ -9,13 +9,12 @@ from __future__ import annotations
 import pytest
 
 from app.ml.search.query_expansion import (
-    ExpandedQuery,
-    MedicalQueryExpander,
     _ABBREVIATION_TO_FULL,
     _FULL_TO_ABBREVIATION,
     _SYNONYM_LOOKUP,
+    ExpandedQuery,
+    MedicalQueryExpander,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -62,7 +61,7 @@ class TestAbbreviationDictionary:
 
     def test_reverse_mapping_consistency(self) -> None:
         """Every abbreviation should have a reverse lookup entry."""
-        for abbr, full in _ABBREVIATION_TO_FULL.items():
+        for _abbr, full in _ABBREVIATION_TO_FULL.items():
             reverse = _FULL_TO_ABBREVIATION.get(full.lower())
             assert reverse is not None, f"No reverse for {full}"
 

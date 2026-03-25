@@ -5,7 +5,6 @@ of the central model registry used by API route handlers.
 """
 
 import threading
-from unittest.mock import MagicMock, patch
 
 import pytest
 

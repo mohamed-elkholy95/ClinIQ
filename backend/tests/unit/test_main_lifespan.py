@@ -6,13 +6,9 @@ exception handler, general exception handler, and process-time middleware.
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.core.exceptions import ClinIQError, NotFoundError, ValidationError
-from app.main import app, _error_code_to_http_status
-
+from app.main import _error_code_to_http_status, app
 
 # ---------------------------------------------------------------------------
 # Lifespan
@@ -90,14 +86,13 @@ class TestProcessTimeMiddleware:
     def test_process_time_header_present(self) -> None:
         with patch("app.main.init_db", new_callable=AsyncMock), \
              patch("app.main.close_db", new_callable=AsyncMock), \
-             patch("app.main.configure_logging"):
-            with TestClient(app) as client:
-                resp = client.get("/")
-                assert "X-Process-Time" in resp.headers
-                # Should be a parseable float ending with 's'
-                val = resp.headers["X-Process-Time"]
-                assert val.endswith("s")
-                float(val.rstrip("s"))  # Should not raise
+             patch("app.main.configure_logging"), TestClient(app) as client:
+            resp = client.get("/")
+            assert "X-Process-Time" in resp.headers
+            # Should be a parseable float ending with 's'
+            val = resp.headers["X-Process-Time"]
+            assert val.endswith("s")
+            float(val.rstrip("s"))  # Should not raise
 
 
 # ---------------------------------------------------------------------------
@@ -111,11 +106,10 @@ class TestRootEndpoint:
     def test_root_returns_app_info(self) -> None:
         with patch("app.main.init_db", new_callable=AsyncMock), \
              patch("app.main.close_db", new_callable=AsyncMock), \
-             patch("app.main.configure_logging"):
-            with TestClient(app) as client:
-                resp = client.get("/")
-                assert resp.status_code == 200
-                data = resp.json()
-                assert "name" in data
-                assert "version" in data
-                assert "docs" in data
+             patch("app.main.configure_logging"), TestClient(app) as client:
+            resp = client.get("/")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert "name" in data
+            assert "version" in data
+            assert "docs" in data

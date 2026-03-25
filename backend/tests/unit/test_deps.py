@@ -6,13 +6,12 @@ database sessions, and ML pipeline instances to route handlers.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
 
 from app.api.v1.deps import get_ml_pipeline, get_superuser
-
 
 # ---------------------------------------------------------------------------
 # get_ml_pipeline

@@ -14,10 +14,10 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.ml.medications.extractor import (
-    ClinicalMedicationExtractor,
     DRUG_DICTIONARY,
-    RouteOfAdministration,
+    ClinicalMedicationExtractor,
     MedicationStatus,
+    RouteOfAdministration,
 )
 
 logger = logging.getLogger(__name__)

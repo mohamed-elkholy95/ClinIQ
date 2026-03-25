@@ -11,12 +11,7 @@ import time
 
 import pytest
 
-from app.ml.utils.inference_cache import (
-    InferenceCache,
-    _normalise,
-    make_cache_key,
-)
-
+from app.ml.utils.inference_cache import InferenceCache, _normalise, make_cache_key
 
 # ── Normalisation ────────────────────────────────────────────────────────
 

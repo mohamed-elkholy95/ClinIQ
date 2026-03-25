@@ -2,7 +2,7 @@
 
 import hashlib
 import logging
-import time
+from datetime import UTC
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -135,13 +135,13 @@ class AnalysisService:
 
     async def mark_document_processed(self, document_id: UUID) -> None:
         """Mark a document as processed."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from sqlalchemy import update
 
         await self.db.execute(
             update(Document)
             .where(Document.id == document_id)
-            .values(is_processed=True, processed_at=datetime.now(timezone.utc))
+            .values(is_processed=True, processed_at=datetime.now(UTC))
         )
         await self.db.flush()

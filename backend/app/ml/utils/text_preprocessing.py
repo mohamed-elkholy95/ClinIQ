@@ -3,11 +3,11 @@
 import hashlib
 import re
 import string
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    pass
 
 
 @dataclass
@@ -263,12 +263,9 @@ class ClinicalTextPreprocessor:
                     break
 
         # Create sections with content
-        for i, (start_pos, section_type, start_line) in enumerate(section_starts):
+        for i, (start_pos, section_type, _start_line) in enumerate(section_starts):
             # End position is start of next section or end of text
-            if i + 1 < len(section_starts):
-                end_pos = section_starts[i + 1][0]
-            else:
-                end_pos = len(text)
+            end_pos = section_starts[i + 1][0] if i + 1 < len(section_starts) else len(text)
 
             content = text[start_pos:end_pos].strip()
 

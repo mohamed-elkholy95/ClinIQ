@@ -7,7 +7,6 @@ lines 30–73 and 80–82 in deps.py.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -91,14 +90,13 @@ class TestDepsJWTAuth:
 
         with patch(
             "app.api.v1.deps.decode_access_token", return_value={"exp": 9999}
-        ):
-            with pytest.raises(HTTPException) as exc_info:
-                await get_current_user(
-                    db=mock_db,
-                    credentials=credentials,
-                    api_key=None,
-                    settings=_mock_settings(),
-                )
+        ), pytest.raises(HTTPException) as exc_info:
+            await get_current_user(
+                db=mock_db,
+                credentials=credentials,
+                api_key=None,
+                settings=_mock_settings(),
+            )
         assert exc_info.value.status_code == 401
 
     @pytest.mark.asyncio
@@ -116,14 +114,13 @@ class TestDepsJWTAuth:
 
         with patch(
             "app.api.v1.deps.decode_access_token", return_value={"sub": user_id}
-        ):
-            with pytest.raises(HTTPException) as exc_info:
-                await get_current_user(
-                    db=mock_db,
-                    credentials=credentials,
-                    api_key=None,
-                    settings=_mock_settings(),
-                )
+        ), pytest.raises(HTTPException) as exc_info:
+            await get_current_user(
+                db=mock_db,
+                credentials=credentials,
+                api_key=None,
+                settings=_mock_settings(),
+            )
         assert exc_info.value.status_code == 401
 
     @pytest.mark.asyncio
@@ -142,14 +139,13 @@ class TestDepsJWTAuth:
         with patch(
             "app.api.v1.deps.decode_access_token",
             return_value={"sub": str(user.id)},
-        ):
-            with pytest.raises(HTTPException) as exc_info:
-                await get_current_user(
-                    db=mock_db,
-                    credentials=credentials,
-                    api_key=None,
-                    settings=_mock_settings(),
-                )
+        ), pytest.raises(HTTPException) as exc_info:
+            await get_current_user(
+                db=mock_db,
+                credentials=credentials,
+                api_key=None,
+                settings=_mock_settings(),
+            )
         assert exc_info.value.status_code == 403
 
 

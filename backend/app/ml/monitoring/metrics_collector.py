@@ -16,7 +16,6 @@ Usage
 from __future__ import annotations
 
 import logging
-import math
 import time
 from collections import defaultdict
 from typing import Any
@@ -275,7 +274,7 @@ class ModelMetrics:
 
         def __init__(
             self,
-            metrics: "ModelMetrics",
+            metrics: ModelMetrics,
             model_name: str,
             prediction_type: str,
         ) -> None:
@@ -284,7 +283,7 @@ class ModelMetrics:
             self._prediction_type = prediction_type
             self._start: float = 0.0
 
-        def __enter__(self) -> "ModelMetrics._InferenceTimer":
+        def __enter__(self) -> ModelMetrics._InferenceTimer:
             self._start = time.monotonic()
             return self
 
@@ -299,7 +298,7 @@ class ModelMetrics:
 
     def time_inference(
         self, model_name: str, prediction_type: str = "default"
-    ) -> "ModelMetrics._InferenceTimer":
+    ) -> ModelMetrics._InferenceTimer:
         """Return a context manager that auto-records inference timing.
 
         Example
@@ -315,7 +314,7 @@ class ModelMetrics:
 
     def _try_init_prometheus(self) -> None:
         try:
-            from prometheus_client import Counter, Gauge, Histogram, REGISTRY  # noqa: F401
+            from prometheus_client import REGISTRY, Counter, Gauge, Histogram  # noqa: F401
 
             prefix = self._namespace
 
@@ -406,7 +405,6 @@ class ModelMetrics:
         """Read Prometheus metric samples and serialise to a plain dict."""
         try:
             from prometheus_client import REGISTRY
-            from prometheus_client.exposition import choose_encoder
 
             output: dict[str, Any] = {}
 

@@ -30,8 +30,8 @@ from __future__ import annotations
 import logging
 import math
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 import numpy as np
 
@@ -317,7 +317,7 @@ class HybridSearchEngine:
 
         # Build internal document representations
         documents: list[_Document] = []
-        for i, (text, did) in enumerate(zip(texts, ids)):
+        for _i, (text, did) in enumerate(zip(texts, ids, strict=False)):
             tokens = _tokenize(text)
             freqs: dict[str, int] = {}
             for t in tokens:
@@ -470,10 +470,7 @@ class HybridSearchEngine:
 
         # Normalise BM25 to [0, 1]
         bm25_max = bm25_scores.max()
-        if bm25_max > 0:
-            bm25_norm = bm25_scores / bm25_max
-        else:
-            bm25_norm = bm25_scores
+        bm25_norm = bm25_scores / bm25_max if bm25_max > 0 else bm25_scores
 
         # TF-IDF cosine scores (already normalised to [0, 1])
         q_vec = self._tfidf_query_vector(query_tokens)

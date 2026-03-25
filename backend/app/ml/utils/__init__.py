@@ -1,18 +1,18 @@
 """ML utilities module initialization."""
 
 from app.ml.utils.feature_engineering import (
-    BagOfWordsExtractor,
-    ClinicalFeatureExtractor,
-    FeatureConfig,
-    MEDICAL_STOPWORDS,
+                                              MEDICAL_STOPWORDS,
+                                              BagOfWordsExtractor,
+                                              ClinicalFeatureExtractor,
+                                              FeatureConfig,
 )
 from app.ml.utils.text_preprocessing import (
-    CLINICAL_SECTIONS,
-    MEDICAL_ABBREVIATIONS,
-    ClinicalTextPreprocessor,
-    PreprocessingConfig,
-    TextSection,
-    preprocess_clinical_text,
+                                              CLINICAL_SECTIONS,
+                                              MEDICAL_ABBREVIATIONS,
+                                              ClinicalTextPreprocessor,
+                                              PreprocessingConfig,
+                                              TextSection,
+                                              preprocess_clinical_text,
 )
 
 __all__ = [

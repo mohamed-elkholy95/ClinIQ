@@ -28,10 +28,8 @@ Task weights reflect approximate real-world traffic distribution:
 from __future__ import annotations
 
 import random
-from typing import Any
 
 from locust import HttpUser, between, task
-
 
 # ---------------------------------------------------------------------------
 # Sample clinical texts used in load tasks
@@ -451,9 +449,7 @@ class BatchProcessingUser(HttpUser):
             catch_response=True,
             timeout=30,
         ) as resp:
-            if resp.status_code in (200, 202):
-                resp.success()
-            elif resp.status_code in (422, 503):
+            if resp.status_code in (200, 202) or resp.status_code in (422, 503):
                 resp.success()
             else:
                 resp.failure(f"Unexpected status: {resp.status_code}")

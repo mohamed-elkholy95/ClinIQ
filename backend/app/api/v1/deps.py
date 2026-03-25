@@ -1,15 +1,14 @@
 """API dependencies for dependency injection."""
 
-from functools import lru_cache
+from datetime import UTC
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import decode_access_token, verify_api_key
 from app.db.models import APIKey, User
 from app.db.session import get_db_session
@@ -42,7 +41,7 @@ async def get_current_user(
         # Find API key by prefix
         key_prefix = api_key[:10]
         result = await db.execute(
-            select(APIKey).where(APIKey.key_prefix == key_prefix, APIKey.is_active == True)
+            select(APIKey).where(APIKey.key_prefix == key_prefix, APIKey.is_active)
         )
         api_key_obj = result.scalar_one_or_none()
 
@@ -53,8 +52,8 @@ async def get_current_user(
             user = result.scalar_one_or_none()
 
             # Update last used
-            from datetime import datetime, timezone
-            api_key_obj.last_used_at = datetime.now(timezone.utc)
+            from datetime import datetime
+            api_key_obj.last_used_at = datetime.now(UTC)
             await db.commit()
 
     if not user:

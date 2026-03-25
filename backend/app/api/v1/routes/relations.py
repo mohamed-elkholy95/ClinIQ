@@ -8,7 +8,6 @@ structured semantic relations.
 from __future__ import annotations
 
 import logging
-import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -16,10 +15,7 @@ from pydantic import BaseModel, Field
 
 from app.core.exceptions import ClinIQError
 from app.ml.ner.model import Entity
-from app.ml.relations.extractor import (
-    RelationType,
-    RuleBasedRelationExtractor,
-)
+from app.ml.relations.extractor import RelationType, RuleBasedRelationExtractor
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/relations", tags=["relations"])

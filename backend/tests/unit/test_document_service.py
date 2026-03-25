@@ -7,7 +7,6 @@ orchestrates the ML pipeline for single and batch document analysis.
 from __future__ import annotations
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 from app.core.exceptions import InferenceError
 from app.services.document_service import AnalysisService

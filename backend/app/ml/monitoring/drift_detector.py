@@ -16,7 +16,7 @@ import logging
 import re
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -77,7 +77,7 @@ class DriftReport:
     feature_drifts: dict[str, dict[str, Any]]
     reference_stats: dict[str, Any]
     current_stats: dict[str, Any]
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     window_size: int = 100
 
     def to_dict(self) -> dict[str, Any]:

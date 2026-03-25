@@ -6,11 +6,11 @@ Supports both free-text clinical narratives and structured medication lists.
 """
 
 from app.ml.medications.extractor import (
-    ClinicalMedicationExtractor,
-    Dosage,
-    MedicationMention,
-    MedicationExtractionResult,
-    RouteOfAdministration,
+                                          ClinicalMedicationExtractor,
+                                          Dosage,
+                                          MedicationExtractionResult,
+                                          MedicationMention,
+                                          RouteOfAdministration,
 )
 
 __all__ = [

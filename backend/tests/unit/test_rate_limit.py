@@ -6,14 +6,12 @@ window are allowed, that excess requests get 429, and that rate-limit
 headers are always present.
 """
 
-import pytest
+from unittest.mock import patch
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.middleware.rate_limit import RateLimitMiddleware
-
-
-from unittest.mock import patch, MagicMock
 
 
 def _make_app_and_client(max_requests: int = 5, window: int = 60):

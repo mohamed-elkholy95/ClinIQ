@@ -26,13 +26,13 @@ import logging
 import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
-from app.ml.search.hybrid import HybridSearchEngine, SearchResult
+from app.ml.search.hybrid import HybridSearchEngine
 from app.ml.search.query_expansion import MedicalQueryExpander
 from app.ml.search.reranker import ClinicalRuleReRanker, ReRankCandidate
 

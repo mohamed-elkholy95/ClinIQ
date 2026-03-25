@@ -3,12 +3,7 @@
 import pytest
 
 from app.ml.ner.model import Entity
-from app.ml.risk.model import (
-    RISK_CATEGORIES,
-    RiskAssessment,
-    RiskFactor,
-    RuleBasedRiskScorer,
-)
+from app.ml.risk.model import RISK_CATEGORIES, RiskAssessment, RiskFactor, RuleBasedRiskScorer
 
 
 class TestRiskFactor:

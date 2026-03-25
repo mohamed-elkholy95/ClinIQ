@@ -13,13 +13,7 @@ import numpy as np
 import pytest
 
 from app.core.exceptions import InferenceError, ModelLoadError
-from app.ml.ner.model import (
-    Entity,
-    SpacyNERModel,
-    TransformerNERModel,
-    ENTITY_TYPES,
-)
-
+from app.ml.ner.model import ENTITY_TYPES, Entity, SpacyNERModel, TransformerNERModel
 
 # ---------------------------------------------------------------------------
 # Entity dataclass

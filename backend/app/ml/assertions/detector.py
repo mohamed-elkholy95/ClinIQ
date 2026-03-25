@@ -35,13 +35,13 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class AssertionStatus(str, Enum):
+class AssertionStatus(StrEnum):
     """Assertion status for a clinical entity.
 
     Values follow the HL7/i2b2 assertion taxonomy:
@@ -61,7 +61,7 @@ class AssertionStatus(str, Enum):
     FAMILY = "family"
 
 
-class TriggerType(str, Enum):
+class TriggerType(StrEnum):
     """Direction and type of an assertion trigger.
 
     - pre: trigger occurs BEFORE the entity (e.g., "no [entity]")
@@ -656,10 +656,7 @@ class RuleBasedAssertionDetector(AssertionDetector):
         best_match = None
         if best_pre and best_post:
             # Prefer higher priority; on tie, prefer pre-entity
-            if best_pre[0].priority >= best_post[0].priority:
-                best_match = best_pre
-            else:
-                best_match = best_post
+            best_match = best_pre if best_pre[0].priority >= best_post[0].priority else best_post
         elif best_pre:
             best_match = best_pre
         elif best_post:
@@ -737,7 +734,7 @@ class RuleBasedAssertionDetector(AssertionDetector):
             # Check for terminators between trigger and entity
             between = pre_context[match.end():]
             terminated = False
-            for term_trigger, term_pattern in self._terminators:
+            for _term_trigger, term_pattern in self._terminators:
                 if term_pattern.search(between):
                     terminated = True
                     break

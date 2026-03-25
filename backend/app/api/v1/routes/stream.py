@@ -25,7 +25,7 @@ import hashlib
 import json
 import logging
 import time
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Request, status
 from fastapi.responses import StreamingResponse

@@ -12,10 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.core.exceptions import InferenceError, ModelLoadError
-from app.ml.summarization.model import (
-    AbstractiveSummarizer,
-    SummarizationResult,
-)
+from app.ml.summarization.model import AbstractiveSummarizer, SummarizationResult
 
 
 class TestAbstractiveSummarizerLoad:

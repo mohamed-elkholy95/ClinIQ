@@ -6,8 +6,7 @@ management, and current-user profile retrieval.
 
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,6 +21,7 @@ from app.api.schemas.auth import (
     UserCreate,
     UserResponse,
 )
+from app.api.v1.deps import get_current_user
 from app.core.config import Settings, get_settings
 from app.core.security import (
     create_access_token,
@@ -30,7 +30,6 @@ from app.core.security import (
     hash_api_key,
     verify_password,
 )
-from app.api.v1.deps import get_current_user
 from app.db.models import APIKey, User
 from app.db.session import get_db_session
 

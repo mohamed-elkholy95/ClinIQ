@@ -2,20 +2,19 @@
 
 import logging
 import time
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
-from collections.abc import Callable
-from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.middleware.rate_limit import RateLimitMiddleware
 
 from app.api.v1.routes import api_router
 from app.core.config import get_settings
 from app.core.exceptions import ClinIQError
 from app.db.session import close_db, init_db
 from app.middleware.logging import configure_logging
+from app.middleware.rate_limit import RateLimitMiddleware
 
 # Configure logging
 logging.basicConfig(

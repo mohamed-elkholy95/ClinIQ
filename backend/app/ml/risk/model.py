@@ -726,7 +726,7 @@ class MLRiskScorer(BaseRiskScorer):
                     factors=[],
                     recommendations=["ML risk model not yet trained; manual review advised"],
                     processing_time_ms=(time.time() - start_time) * 1000,
-                    category_scores={cat: 0.0 for cat in RISK_CATEGORIES},
+                    category_scores=dict.fromkeys(RISK_CATEGORIES, 0.0),
                     model_name=self.model_name,
                     model_version=self.version,
                 )
@@ -745,7 +745,7 @@ class MLRiskScorer(BaseRiskScorer):
                     f"ML risk model score: {overall_score:.1f}/100 ({risk_level})"
                 ],
                 processing_time_ms=processing_time,
-                category_scores={cat: 0.0 for cat in RISK_CATEGORIES},
+                category_scores=dict.fromkeys(RISK_CATEGORIES, 0.0),
                 model_name=self.model_name,
                 model_version=self.version,
             )
@@ -764,7 +764,6 @@ class MLRiskScorer(BaseRiskScorer):
         icd_codes: list[str] | None,
     ) -> list[float]:
         """Convert inputs into a flat feature vector for the classifier."""
-        import numpy as np
 
         features: list[float] = []
 

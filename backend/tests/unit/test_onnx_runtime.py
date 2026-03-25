@@ -86,13 +86,11 @@ class TestOnnxModelServerLoad:
         model_file.write_bytes(b"fake")
         server = OnnxModelServer(model_path=str(model_file))
 
-        with patch.dict("sys.modules", {"onnxruntime": None}):
-            with patch(
-                "builtins.__import__",
-                side_effect=ImportError("No module named 'onnxruntime'"),
-            ):
-                with pytest.raises(ModelLoadError, match="onnxruntime"):
-                    server.load()
+        with patch.dict("sys.modules", {"onnxruntime": None}), patch(
+            "builtins.__import__",
+            side_effect=ImportError("No module named 'onnxruntime'"),
+        ), pytest.raises(ModelLoadError, match="onnxruntime"):
+            server.load()
 
     def test_raises_when_model_file_missing(self) -> None:
         """Should raise ModelLoadError if .onnx file doesn't exist."""
@@ -125,7 +123,7 @@ class TestOnnxModelServerLoad:
         server = OnnxModelServer(model_path=str(model_file))
 
         with patch.dict("sys.modules", {"onnxruntime": mock_ort}):
-            with patch("app.ml.serving.onnx_runtime.OnnxModelServer.load") as mock_load:
+            with patch("app.ml.serving.onnx_runtime.OnnxModelServer.load"):
                 # Just test the state management
                 server._loaded = True
                 assert server.is_loaded
@@ -278,14 +276,13 @@ class TestOnnxExportHelper:
         mock_torch = MagicMock()
         mock_model = MagicMock()
 
-        with patch.dict("sys.modules", {"torch": mock_torch}):
-            with patch(
-                "app.ml.serving.onnx_runtime.OnnxModelServer.export_from_pytorch"
-            ) as mock_export:
-                mock_export.return_value = output
-                result = OnnxModelServer.export_from_pytorch(
-                    model=mock_model,
-                    dummy_input={"input_ids": MagicMock()},
-                    output_path=str(output),
-                )
-                assert result == output
+        with patch.dict("sys.modules", {"torch": mock_torch}), patch(
+            "app.ml.serving.onnx_runtime.OnnxModelServer.export_from_pytorch"
+        ) as mock_export:
+            mock_export.return_value = output
+            result = OnnxModelServer.export_from_pytorch(
+                model=mock_model,
+                dummy_input={"input_ids": MagicMock()},
+                output_path=str(output),
+            )
+            assert result == output

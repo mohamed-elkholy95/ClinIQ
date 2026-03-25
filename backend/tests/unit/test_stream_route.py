@@ -12,8 +12,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.api.v1.routes.stream import _sse_event, _stream_analysis
 from app.api.schemas.analysis import AnalysisRequest
+from app.api.v1.routes.stream import _sse_event, _stream_analysis
 
 # Mock target base — stream.py imports these from app.services.model_registry
 _MOCK_BASE = "app.api.v1.routes.stream"

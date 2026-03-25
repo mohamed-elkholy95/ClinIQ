@@ -22,16 +22,13 @@ import pytest
 
 from app.ml.ner.model import Entity
 from app.ml.relations.extractor import (
-    RELATION_PATTERNS,
     RELATION_TYPE_CONSTRAINTS,
-    BaseRelationExtractor,
     Relation,
     RelationExtractionResult,
     RelationType,
     RuleBasedRelationExtractor,
     TransformerRelationExtractor,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

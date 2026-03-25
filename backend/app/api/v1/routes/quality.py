@@ -6,12 +6,11 @@ for NLP processing *before* running the full inference pipeline.
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.core.config import Settings, get_settings
 from app.ml.quality.analyzer import (
     ClinicalNoteQualityAnalyzer,
     QualityConfig,

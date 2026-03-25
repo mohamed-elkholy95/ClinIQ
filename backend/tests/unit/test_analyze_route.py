@@ -11,20 +11,11 @@ Tests cover:
 
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass, field
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.api.v1.routes.analyze import (
-    _run_icd,
-    _run_ner,
-    _run_risk,
-    _run_summary,
-    run_analysis,
-)
 from app.api.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -34,7 +25,7 @@ from app.api.schemas.analysis import (
     RiskConfig,
     SummaryConfig,
 )
-
+from app.api.v1.routes.analyze import _run_icd, _run_ner, _run_risk, _run_summary, run_analysis
 
 # ---------------------------------------------------------------------------
 # Lightweight stand-ins for ML-layer dataclasses
@@ -517,6 +508,7 @@ class TestRunAnalysis:
     async def test_document_processing_error_raises_422(self, mock_get: MagicMock) -> None:
         """DocumentProcessingError during pipeline → HTTP 422."""
         from fastapi import HTTPException
+
         from app.core.exceptions import DocumentProcessingError
 
         mock_get.return_value = MagicMock(

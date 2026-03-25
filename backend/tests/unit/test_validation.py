@@ -1,6 +1,5 @@
 """Tests for clinical text input validation."""
 
-import pytest
 
 from app.ml.utils.validation import validate_clinical_text
 

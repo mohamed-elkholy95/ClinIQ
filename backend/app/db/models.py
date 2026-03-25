@@ -5,27 +5,27 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
     ForeignKey,
     Index,
     Integer,
-    JSON,
     String,
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.session import Base
 
 # Use JSONB on PostgreSQL, fall back to JSON on other dialects (e.g. SQLite for tests).
 PortableJSON = JSON().with_variant(JSONB, "postgresql")
 
-from app.db.session import Base
-
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    pass
 
 
 class TimestampMixin:

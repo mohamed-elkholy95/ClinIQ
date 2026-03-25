@@ -15,13 +15,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.api.v1.routes.risk import (
-    _run_risk_scoring,
-    _score_to_category,
-    calculate_risk_score,
-)
 from app.api.schemas.risk import RiskScoreRequest, RiskScoreResponse
-
+from app.api.v1.routes.risk import _run_risk_scoring, _score_to_category, calculate_risk_score
 
 # ---------------------------------------------------------------------------
 # Fake stand-ins
@@ -231,6 +226,7 @@ class TestCalculateRiskScore:
     async def test_inference_error_raises_500(self, mock_get: MagicMock) -> None:
         """InferenceError → HTTP 500."""
         from fastapi import HTTPException
+
         from app.core.exceptions import InferenceError
 
         mock_get.return_value = MagicMock(

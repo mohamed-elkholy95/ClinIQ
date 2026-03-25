@@ -10,13 +10,12 @@ Tests cover:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.api.v1.routes.ner import _run_ner_inference, extract_entities
 from app.api.schemas.ner import NERRequest, NERResponse
-
+from app.api.v1.routes.ner import _run_ner_inference, extract_entities
 
 # ---------------------------------------------------------------------------
 # Fake Entity stand-in
@@ -227,6 +226,7 @@ class TestExtractEntities:
     async def test_inference_error_raises_500(self, mock_get: MagicMock) -> None:
         """InferenceError from model → HTTP 500."""
         from fastapi import HTTPException
+
         from app.core.exceptions import InferenceError
 
         mock_get.return_value = MagicMock(

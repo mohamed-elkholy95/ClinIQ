@@ -5,25 +5,18 @@ main.py exception handlers, summarization error propagation, drift detector
 branches, metrics collector gauge methods, and document service.
 """
 
-import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 
-from app.ml.ner.model import (
-    CompositeNERModel,
-    Entity,
-    RuleBasedNERModel,
-    TransformerNERModel,
-)
-from app.ml.icd.model import SklearnICDClassifier, ICDPredictionResult
-from app.ml.dental.model import DentalNERModel
-from app.ml.monitoring.drift_detector import TextDistributionMonitor, PredictionMonitor
-from app.ml.monitoring.metrics_collector import ModelMetrics
-from app.ml.summarization.model import ExtractiveSummarizer
 from app.core.exceptions import InferenceError
-
+from app.ml.dental.model import DentalNERModel
+from app.ml.icd.model import SklearnICDClassifier
+from app.ml.monitoring.drift_detector import PredictionMonitor, TextDistributionMonitor
+from app.ml.monitoring.metrics_collector import ModelMetrics
+from app.ml.ner.model import CompositeNERModel, Entity, TransformerNERModel
+from app.ml.summarization.model import ExtractiveSummarizer
 
 # ---------------------------------------------------------------------------
 # 1. NER — TransformerNER BIO tag continuation, CompositeNER intersection/overlap
@@ -394,10 +387,11 @@ class TestMainExceptionHandlers:
 
     def test_cliniq_error_returns_structured_json(self):
         """ClinIQError handler returns error_code and details (lines 113-114)."""
-        from fastapi.testclient import TestClient
         from fastapi import APIRouter
-        from app.main import app
+        from fastapi.testclient import TestClient
+
         from app.core.exceptions import ClinIQError
+        from app.main import app
 
         test_router = APIRouter(prefix="/test-err")
 
@@ -423,8 +417,9 @@ class TestMainExceptionHandlers:
 
     def test_general_exception_returns_500(self):
         """General exception handler returns 500 with INTERNAL_ERROR (lines 127-128)."""
-        from fastapi.testclient import TestClient
         from fastapi import APIRouter
+        from fastapi.testclient import TestClient
+
         from app.main import app
 
         test_router = APIRouter(prefix="/test-err2")
@@ -507,6 +502,7 @@ class TestAnalysisSchemaEdge:
     def test_analysis_request_empty_text_rejected(self):
         """Empty text in AnalysisRequest raises ValidationError."""
         from pydantic import ValidationError
+
         from app.api.schemas.analysis import AnalysisRequest
 
         with pytest.raises(ValidationError):
@@ -515,6 +511,7 @@ class TestAnalysisSchemaEdge:
     def test_analysis_request_missing_text_rejected(self):
         """Missing text field raises ValidationError."""
         from pydantic import ValidationError
+
         from app.api.schemas.analysis import AnalysisRequest
 
         with pytest.raises(ValidationError):
@@ -530,8 +527,9 @@ class TestRateLimitEdge:
 
     def test_rate_limit_middleware_init(self):
         """RateLimitMiddleware can be initialized."""
-        from app.middleware.rate_limit import RateLimitMiddleware
         from starlette.applications import Starlette
+
+        from app.middleware.rate_limit import RateLimitMiddleware
 
         app = Starlette()
         middleware = RateLimitMiddleware(app)

@@ -71,10 +71,7 @@ async def prometheus_metrics() -> Response:
     (e.g. internal-only service mesh) is the recommended protection.
     """
     try:
-        from prometheus_client import (  # type: ignore[import-untyped]
-            REGISTRY,
-            generate_latest,
-        )
+        from prometheus_client import REGISTRY, generate_latest  # type: ignore[import-untyped]
 
         metrics_output = generate_latest(REGISTRY)
         return Response(

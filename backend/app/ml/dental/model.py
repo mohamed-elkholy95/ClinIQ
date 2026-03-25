@@ -9,7 +9,7 @@ dental expertise.
 import logging
 import re
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from app.ml.ner.model import Entity
@@ -17,7 +17,7 @@ from app.ml.ner.model import Entity
 logger = logging.getLogger(__name__)
 
 
-class ToothNumberingSystem(str, Enum):
+class ToothNumberingSystem(StrEnum):
     """Supported tooth numbering systems."""
 
     UNIVERSAL = "universal"  # 1-32 (US system)
@@ -25,7 +25,7 @@ class ToothNumberingSystem(str, Enum):
     PALMER = "palmer"  # Quadrant + number with symbols
 
 
-class DentalSurface(str, Enum):
+class DentalSurface(StrEnum):
     """Tooth surfaces."""
 
     M = "mesial"
@@ -145,7 +145,7 @@ class DentalNERModel:
             )
 
         # Compile procedure patterns
-        for proc, entity_type in DENTAL_PROCEDURES.items():
+        for proc, _entity_type in DENTAL_PROCEDURES.items():
             pattern = r"\b" + re.escape(proc) + r"\b"
             self._compiled_patterns[f"proc_{proc}"] = re.compile(
                 pattern, re.IGNORECASE
@@ -327,7 +327,6 @@ class DentalNERModel:
             "caries": "caries",
             "cavity": "caries",
             "decay": "caries",
-            "caries": "caries",
             "fracture": "fracture",
             "crack": "fracture",
             "abscess": "abscess",
@@ -441,9 +440,8 @@ class PeriodontalRiskAssessment:
 
         pocket_depths = []
         for e in perio_entities:
-            if e.metadata and e.metadata.get("measurement_type") == "pocket_depth":
-                if e.periodontal_value:
-                    pocket_depths.append(e.periodontal_value)
+            if e.metadata and e.metadata.get("measurement_type") == "pocket_depth" and e.periodontal_value:
+                pocket_depths.append(e.periodontal_value)
 
         # Assess based on pocket depths
         if pocket_depths:
@@ -560,10 +558,7 @@ class CDTCodePredictor:
         for procedure, cdt_info in self.CDT_CODES.items():
             if procedure in text_lower:
                 # Calculate confidence based on exact match vs partial
-                if f" {procedure} " in f" {text_lower} ":
-                    confidence = 0.90
-                else:
-                    confidence = 0.75
+                confidence = 0.9 if f" {procedure} " in f" {text_lower} " else 0.75
 
                 predictions.append(
                     {

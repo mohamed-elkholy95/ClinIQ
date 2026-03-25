@@ -29,7 +29,6 @@ Tests cover:
 import pytest
 
 from app.ml.assertions.detector import (
-    AssertionDetector,
     AssertionResult,
     AssertionStatus,
     ConTextAssertionDetector,
@@ -39,7 +38,6 @@ from app.ml.assertions.detector import (
     _find_entity_sentence,
     _segment_sentences,
 )
-
 
 # ---------------------------------------------------------------------------
 # Enum and dataclass tests

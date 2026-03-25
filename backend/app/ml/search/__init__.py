@@ -12,19 +12,15 @@ Provides a multi-stage search pipeline for clinical documents:
    multi-turn clinical analysis workflows.
 """
 
-from app.ml.search.conversation_memory import (
-    ConversationMemory,
-    ConversationTurn,
-    SessionContext,
-)
+from app.ml.search.conversation_memory import ConversationMemory, ConversationTurn, SessionContext
 from app.ml.search.hybrid import HybridSearchEngine, SearchResult
 from app.ml.search.query_expansion import ExpandedQuery, MedicalQueryExpander
 from app.ml.search.reranker import (
-    ClinicalRuleReRanker,
-    ReRankCandidate,
-    ReRankedResult,
-    ReRanker,
-    TransformerReRanker,
+                                               ClinicalRuleReRanker,
+                                               ReRankCandidate,
+                                               ReRankedResult,
+                                               ReRanker,
+                                               TransformerReRanker,
 )
 
 __all__ = [

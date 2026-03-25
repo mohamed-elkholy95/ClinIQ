@@ -9,17 +9,12 @@ Tests cover:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.api.v1.routes.models import (
-    _model_version_to_dict,
-    get_model,
-    list_models,
-)
-
+from app.api.v1.routes.models import _model_version_to_dict, get_model, list_models
 
 # ---------------------------------------------------------------------------
 # Fake ModelVersion stand-in
@@ -50,8 +45,8 @@ def _fake_model_version(
     mv.config = config or {}
     mv.deployed_at = deployed_at
     mv.deployed_by = deployed_by
-    mv.created_at = datetime(2026, 3, 1, tzinfo=timezone.utc)
-    mv.updated_at = datetime(2026, 3, 1, tzinfo=timezone.utc)
+    mv.created_at = datetime(2026, 3, 1, tzinfo=UTC)
+    mv.updated_at = datetime(2026, 3, 1, tzinfo=UTC)
     return mv
 
 
@@ -76,7 +71,7 @@ class TestModelVersionToDict:
 
     def test_deployed_at_iso(self) -> None:
         """deployed_at is ISO-formatted when present."""
-        dt = datetime(2026, 3, 15, 10, 0, tzinfo=timezone.utc)
+        dt = datetime(2026, 3, 15, 10, 0, tzinfo=UTC)
         mv = _fake_model_version(deployed_at=dt)
         d = _model_version_to_dict(mv)
         assert d["deployed_at"] == dt.isoformat()

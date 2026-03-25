@@ -6,18 +6,15 @@ detail-level behaviour, and edge cases.
 """
 
 import math
-import re
 
 import numpy as np
 import pytest
 
 from app.ml.summarization.model import (
-    ExtractiveSummarizer,
-    SummarizationResult,
-    _CLINICAL_IMPORTANCE_PATTERNS,
     _DETAIL_RATIO,
     _DETAIL_SENTENCE_CAP,
-    _HIGH_PRIORITY_SECTIONS,
+    ExtractiveSummarizer,
+    SummarizationResult,
 )
 
 

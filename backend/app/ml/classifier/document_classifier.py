@@ -31,10 +31,10 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
-from app.core.exceptions import InferenceError, ModelLoadError
+from app.core.exceptions import InferenceError
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """Standard clinical document types.
 
     Based on HL7 CDA document type codes and common EHR categorisations.
@@ -655,10 +655,7 @@ class RuleBasedDocumentClassifier(BaseDocumentClassifier):
             if not stripped:
                 continue
             # All-caps line (2–60 chars) — common header style
-            if stripped.isupper() and 2 <= len(stripped) <= 60:
-                count += 1
-            # Line ending with colon (up to 80 chars)
-            elif stripped.endswith(":") and len(stripped) <= 80:
+            if stripped.isupper() and 2 <= len(stripped) <= 60 or stripped.endswith(":") and len(stripped) <= 80:
                 count += 1
         return count
 
@@ -791,10 +788,7 @@ class TransformerDocumentClassifier(BaseDocumentClassifier):
             If the model cannot be loaded.
         """
         try:
-            from transformers import (
-                AutoModelForSequenceClassification,
-                AutoTokenizer,
-            )
+            from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
             self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self._model = AutoModelForSequenceClassification.from_pretrained(

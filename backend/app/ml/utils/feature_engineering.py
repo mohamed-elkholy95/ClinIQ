@@ -8,10 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from app.ml.utils.text_preprocessing import (
-    ClinicalTextPreprocessor,
-    PreprocessingConfig,
-)
+from app.ml.utils.text_preprocessing import ClinicalTextPreprocessor
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray

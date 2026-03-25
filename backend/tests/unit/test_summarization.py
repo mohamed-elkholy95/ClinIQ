@@ -2,11 +2,7 @@
 
 import pytest
 
-from app.ml.summarization.model import (
-    ExtractiveSummarizer,
-    SummarizationResult,
-)
-
+from app.ml.summarization.model import ExtractiveSummarizer, SummarizationResult
 
 SAMPLE_CLINICAL_NOTE = """
 CHIEF COMPLAINT: Follow-up for type 2 diabetes mellitus.

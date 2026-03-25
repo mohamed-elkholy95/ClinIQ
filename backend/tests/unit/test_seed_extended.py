@@ -1,8 +1,6 @@
 """Extended tests for db/seed.py — covering the main() entry point (lines 104-109)."""
 
-from unittest.mock import patch, AsyncMock
-
-import pytest
+from unittest.mock import patch
 
 from app.db.seed import main
 

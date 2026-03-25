@@ -7,18 +7,13 @@ _components helper, and _collect_model_versions helper in pipeline.py.
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
 from app.ml.dental.model import DentalAssessment
-from app.ml.icd.model import ICDCodePrediction, ICDPredictionResult
 from app.ml.ner.model import Entity
-from app.ml.pipeline import ClinicalPipeline, PipelineConfig, PipelineResult
-from app.ml.risk.model import RiskAssessment
-from app.ml.summarization.model import SummarizationResult
-
+from app.ml.pipeline import ClinicalPipeline, PipelineConfig
 
 SAMPLE_TEXT = (
     "Patient presents with moderate periodontitis affecting teeth #18 and #19. "
@@ -245,7 +240,7 @@ class TestRunDental:
     ) -> None:
         """Dental disabled → no dental processing."""
         config = PipelineConfig(enable_dental=False)
-        result = dental_pipeline.process(SAMPLE_TEXT, config=config)
+        dental_pipeline.process(SAMPLE_TEXT, config=config)
         dental_pipeline._dental_model.extract_entities.assert_not_called()
 
 

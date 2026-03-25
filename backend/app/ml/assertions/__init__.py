@@ -7,13 +7,13 @@ else (e.g., family history).
 """
 
 from app.ml.assertions.detector import (
-    AssertionDetector,
-    AssertionResult,
-    AssertionStatus,
-    ConTextAssertionDetector,
-    RuleBasedAssertionDetector,
-    Trigger,
-    TriggerType,
+                                        AssertionDetector,
+                                        AssertionResult,
+                                        AssertionStatus,
+                                        ConTextAssertionDetector,
+                                        RuleBasedAssertionDetector,
+                                        Trigger,
+                                        TriggerType,
 )
 
 __all__ = [

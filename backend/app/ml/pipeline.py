@@ -14,7 +14,6 @@ import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
-from app.core.exceptions import InferenceError, ModelLoadError
 from app.ml.dental.model import DentalAssessment, DentalNERModel, PeriodontalRiskAssessor
 from app.ml.icd.model import BaseICDClassifier, ICDPredictionResult
 from app.ml.ner.model import BaseNERModel, Entity
@@ -302,7 +301,7 @@ class ClinicalPipeline:
         doc_ids: list[str | None] = document_ids or [None] * len(texts)
         results: list[PipelineResult] = []
 
-        for text, doc_id in zip(texts, doc_ids):
+        for text, doc_id in zip(texts, doc_ids, strict=False):
             result = self.process(text, config=config, document_id=doc_id)
             results.append(result)
 

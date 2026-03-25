@@ -13,15 +13,7 @@ import pytest
 
 from app.core.exceptions import InferenceError, ModelLoadError
 from app.ml.ner.model import Entity
-from app.ml.risk.model import (
-    MLRiskScorer,
-    RuleBasedRiskScorer,
-    RiskAssessment,
-    RiskFactor,
-    RISK_CATEGORIES,
-    _CRITICAL_KEYWORDS,
-)
-
+from app.ml.risk.model import MLRiskScorer, RiskAssessment, RiskFactor, RuleBasedRiskScorer
 
 # ---------------------------------------------------------------------------
 # MLRiskScorer

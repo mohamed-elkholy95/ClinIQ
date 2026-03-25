@@ -6,7 +6,6 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.core.config import get_settings
-from app.db.session import Base
 
 # Import all models so they register with Base.metadata
 from app.db.models import (  # noqa: F401
@@ -20,6 +19,7 @@ from app.db.models import (  # noqa: F401
     Prediction,
     User,
 )
+from app.db.session import Base
 
 config = context.config
 

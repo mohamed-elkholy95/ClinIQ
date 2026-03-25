@@ -5,12 +5,10 @@ caching, multi-class vs binary paths, and the AttentionExplainer's
 attention-weight extraction from transformer outputs.
 """
 
-from unittest.mock import MagicMock, patch, PropertyMock
-import sys
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Minimal torch mock for AttentionExplainer tests
@@ -77,7 +75,6 @@ from app.ml.explainability.shap_explainer import (
     SHAPExplanation,
     TokenSHAPExplainer,
 )
-
 
 # ---------------------------------------------------------------------------
 # TokenSHAPExplainer — real SHAP path

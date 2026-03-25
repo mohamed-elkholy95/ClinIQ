@@ -2,9 +2,7 @@
 PeriodontalRiskAssessor lifecycle, primary tooth extraction, and procedure
 extraction paths."""
 
-from unittest.mock import MagicMock, patch
 
-import pytest
 
 from app.ml.dental.model import (
     DentalAssessment,
@@ -13,7 +11,6 @@ from app.ml.dental.model import (
     PeriodontalRiskAssessment,
     PeriodontalRiskAssessor,
 )
-
 
 # ---------------------------------------------------------------------------
 # DentalAssessment.to_dict
@@ -138,7 +135,7 @@ class TestDentalNERPrimaryTeeth:
         model.load()
         # Use context that makes tooth-letter pattern likely to match
         entities = model.extract_entities("Tooth A is carious, tooth T needs extraction")
-        tooth_entities = [e for e in entities if e.entity_type == "TOOTH_PRIMARY"]
+        [e for e in entities if e.entity_type == "TOOTH_PRIMARY"]
         # The pattern may or may not match depending on regex specifics;
         # at minimum verify the method runs without error
         assert isinstance(entities, list)
@@ -162,7 +159,7 @@ class TestDentalNERProcedures:
             "Patient underwent extraction of tooth 18. Crown placement on 36. "
             "Root canal treatment completed. Scaling and root planing performed."
         )
-        proc_entities = [e for e in entities if "PROCEDURE" in e.entity_type
+        [e for e in entities if "PROCEDURE" in e.entity_type
                          or "TREATMENT" in e.entity_type]
         assert isinstance(entities, list)
 

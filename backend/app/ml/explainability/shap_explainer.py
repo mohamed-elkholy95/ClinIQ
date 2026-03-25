@@ -166,7 +166,7 @@ class TokenSHAPExplainer(BaseExplainer):
         start = time.time()
 
         try:
-            import shap
+            import shap  # noqa: F401
         except ImportError:
             logger.warning("shap not installed — falling back to TF-IDF weight heuristic")
             return self._fallback_explain(text, start)
@@ -241,7 +241,7 @@ class TokenSHAPExplainer(BaseExplainer):
 
     def _get_shap_explainer(self, vectorizer: Any) -> Any:
         """Build or return cached KernelExplainer."""
-        import shap
+        import shap  # noqa: F401
 
         if self._shap_explainer is not None:
             return self._shap_explainer
@@ -268,7 +268,7 @@ class TokenSHAPExplainer(BaseExplainer):
     def _build_attribution_dict(self, shap_values: NDArray[np.float64]) -> dict[str, float]:
         """Map SHAP values to feature names, filtering near-zero entries."""
         attributions: dict[str, float] = {}
-        for name, val in zip(self._feature_names, shap_values):
+        for name, val in zip(self._feature_names, shap_values, strict=False):
             if abs(val) > 1e-6:
                 attributions[name] = round(float(val), 6)
         return attributions
@@ -292,7 +292,7 @@ class TokenSHAPExplainer(BaseExplainer):
         names = vect.get_feature_names_out().tolist()
 
         attributions: dict[str, float] = {
-            name: round(float(val), 6) for name, val in zip(names, x) if val > 0
+            name: round(float(val), 6) for name, val in zip(names, x, strict=False) if val > 0
         }
         top_pos, top_neg = self._rank_features(attributions)
 
@@ -423,7 +423,7 @@ class AttentionExplainer(BaseExplainer):
             token_importance = token_importance / token_importance.max()
 
         attributions: dict[str, float] = {}
-        for token, weight in zip(tokens, token_importance):
+        for token, weight in zip(tokens, token_importance, strict=False):
             # Skip special tokens
             if token in ("[CLS]", "[SEP]", "<s>", "</s>", "[PAD]"):
                 continue

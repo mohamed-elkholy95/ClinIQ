@@ -8,7 +8,6 @@ Tests cover:
 - Validation errors (out-of-bounds offsets, invalid spans)
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app

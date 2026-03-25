@@ -5,13 +5,11 @@ _collect_fallback_metrics serialisation, _collect_prometheus_metrics,
 and the _InferenceTimer context manager.
 """
 
-from collections import defaultdict
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.ml.monitoring.metrics_collector import ModelMetrics
-
 
 # ---------------------------------------------------------------------------
 # Prometheus init path
@@ -229,9 +227,8 @@ class TestTimeInference:
         """Timer records an error (not inference) when exception occurs."""
         m = ModelMetrics(namespace="test_timer_exc", use_prometheus=False)
 
-        with pytest.raises(ValueError):
-            with m.time_inference("ner", "entity"):
-                raise ValueError("inference failed")
+        with pytest.raises(ValueError), m.time_inference("ner", "entity"):
+            raise ValueError("inference failed")
 
         result = m._collect_fallback_metrics()
         assert result["error_count_total"]["ner__ValueError"] == 1

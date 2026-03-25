@@ -3,7 +3,6 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -12,7 +11,7 @@ from app.core.exceptions import InferenceError, ModelLoadError
 from app.ml.utils.text_preprocessing import ClinicalTextPreprocessor
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -361,7 +360,6 @@ class TransformerNERModel(BaseNERModel):
     def load(self) -> None:
         """Load the transformer model."""
         try:
-            import torch
             from transformers import AutoModelForTokenClassification, AutoTokenizer
 
             model_path = self.model_path or self.model_name
@@ -427,7 +425,7 @@ class TransformerNERModel(BaseNERModel):
         entities = []
         current_entity: dict[str, Any] | None = None
 
-        for i, (pred, (start, end)) in enumerate(zip(predictions, offsets)):
+        for i, (pred, (start, end)) in enumerate(zip(predictions, offsets, strict=False)):
             if start == end:  # Special token
                 continue
 

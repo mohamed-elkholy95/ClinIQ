@@ -4,11 +4,10 @@ Covers route registration, error-code mapping, exception handlers,
 root endpoint, and middleware presence.
 """
 
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, patch
 
-from app.core.exceptions import ClinIQError
 from app.main import _error_code_to_http_status, app
 
 

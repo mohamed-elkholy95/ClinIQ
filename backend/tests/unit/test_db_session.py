@@ -4,12 +4,11 @@ Covers get_db_session dependency, get_db_context context manager,
 init_db, and close_db lifecycle functions.
 """
 
-import pytest
-import pytest_asyncio
+import contextlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
-
 
 # ---------------------------------------------------------------------------
 # get_db_session (async generator dependency)
@@ -39,10 +38,8 @@ class TestGetDbSession:
             assert session is mock_session
 
             # Simulate normal exit
-            try:
+            with contextlib.suppress(StopAsyncIteration):
                 await gen.__anext__()
-            except StopAsyncIteration:
-                pass
 
             mock_session.commit.assert_awaited_once()
             mock_session.close.assert_awaited_once()
@@ -113,7 +110,7 @@ class TestGetDbContext:
             from app.db.session import get_db_context
 
             with pytest.raises(RuntimeError):
-                async with get_db_context() as session:
+                async with get_db_context():
                     raise RuntimeError("DB error")
 
             mock_session.rollback.assert_awaited_once()

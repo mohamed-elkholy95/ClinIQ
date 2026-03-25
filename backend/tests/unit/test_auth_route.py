@@ -14,24 +14,14 @@ checks, response shaping).
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
 
-from app.api.schemas.auth import (
-    APIKeyCreate,
-    TokenRequest,
-    UserCreate,
-)
-from app.api.v1.routes.auth import (
-    create_api_key,
-    get_current_user_profile,
-    login,
-    register_user,
-)
-
+from app.api.schemas.auth import APIKeyCreate, TokenRequest, UserCreate
+from app.api.v1.routes.auth import create_api_key, get_current_user_profile, login, register_user
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -57,8 +47,8 @@ def _make_user(
     user.is_superuser = is_superuser
     user.role = role
     user.full_name = full_name
-    user.created_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
-    user.updated_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    user.created_at = datetime(2026, 1, 1, tzinfo=UTC)
+    user.updated_at = datetime(2026, 1, 1, tzinfo=UTC)
     return user
 
 
@@ -251,13 +241,13 @@ class TestCreateAPIKey:
     async def test_create_api_key_success(self) -> None:
         """Authenticated user can create an API key."""
         import uuid as _uuid
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         user = _make_user()
         settings = _make_settings()
 
         _fake_id = _uuid.uuid4()
-        _fake_now = datetime.now(timezone.utc)
+        _fake_now = datetime.now(UTC)
 
         mock_db = AsyncMock()
 

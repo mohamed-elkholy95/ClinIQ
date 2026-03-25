@@ -11,7 +11,7 @@ where PHI is not needed and could pose a compliance risk.
 """
 
 import logging
-from enum import Enum
+from enum import StrEnum
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/deidentify", tags=["deidentify"])
 
 
-class DeidentifyStrategy(str, Enum):
+class DeidentifyStrategy(StrEnum):
     """Replacement strategy for the API request."""
 
     REDACT = "redact"

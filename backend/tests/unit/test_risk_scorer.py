@@ -22,7 +22,6 @@ from app.ml.risk.scorer import (
     RiskScorer,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -188,7 +187,7 @@ class TestConstants:
 
     def test_urgency_keywords_levels(self):
         assert set(URGENCY_KEYWORDS.keys()) == {"critical", "high", "moderate"}
-        for level, keywords in URGENCY_KEYWORDS.items():
+        for _level, keywords in URGENCY_KEYWORDS.items():
             assert len(keywords) > 0
 
 
@@ -404,7 +403,7 @@ class TestOverallScoring:
     def test_score_bounded_zero_one(self, scorer: RiskScorer):
         """Overall score must be in [0, 1]."""
         # Extreme high
-        category_scores = {k: 1.0 for k in RISK_CATEGORIES}
+        category_scores = dict.fromkeys(RISK_CATEGORIES, 1.0)
         factors = [
             RiskFactor(name="x", description="d", weight=0.9, value=1.0, source="text")
             for _ in range(20)
@@ -413,7 +412,7 @@ class TestOverallScoring:
         assert 0.0 <= score <= 1.0
 
         # All zeros
-        zero_scores = {k: 0.0 for k in RISK_CATEGORIES}
+        zero_scores = dict.fromkeys(RISK_CATEGORIES, 0.0)
         score_low = scorer._calculate_overall_score(zero_scores, [])
         assert score_low == 0.0
 
@@ -467,7 +466,7 @@ class TestRecommendations:
 
     def test_max_five_recommendations(self, scorer: RiskScorer):
         """Should never return more than 5 recommendations."""
-        all_high = {k: 0.8 for k in RISK_CATEGORIES}
+        all_high = dict.fromkeys(RISK_CATEGORIES, 0.8)
         many_factors = [
             RiskFactor(name=f"f{i}", description="d", weight=0.9, value=1.0, source="text")
             for i in range(10)

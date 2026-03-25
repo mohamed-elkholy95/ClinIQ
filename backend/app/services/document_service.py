@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.core.config import get_settings
@@ -114,7 +114,7 @@ class AnalysisService:
                 "text_hash": _text_hash(text),
                 "result": result,
                 "processing_ms": round(processing_ms, 2),
-                "processed_at": datetime.now(timezone.utc).isoformat(),
+                "processed_at": datetime.now(UTC).isoformat(),
             }
         except InferenceError:
             raise

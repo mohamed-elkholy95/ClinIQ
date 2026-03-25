@@ -28,14 +28,14 @@ Limitations
 
 import logging
 import re
-from dataclasses import dataclass, field
-from enum import Enum
+from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class PhiType(str, Enum):
+class PhiType(StrEnum):
     """HIPAA Safe Harbor PHI identifier categories.
 
     Each member corresponds to one of the 18 categories defined in
@@ -63,7 +63,7 @@ class PhiType(str, Enum):
     AGE = "AGE"
 
 
-class ReplacementStrategy(str, Enum):
+class ReplacementStrategy(StrEnum):
     """How to replace detected PHI spans in the output text.
 
     * ``REDACT`` — replace with a bracketed type tag, e.g. ``[DATE]``.

@@ -1,7 +1,7 @@
 """Risk Scoring system for clinical documents."""
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from app.ml.ner.model import Entity
@@ -383,7 +383,7 @@ class RiskScorer:
         text: str,
     ) -> dict[str, float]:
         """Calculate scores for each risk category."""
-        scores = {category: 0.0 for category in RISK_CATEGORIES}
+        scores = dict.fromkeys(RISK_CATEGORIES, 0.0)
         text_lower = text.lower()
 
         # Medication risks

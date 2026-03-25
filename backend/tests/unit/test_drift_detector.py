@@ -18,7 +18,6 @@ from app.ml.monitoring.drift_detector import (
     _compute_psi,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -194,7 +193,7 @@ class TestTextDistributionMonitor:
 
     def test_reference_freezes_at_threshold(self, text_monitor: TextDistributionMonitor) -> None:
         assert not text_monitor.reference_frozen
-        for i in range(10):
+        for _i in range(10):
             text_monitor.track(_make_clinical_note())
         assert text_monitor.reference_frozen
 

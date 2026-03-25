@@ -10,11 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.ml.assertions import (
-    AssertionResult,
-    AssertionStatus,
-    ConTextAssertionDetector,
-)
+from app.ml.assertions import AssertionResult, AssertionStatus, ConTextAssertionDetector
 
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,12 @@
 """Extended tests for document_service — covering _ensure_pipeline and
 generic exception wrapping (lines 56, 120)."""
 
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.services.document_service import AnalysisService
 from app.core.exceptions import InferenceError
+from app.services.document_service import AnalysisService
 
 
 class TestAnalysisServicePipeline:

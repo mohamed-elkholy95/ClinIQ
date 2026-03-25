@@ -6,7 +6,7 @@ using lightweight mocks (no database required).
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest

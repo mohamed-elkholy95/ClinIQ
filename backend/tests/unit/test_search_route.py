@@ -6,7 +6,7 @@ initialisation, and request validation.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -17,8 +17,7 @@ from app.api.v1.routes.search import (
     SearchResponse,
     _ensure_index,
 )
-from app.ml.search.hybrid import HybridSearchEngine, SearchResult
-
+from app.ml.search.hybrid import HybridSearchEngine
 
 # ---------------------------------------------------------------------------
 # Schema validation tests

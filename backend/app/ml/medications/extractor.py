@@ -50,7 +50,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class RouteOfAdministration(str, Enum):
+class RouteOfAdministration(StrEnum):
     """Standard routes of administration (ISMP conventions)."""
 
     ORAL = "PO"
@@ -82,7 +82,7 @@ class RouteOfAdministration(str, Enum):
     UNKNOWN = "unknown"
 
 
-class MedicationStatus(str, Enum):
+class MedicationStatus(StrEnum):
     """Medication status in the clinical context."""
 
     ACTIVE = "active"
@@ -494,7 +494,6 @@ DRUG_DICTIONARY: dict[str, str] = {
     "claritin": "loratadine",
     "fexofenadine": "fexofenadine",
     "allegra": "fexofenadine",
-    "montelukast": "montelukast",
     "allopurinol": "allopurinol",
     "zyloprim": "allopurinol",
     "colchicine": "colchicine",
@@ -730,7 +729,7 @@ class RuleBasedMedicationExtractor:
             generic = DRUG_DICTIONARY.get(drug_lower, drug_lower)
 
             # Context window: text after the drug name for attribute extraction
-            ctx_start = match.start()
+            match.start()
             ctx_end = min(len(text), match.end() + self.context_window)
             context = text[match.end():ctx_end]
 

@@ -8,14 +8,13 @@ Tests cover:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
 
 from app.api.v1.routes.batch import get_batch_status, submit_batch_job
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -70,8 +69,8 @@ def _make_batch_job(
     job.processed_documents = processed
     job.failed_documents = failed
     job.pipeline_config = {"run_ner": True}
-    job.created_at = datetime(2026, 3, 24, 10, 0, 0, tzinfo=timezone.utc)
-    job.started_at = datetime(2026, 3, 24, 10, 0, 1, tzinfo=timezone.utc)
+    job.created_at = datetime(2026, 3, 24, 10, 0, 0, tzinfo=UTC)
+    job.started_at = datetime(2026, 3, 24, 10, 0, 1, tzinfo=UTC)
     job.completed_at = None
     job.error_message = None
     job.result_file = None

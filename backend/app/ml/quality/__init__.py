@@ -15,11 +15,11 @@ dimension breakdowns with actionable recommendations.
 """
 
 from app.ml.quality.analyzer import (
-    ClinicalNoteQualityAnalyzer,
-    QualityConfig,
-    QualityDimension,
-    QualityReport,
-    QualityScore,
+                                     ClinicalNoteQualityAnalyzer,
+                                     QualityConfig,
+                                     QualityDimension,
+                                     QualityReport,
+                                     QualityScore,
 )
 
 __all__ = [

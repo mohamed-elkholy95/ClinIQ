@@ -7,14 +7,12 @@ TokenSHAPExplainer fallback path (when SHAP is not installed).
 from unittest.mock import MagicMock, patch
 
 import numpy as np
-import pytest
 
 from app.ml.explainability.shap_explainer import (
     SHAPExplanation,
     TokenSHAPExplainer,
     format_explanation,
 )
-
 
 # ---------------------------------------------------------------------------
 # SHAPExplanation dataclass

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.db.seed import ICD10_SEED_DATA, seed_icd_codes, seed_admin_user, seed_all
+from app.db.seed import ICD10_SEED_DATA, seed_admin_user, seed_all, seed_icd_codes
 
 
 class TestICD10SeedData:

@@ -33,13 +33,11 @@ from __future__ import annotations
 
 import hashlib
 import logging
-import math
 import re
 import statistics
 import time
-from collections import Counter
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -50,7 +48,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class QualityDimension(str, Enum):
+class QualityDimension(StrEnum):
     """Quality dimensions evaluated by the analyzer."""
 
     COMPLETENESS = "completeness"
@@ -60,7 +58,7 @@ class QualityDimension(str, Enum):
     CONSISTENCY = "consistency"
 
 
-class FindingSeverity(str, Enum):
+class FindingSeverity(StrEnum):
     """Severity level for quality findings."""
 
     CRITICAL = "critical"
@@ -163,7 +161,7 @@ class QualityConfig:
 
     def normalized_weights(self) -> dict[QualityDimension, float]:
         """Return weights normalised to sum to 1.0."""
-        raw = self.weights or {d: 1.0 for d in QualityDimension}
+        raw = self.weights or dict.fromkeys(QualityDimension, 1.0)
         total = sum(raw.values()) or 1.0
         return {d: w / total for d, w in raw.items()}
 
@@ -660,7 +658,7 @@ class ClinicalNoteQualityAnalyzer:
         findings: list[Finding] = []
         score = 100.0
         detected: list[str] = stats["detected_sections"]
-        line_count: int = stats["line_count"]
+        stats["line_count"]
         char_count: int = stats["char_count"]
 
         # Whitespace ratio

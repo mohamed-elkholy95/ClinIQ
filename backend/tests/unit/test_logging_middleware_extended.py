@@ -1,7 +1,6 @@
 """Extended tests for logging middleware — covering the exception path (lines 58-66)."""
 
-import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 

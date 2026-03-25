@@ -6,10 +6,9 @@ import pytest
 
 from app.ml.utils.metrics import (
     compute_confusion_matrix_metrics,
-    compute_rouge_scores,
     compute_precision_at_k,
+    compute_rouge_scores,
 )
-
 
 # ---------------------------------------------------------------------------
 # precision_at_k

@@ -6,7 +6,6 @@ headers, and that the logging configuration function runs without error.
 
 import uuid
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 

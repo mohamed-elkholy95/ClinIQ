@@ -269,7 +269,7 @@ class SklearnICDClassifier(BaseICDClassifier):
                 probas = 1 / (1 + np.exp(-scores))
 
             results = []
-            for i, proba in enumerate(probas):
+            for _i, proba in enumerate(probas):
                 predictions = self._get_top_predictions(proba, top_k)
                 results.append(
                     ICDPredictionResult(
@@ -335,7 +335,6 @@ class TransformerICDClassifier(BaseICDClassifier):
     def load(self) -> None:
         """Load the transformer model."""
         try:
-            import torch
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
             model_path = self.model_path or self.model_name
@@ -403,6 +402,7 @@ class TransformerICDClassifier(BaseICDClassifier):
     def _predict_long_document(self, text: str, top_k: int) -> ICDPredictionResult:
         """Handle long documents with sliding window."""
         import time
+
         import torch
 
         start_time = time.time()
@@ -453,6 +453,7 @@ class TransformerICDClassifier(BaseICDClassifier):
     def predict_batch(self, texts: list[str], top_k: int = 10) -> list[ICDPredictionResult]:
         """Predict ICD-10 codes for multiple texts."""
         import time
+
         import torch
 
         self.ensure_loaded()

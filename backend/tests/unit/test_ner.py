@@ -2,11 +2,7 @@
 
 import pytest
 
-from app.ml.ner.model import (
-    ENTITY_TYPES,
-    Entity,
-    RuleBasedNERModel,
-)
+from app.ml.ner.model import ENTITY_TYPES, Entity, RuleBasedNERModel
 
 
 class TestEntityDataclass:

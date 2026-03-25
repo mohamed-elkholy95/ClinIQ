@@ -9,14 +9,13 @@ from __future__ import annotations
 import pytest
 
 from app.ml.search.hybrid import (
+    _BM25,
     HybridSearchEngine,
     SearchResult,
-    _BM25,
     _Document,
     _extract_snippet,
     _tokenize,
 )
-
 
 # ---------------------------------------------------------------------------
 # Tokenizer tests

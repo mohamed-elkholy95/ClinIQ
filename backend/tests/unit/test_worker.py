@@ -9,9 +9,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -69,6 +66,7 @@ class TestHealthCheckTask:
             )
             # Force re-import with patched settings
             import importlib
+
             import app.worker as worker_mod
             importlib.reload(worker_mod)
 
@@ -102,6 +100,7 @@ class TestProcessBatchTask:
                 celery_result_backend="cache+memory://",
             )
             import importlib
+
             import app.worker as worker_mod
             importlib.reload(worker_mod)
 
@@ -136,6 +135,7 @@ class TestProcessBatchTask:
                 celery_result_backend="cache+memory://",
             )
             import importlib
+
             import app.worker as worker_mod
             importlib.reload(worker_mod)
 
@@ -163,6 +163,7 @@ class TestProcessBatchTask:
                 celery_result_backend="cache+memory://",
             )
             import importlib
+
             import app.worker as worker_mod
             importlib.reload(worker_mod)
 

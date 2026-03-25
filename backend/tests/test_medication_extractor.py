@@ -10,18 +10,17 @@ from __future__ import annotations
 import pytest
 
 from app.ml.medications.extractor import (
+    _GENERIC_TO_BRANDS,
     DRUG_DICTIONARY,
     ClinicalMedicationExtractor,
     Dosage,
     MedicationExtractionResult,
     MedicationMention,
     MedicationStatus,
-    RuleBasedMedicationExtractor,
     RouteOfAdministration,
+    RuleBasedMedicationExtractor,
     TransformerMedicationExtractor,
-    _GENERIC_TO_BRANDS,
 )
-
 
 # =========================================================================
 # Drug dictionary validation

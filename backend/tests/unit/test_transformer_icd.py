@@ -5,8 +5,7 @@ batch prediction, and the hierarchical two-stage dispatch strategy.
 All transformer/torch dependencies are mocked to avoid GPU/weight downloads.
 """
 
-from unittest.mock import MagicMock, patch, PropertyMock
-import sys
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -32,15 +31,13 @@ _no_grad_ctx.__exit__ = MagicMock(return_value=False)
 _torch_mock.no_grad.return_value = _no_grad_ctx
 _torch_mock.sigmoid = lambda x: _fake_tensor(1.0 / (1.0 + np.exp(-x.cpu().numpy())))
 
+from app.core.exceptions import InferenceError, ModelLoadError
 from app.ml.icd.model import (
     HierarchicalICDClassifier,
     ICDCodePrediction,
     ICDPredictionResult,
     TransformerICDClassifier,
-    get_chapter_for_code,
 )
-from app.core.exceptions import InferenceError, ModelLoadError
-
 
 # ---------------------------------------------------------------------------
 # TransformerICDClassifier — load

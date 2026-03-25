@@ -19,7 +19,7 @@ Design decisions:
 """
 
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, Security, status
@@ -79,7 +79,7 @@ async def get_current_user(
         for key_record in api_keys:
             if verify_api_key(api_key, key_record.hashed_key):
                 # Update last used timestamp
-                key_record.last_used_at = datetime.now(timezone.utc)
+                key_record.last_used_at = datetime.now(UTC)
 
                 # Fetch the associated user
                 user_result = await db.execute(

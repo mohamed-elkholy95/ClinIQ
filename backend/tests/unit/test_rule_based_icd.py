@@ -7,12 +7,7 @@ synonym matches, deduplication, batch prediction, and edge-case handling
 
 import pytest
 
-from app.ml.icd.model import (
-    ICDCodePrediction,
-    ICDPredictionResult,
-    RuleBasedICDClassifier,
-    get_chapter_for_code,
-)
+from app.ml.icd.model import ICDPredictionResult, RuleBasedICDClassifier
 
 
 @pytest.fixture
@@ -121,7 +116,7 @@ class TestRuleBasedICDClassifierPredict:
             "and chronic kidney disease."
         )
         result = classifier.predict(text)
-        codes = set(p.code for p in result.predictions)
+        codes = {p.code for p in result.predictions}
         assert {"I10", "E11.9", "J44.1", "N18.9"}.issubset(codes)
 
     def test_predictions_sorted_by_confidence(self, classifier: RuleBasedICDClassifier) -> None:

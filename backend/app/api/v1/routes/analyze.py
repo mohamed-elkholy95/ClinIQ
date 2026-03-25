@@ -16,12 +16,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.schemas.analysis import (
-    AnalysisRequest,
-    AnalysisResponse,
-    RiskSummary,
-    StageTiming,
-)
+from app.api.schemas.analysis import AnalysisRequest, AnalysisResponse, RiskSummary, StageTiming
 from app.api.schemas.icd import ICDCodeResponse
 from app.api.schemas.ner import EntityResponse
 from app.api.schemas.risk import RiskFactorResponse

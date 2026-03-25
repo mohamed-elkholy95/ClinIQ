@@ -7,18 +7,13 @@ reset, observability helpers, and thread-safety under contention.
 
 from __future__ import annotations
 
+import contextlib
 import threading
 import time
-from unittest.mock import patch
 
 import pytest
 
-from app.ml.utils.circuit_breaker import (
-    CircuitBreaker,
-    CircuitOpenError,
-    CircuitState,
-)
-
+from app.ml.utils.circuit_breaker import CircuitBreaker, CircuitOpenError, CircuitState
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -220,9 +215,8 @@ class TestExcludedExceptions:
     def test_excluded_via_context_manager(self) -> None:
         cb = _make_breaker(failure_threshold=1)
 
-        with pytest.raises(_ValidationError):
-            with cb:
-                raise _ValidationError("bad input")
+        with pytest.raises(_ValidationError), cb:
+            raise _ValidationError("bad input")
 
         assert cb.failure_count == 0
 
@@ -242,20 +236,17 @@ class TestContextManager:
 
     def test_failure_records_failure(self) -> None:
         cb = _make_breaker(failure_threshold=5)
-        with pytest.raises(_TransientError):
-            with cb:
-                raise _TransientError("boom")
+        with pytest.raises(_TransientError), cb:
+            raise _TransientError("boom")
         assert cb.failure_count == 1
 
     def test_rejects_when_open(self) -> None:
         cb = _make_breaker(failure_threshold=1)
-        with pytest.raises(_TransientError):
-            with cb:
-                raise _TransientError("boom")
+        with pytest.raises(_TransientError), cb:
+            raise _TransientError("boom")
 
-        with pytest.raises(CircuitOpenError):
-            with cb:
-                pass  # pragma: no cover — never reached
+        with pytest.raises(CircuitOpenError), cb:
+            pass  # pragma: no cover — never reached
 
 
 # ── Manual reset ─────────────────────────────────────────────────────────
@@ -375,10 +366,8 @@ class TestThreadSafety:
 
         def worker() -> None:
             for _ in range(20):
-                try:
+                with contextlib.suppress(_TransientError, CircuitOpenError):
                     mixed()
-                except (_TransientError, CircuitOpenError):
-                    pass
 
         threads = [threading.Thread(target=worker) for _ in range(4)]
         for t in threads:

@@ -19,14 +19,13 @@ import pytest
 from app.core.exceptions import InferenceError, ModelLoadError
 from app.ml.icd.model import (
     BaseICDClassifier,
+    HierarchicalICDClassifier,
     ICDCodePrediction,
     ICDPredictionResult,
     SklearnICDClassifier,
     TransformerICDClassifier,
-    HierarchicalICDClassifier,
     get_chapter_for_code,
 )
-
 
 # ---------------------------------------------------------------------------
 # get_chapter_for_code
@@ -272,7 +271,7 @@ class TestTransformerICDClassifier:
     def test_load_success(self) -> None:
         mock_model = MagicMock()
         mock_model.config.id2label = {0: "I10", 1: "E11.9"}
-        mock_tokenizer = MagicMock()
+        MagicMock()
 
         with patch("app.ml.icd.model.TransformerICDClassifier.load") as mock_load:
             mock_load.side_effect = lambda: setattr(

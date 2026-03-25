@@ -38,7 +38,7 @@ import re
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from app.ml.ner.model import Entity
@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 # Relation taxonomy
 # ---------------------------------------------------------------------------
 
-class RelationType(str, Enum):
+class RelationType(StrEnum):
     """Semantic relation categories between medical entities.
 
     Each relation is directional: *subject* → relation → *object*.

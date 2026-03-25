@@ -12,11 +12,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from httpx import AsyncClient
 
-from app.ml.ner.model import Entity
 from app.ml.icd.model import ICDCodePrediction
-from app.ml.summarization.model import SummarizationResult
+from app.ml.ner.model import Entity
 from app.ml.risk.model import RiskAssessment, RiskFactor
-
+from app.ml.summarization.model import SummarizationResult
 
 # ---------------------------------------------------------------------------
 # Helpers

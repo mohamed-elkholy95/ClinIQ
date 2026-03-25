@@ -25,12 +25,12 @@ HIPAA Safe Harbor identifiers covered:
 """
 
 from app.ml.deidentification.detector import (
-    DeidentificationConfig,
-    Deidentifier,
-    PhiDetector,
-    PhiEntity,
-    PhiType,
-    ReplacementStrategy,
+                                              DeidentificationConfig,
+                                              Deidentifier,
+                                              PhiDetector,
+                                              PhiEntity,
+                                              PhiType,
+                                              ReplacementStrategy,
 )
 
 __all__ = [
