@@ -23,6 +23,8 @@ from app.api.v1.routes.metrics import router as metrics_router
 from app.api.v1.routes.models import router as models_router
 from app.api.v1.routes.ner import router as ner_router
 from app.api.v1.routes.risk import router as risk_router
+from app.api.v1.routes.search import router as search_router
+from app.api.v1.routes.stream import router as stream_router
 from app.api.v1.routes.summarize import router as summarize_router
 
 # ---------------------------------------------------------------------------
@@ -38,6 +40,7 @@ api_router.include_router(drift_router)    # GET  /drift/status, POST /drift/rec
 
 # Core NLP inference endpoints
 api_router.include_router(analyze_router)  # POST /analyze
+api_router.include_router(stream_router)   # POST /analyze/stream  (SSE)
 api_router.include_router(ner_router)      # POST /ner
 api_router.include_router(icd_router)      # POST /icd-predict, GET /icd-codes/{code}
 api_router.include_router(summarize_router)  # POST /summarize
@@ -45,6 +48,9 @@ api_router.include_router(risk_router)     # POST /risk-score
 
 # Async batch processing
 api_router.include_router(batch_router)    # POST /batch, GET /batch/{job_id}
+
+# Document search
+api_router.include_router(search_router)   # POST /search, POST /search/reindex
 
 # Model registry
 api_router.include_router(models_router)   # GET  /models, GET /models/{model_name}
