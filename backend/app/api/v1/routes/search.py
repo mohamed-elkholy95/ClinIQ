@@ -33,13 +33,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
 from app.ml.search.hybrid import HybridSearchEngine, SearchResult
+from app.ml.search.query_expansion import MedicalQueryExpander
+from app.ml.search.reranker import ClinicalRuleReRanker, ReRankCandidate
 
 router = APIRouter(tags=["search"])
 logger = logging.getLogger(__name__)
 
-# Module-level singleton — rebuilt via /search/reindex or on first query
+# Module-level singletons
 _engine: HybridSearchEngine | None = None
 _indexed_count: int = 0
+_expander = MedicalQueryExpander(max_expansions=6)
+_reranker = ClinicalRuleReRanker()
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +64,10 @@ class SearchRequest(BaseModel):
         Minimum hybrid score threshold.
     alpha:
         BM25 vs TF-IDF interpolation weight (0 = pure TF-IDF, 1 = pure BM25).
+    expand_query:
+        Whether to apply medical query expansion (synonyms, abbreviations).
+    rerank:
+        Whether to apply re-ranking on initial retrieval results.
     """
 
     query: str = Field(..., min_length=1, max_length=2000, description="Search query")
@@ -72,6 +80,14 @@ class SearchRequest(BaseModel):
         ge=0.0,
         le=1.0,
         description="BM25 weight (0=pure TF-IDF, 1=pure BM25)",
+    )
+    expand_query: bool = Field(
+        default=True,
+        description="Apply medical query expansion (synonyms, abbreviations)",
+    )
+    rerank: bool = Field(
+        default=True,
+        description="Apply re-ranking to refine initial retrieval results",
     )
 
 
@@ -99,13 +115,31 @@ class SearchHit(BaseModel):
     snippet: str
 
 
+class QueryExpansionInfo(BaseModel):
+    """Details of query expansion applied.
+
+    Attributes
+    ----------
+    original_query:
+        The user's original query before expansion.
+    expanded_terms:
+        Terms added via synonym/abbreviation expansion.
+    expansion_sources:
+        Mapping of each expanded term to the reason it was added.
+    """
+
+    original_query: str
+    expanded_terms: list[str] = Field(default_factory=list)
+    expansion_sources: dict[str, str] = Field(default_factory=dict)
+
+
 class SearchResponse(BaseModel):
     """Search endpoint response.
 
     Attributes
     ----------
     query:
-        Echo of the search query for logging.
+        The effective query used for search (may be expanded).
     results:
         Ranked list of matching documents.
     total_hits:
@@ -116,6 +150,10 @@ class SearchResponse(BaseModel):
         Wall-clock search time in milliseconds.
     alpha:
         The BM25/TF-IDF interpolation weight used for this query.
+    query_expansion:
+        Details of medical query expansion (if applied).
+    reranked:
+        Whether results were re-ranked.
     """
 
     query: str
@@ -124,6 +162,8 @@ class SearchResponse(BaseModel):
     corpus_size: int
     processing_time_ms: float
     alpha: float
+    query_expansion: QueryExpansionInfo | None = None
+    reranked: bool = False
 
 
 class ReindexResponse(BaseModel):
@@ -245,17 +285,63 @@ async def search_documents(
     t0 = time.monotonic()
     engine = await _ensure_index(db, alpha=payload.alpha)
 
-    results = engine.search(
-        query=payload.query,
-        top_k=payload.top_k,
+    # Step 1: Query expansion (optional)
+    expansion_info: QueryExpansionInfo | None = None
+    search_query = payload.query
+
+    if payload.expand_query:
+        expanded = _expander.expand(payload.query)
+        if expanded.expansion_count > 0:
+            search_query = expanded.expanded_query
+            expansion_info = QueryExpansionInfo(
+                original_query=expanded.original,
+                expanded_terms=expanded.expanded_terms,
+                expansion_sources=expanded.expansion_sources,
+            )
+            logger.info(
+                "Query expanded: '%s' → +%d terms",
+                payload.query,
+                expanded.expansion_count,
+            )
+
+    # Step 2: Initial retrieval (over-fetch for re-ranking)
+    retrieval_k = payload.top_k * 3 if payload.rerank else payload.top_k
+    initial_results = engine.search(
+        query=search_query,
+        top_k=retrieval_k,
         min_score=payload.min_score,
     )
 
-    elapsed = (time.monotonic() - t0) * 1000
-
-    return SearchResponse(
-        query=payload.query,
-        results=[
+    # Step 3: Re-ranking (optional)
+    reranked = False
+    if payload.rerank and len(initial_results) > 1:
+        candidates = [
+            ReRankCandidate(
+                doc_id=r.doc_id,
+                text=r.snippet,
+                initial_score=r.score,
+            )
+            for r in initial_results
+        ]
+        reranked_results = _reranker.rerank(
+            query=payload.query,  # Use original query for re-ranking
+            candidates=candidates,
+            top_k=payload.top_k,
+            initial_weight=0.4,
+        )
+        final_results = [
+            SearchHit(
+                doc_id=rr.doc_id,
+                score=rr.score,
+                bm25_score=rr.score_components.get("initial", 0.0),
+                tfidf_score=rr.score_components.get("reranker", 0.0),
+                snippet=rr.text,
+            )
+            for rr in reranked_results
+        ]
+        reranked = True
+    else:
+        final_results = [
             SearchHit(
                 doc_id=r.doc_id,
                 score=r.score,
@@ -263,12 +349,20 @@ async def search_documents(
                 tfidf_score=r.tfidf_score,
                 snippet=r.snippet,
             )
-            for r in results
-        ],
-        total_hits=len(results),
+            for r in initial_results[:payload.top_k]
+        ]
+
+    elapsed = (time.monotonic() - t0) * 1000
+
+    return SearchResponse(
+        query=search_query,
+        results=final_results,
+        total_hits=len(final_results),
         corpus_size=engine.corpus_size,
         processing_time_ms=round(elapsed, 2),
         alpha=payload.alpha,
+        query_expansion=expansion_info,
+        reranked=reranked,
     )
 
 
