@@ -11,6 +11,9 @@ import {
   Cpu,
   Activity,
   X,
+  Pill,
+  ShieldOff,
+  Layers,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,6 +28,9 @@ const navItems = [
   { to: '/icd-codes', label: 'ICD Codes', icon: FileCode2 },
   { to: '/summary', label: 'Summary', icon: FileText },
   { to: '/risk', label: 'Risk', icon: ShieldAlert },
+  { to: '/medications', label: 'Medications', icon: Pill },
+  { to: '/deidentify', label: 'De-identify', icon: ShieldOff },
+  { to: '/pipeline', label: 'Pipeline Explorer', icon: Layers },
   { to: '/timeline', label: 'Timeline', icon: Clock },
   { to: '/models', label: 'Models', icon: Cpu },
 ];

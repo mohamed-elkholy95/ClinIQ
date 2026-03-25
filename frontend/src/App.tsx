@@ -10,6 +10,9 @@ import { ClinicalSummary } from './pages/ClinicalSummary';
 import { RiskAssessment } from './pages/RiskAssessment';
 import { Timeline } from './pages/Timeline';
 import { ModelManagement } from './pages/ModelManagement';
+import { MedicationExtractor } from './pages/MedicationExtractor';
+import { Deidentification } from './pages/Deidentification';
+import { PipelineExplorer } from './pages/PipelineExplorer';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +44,9 @@ export default function App() {
               <Route path="/icd-codes" element={<ICDResults />} />
               <Route path="/summary" element={<ClinicalSummary />} />
               <Route path="/risk" element={<RiskAssessment />} />
+              <Route path="/medications" element={<MedicationExtractor />} />
+              <Route path="/deidentify" element={<Deidentification />} />
+              <Route path="/pipeline" element={<PipelineExplorer />} />
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/models" element={<ModelManagement />} />
             </Route>
