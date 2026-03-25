@@ -62,8 +62,17 @@ def test_settings() -> Settings:
 
 # Test database engine
 
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create event loop for session-scoped async fixtures."""
+    import asyncio
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="session")
 async def test_engine():
     """Create test database engine."""
     engine = create_async_engine(
