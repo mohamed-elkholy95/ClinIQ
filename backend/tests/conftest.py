@@ -22,20 +22,11 @@ from app.ml.pipeline import ClinicalPipeline
 
 @pytest.fixture(autouse=True)
 def _test_setup():
-    """Ensure fresh event loop and clear rate limiter before each test.
-
-    On Python 3.11, session-scoped async fixtures may leave behind a closed
-    event loop.  TestClient needs an open loop for the ASGI middleware stack,
-    so we create one if the current loop is closed or missing.
-    """
+    """Ensure fresh event loop and clear rate limiter before each test."""
     import asyncio
 
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            asyncio.set_event_loop(asyncio.new_event_loop())
-    except RuntimeError:
-        asyncio.set_event_loop(asyncio.new_event_loop())
+    # Always provide a fresh, open event loop for TestClient/anyio
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
     # Reset rate limiter
     obj = app.middleware_stack
@@ -44,6 +35,16 @@ def _test_setup():
             obj._local_store.clear()
             break
         obj = getattr(obj, "app", None)
+
+    yield
+
+    # Clean up the loop we created
+    try:
+        loop = asyncio.get_event_loop()
+        if not loop.is_closed():
+            loop.close()
+    except RuntimeError:
+        pass
 
 
 # Test settings
