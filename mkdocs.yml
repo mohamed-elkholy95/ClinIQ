@@ -45,6 +45,7 @@ nav:
       - SDoH Extraction: ml/model-card-sdoh.md
       - Vital Signs: ml/model-card-vitals.md
       - De-identification: ml/model-card-deidentification.md
+      - Abbreviation Expansion: ml/model-card-abbreviations.md
   - Evaluation Report: ml/evaluation-report.md
   - Deployment:
       - Local Setup: deployment/local-setup.md
