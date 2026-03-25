@@ -13,17 +13,14 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client: TestClient = None  # type: ignore[assignment]
-
 PREFIX = "/api/v1"
 
 
-@pytest.fixture(autouse=True, scope="module")
-def _module_client():
+@pytest.fixture(autouse=True)
+def _setup_client():
     global client
-    with TestClient(app) as c:
-        client = c
-        yield
+    client = TestClient(app)
+    yield
 
 SAMPLE_NOTE = """
 CHIEF COMPLAINT: Chest pain.

@@ -11,21 +11,11 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-_test_client: TestClient = None  # type: ignore[assignment]
-
-
-@pytest.fixture(autouse=True, scope="module")
-def _module_client():
-    global _test_client
-    with TestClient(app) as c:
-        _test_client = c
-        yield
-
 
 @pytest.fixture
 def client():
-    """Provide the module-level test client as a fixture."""
-    return _test_client
+    """Return a fresh TestClient per test."""
+    return TestClient(app)
 
 
 # ---------------------------------------------------------------------------
