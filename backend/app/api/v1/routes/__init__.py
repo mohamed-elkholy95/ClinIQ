@@ -26,6 +26,7 @@ from app.api.v1.routes.medications import router as medications_router
 from app.api.v1.routes.metrics import router as metrics_router
 from app.api.v1.routes.models import router as models_router
 from app.api.v1.routes.ner import router as ner_router
+from app.api.v1.routes.normalization import router as normalization_router
 from app.api.v1.routes.quality import router as quality_router
 from app.api.v1.routes.relations import router as relations_router
 from app.api.v1.routes.risk import router as risk_router
@@ -69,6 +70,9 @@ api_router.include_router(quality_router)    # POST /quality, POST /quality/batc
 
 # Clinical assertion detection
 api_router.include_router(assertions_router)  # POST /assertions, POST /assertions/batch, GET /assertions/statuses, GET /assertions/stats
+
+# Concept normalization / entity linking
+api_router.include_router(normalization_router)  # POST /normalize, POST /normalize/batch, GET /normalize/lookup/{cui}, GET /normalize/dictionary/stats
 
 # Async batch processing
 api_router.include_router(batch_router)    # POST /batch, GET /batch/{job_id}
