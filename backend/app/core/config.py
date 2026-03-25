@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     app_name: str = "ClinIQ"
     app_version: str = "0.1.0"
     debug: bool = False
-    environment: Literal["development", "staging", "production"] = "development"
+    environment: Literal["development", "staging", "production", "test"] = "development"
 
     # API
     api_v1_prefix: str = "/api/v1"
