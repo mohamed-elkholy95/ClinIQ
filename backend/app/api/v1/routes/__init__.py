@@ -18,6 +18,7 @@ from app.api.v1.routes.assertions import router as assertions_router
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.classify import router as classify_router
 from app.api.v1.routes.medications import router as medications_router
+from app.api.v1.routes.quality import router as quality_router
 from app.api.v1.routes.deidentify import router as deidentify_router
 from app.api.v1.routes.batch import router as batch_router
 from app.api.v1.routes.drift import router as drift_router
@@ -62,6 +63,9 @@ api_router.include_router(medications_router)  # POST /medications, POST /medica
 
 # PHI de-identification
 api_router.include_router(deidentify_router)  # POST /deidentify, POST /deidentify/batch
+
+# Note quality analysis
+api_router.include_router(quality_router)    # POST /quality, POST /quality/batch, GET /quality/dimensions
 
 # Clinical assertion detection
 api_router.include_router(assertions_router)  # POST /assertions, POST /assertions/batch, GET /assertions/statuses, GET /assertions/stats
