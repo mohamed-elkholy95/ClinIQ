@@ -111,6 +111,8 @@ exclude = '''
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -123,13 +125,21 @@ select = [
     "SIM", # flake8-simplify
 ]
 ignore = [
-    "E501",  # line too long (handled by black)
-    "B008",  # function calls in argument defaults
-    "B904",  # raise without from inside except
-    "ARG001", # unused function argument (common in FastAPI)
+    "E501",   # line too long (handled by black)
+    "E741",   # ambiguous variable name (common in ML code)
+    "B008",   # function calls in argument defaults
+    "B017",   # blind exception in pytest.raises (acceptable in tests)
+    "B904",   # raise without from inside except
+    "ARG001", # unused function argument (common in FastAPI deps)
+    "ARG002", # unused method argument (common in base/interface methods)
+    "ARG005", # unused lambda argument (common in mock callbacks)
+    "SIM117", # nested with statements (sometimes clearer)
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["E402"]  # test files often mock modules before importing
+
+[tool.ruff.lint.isort]
 known-first-party = ["cliniq", "app"]
 
 [tool.mypy]
