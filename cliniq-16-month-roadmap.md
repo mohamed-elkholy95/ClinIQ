@@ -4,9 +4,15 @@
 
 *A complete engineering plan for building a professional-grade clinical NLP application from zero to production, designed specifically to demonstrate ML Engineering mastery and healthcare domain expertise.*
 
-### Build Status (2026-03-24)
+### Build Status (2026-03-25)
 
 All phases are **COMPLETE**.
+
+#### Post-PRD Enhancements — Session 17 (2026-03-25)
+- [x] **Circuit breaker for ML inference resilience** (`app.ml.utils.circuit_breaker`) — Three-state machine (CLOSED → OPEN → HALF_OPEN → CLOSED) with configurable failure threshold and recovery timeout; prevents cascading failures when a model is repeatedly failing; decorator and context-manager interfaces; excluded exceptions for input-validation errors; observable state via `to_dict()` for health endpoints; manual reset for admin/test use; thread-safe via `threading.Lock`
+- [x] **Inference result cache with hash-based deduplication** (`app.ml.utils.inference_cache`) — SHA-256 keyed on normalised input text + model name; in-memory LRU with configurable max_size and per-entry TTL; input normalisation (case-folding, whitespace collapsing) ensures equivalent inputs share cache hits; model-scoped keys prevent cross-model collisions; stats endpoint (hit rate, size, misses) for monitoring; thread-safe bounded OrderedDict
+- [x] **55 new tests** across 2 modules: `test_circuit_breaker.py` (28), `test_inference_cache.py` (27) — 100% coverage on both modules
+- [x] **Total test suite: 1302 passing** (backend: 1302, frontend: 238), 0 failures
 
 #### Post-PRD Enhancements — Session 16 (2026-03-24)
 - [x] **Prometheus /metrics endpoint** — `GET /metrics` serves `prometheus_client` text exposition format (falls back to JSON); `GET /metrics/models` returns per-model inference summary for dashboards
