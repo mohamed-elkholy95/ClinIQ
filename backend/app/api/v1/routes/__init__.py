@@ -23,10 +23,12 @@ from app.api.v1.routes.icd import router as icd_router
 from app.api.v1.routes.metrics import router as metrics_router
 from app.api.v1.routes.models import router as models_router
 from app.api.v1.routes.ner import router as ner_router
+from app.api.v1.routes.relations import router as relations_router
 from app.api.v1.routes.risk import router as risk_router
 from app.api.v1.routes.search import router as search_router
 from app.api.v1.routes.stream import router as stream_router
 from app.api.v1.routes.summarize import router as summarize_router
+from app.api.v1.routes.temporal import router as temporal_router
 
 # ---------------------------------------------------------------------------
 # Build the combined v1 router
@@ -46,6 +48,8 @@ api_router.include_router(ner_router)      # POST /ner
 api_router.include_router(icd_router)      # POST /icd-predict, GET /icd-codes/{code}
 api_router.include_router(summarize_router)  # POST /summarize
 api_router.include_router(risk_router)     # POST /risk-score
+api_router.include_router(relations_router)  # POST /relations, GET /relations/types
+api_router.include_router(temporal_router)   # POST /temporal, GET /temporal/frequency-map
 
 # PHI de-identification
 api_router.include_router(deidentify_router)  # POST /deidentify, POST /deidentify/batch
