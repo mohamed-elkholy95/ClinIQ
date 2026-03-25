@@ -11,6 +11,11 @@ import { RiskAssessment } from './pages/RiskAssessment';
 import { Timeline } from './pages/Timeline';
 import { ModelManagement } from './pages/ModelManagement';
 import { MedicationExtractor } from './pages/MedicationExtractor';
+import { AllergyExtractor } from './pages/AllergyExtractor';
+import { VitalSigns } from './pages/VitalSigns';
+import { QualityAnalyzer } from './pages/QualityAnalyzer';
+import { SDoHExtractor } from './pages/SDoHExtractor';
+import { ComorbidityCalculator } from './pages/ComorbidityCalculator';
 import { Deidentification } from './pages/Deidentification';
 import { PipelineExplorer } from './pages/PipelineExplorer';
 
@@ -45,6 +50,11 @@ export default function App() {
               <Route path="/summary" element={<ClinicalSummary />} />
               <Route path="/risk" element={<RiskAssessment />} />
               <Route path="/medications" element={<MedicationExtractor />} />
+              <Route path="/allergies" element={<AllergyExtractor />} />
+              <Route path="/vitals" element={<VitalSigns />} />
+              <Route path="/quality" element={<QualityAnalyzer />} />
+              <Route path="/sdoh" element={<SDoHExtractor />} />
+              <Route path="/comorbidity" element={<ComorbidityCalculator />} />
               <Route path="/deidentify" element={<Deidentification />} />
               <Route path="/pipeline" element={<PipelineExplorer />} />
               <Route path="/timeline" element={<Timeline />} />

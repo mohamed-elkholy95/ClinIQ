@@ -109,6 +109,10 @@ export interface VitalSignResult {
   confidence: number;
   start_char: number;
   end_char: number;
+  /** Diastolic value for blood_pressure type. */
+  diastolic?: number;
+  /** Mean Arterial Pressure for blood_pressure type. */
+  map?: number;
 }
 
 export interface VitalExtractionResponse {
@@ -243,7 +247,8 @@ export interface QualityReport {
   grade: QualityGrade;
   dimensions: QualityDimensionScore[];
   recommendations: string[];
-  processing_time_ms: number;
+  processing_time_ms?: number;
+  analysis_time_ms?: number;
 }
 
 // ─── SDoH Extraction ─────────────────────────────────────────
@@ -263,6 +268,8 @@ export type SDoHSentiment = 'adverse' | 'protective' | 'neutral';
 export interface SDoHFinding {
   domain: SDoHDomain;
   trigger_text: string;
+  /** Raw matched text from the note (may include surrounding context). */
+  matched_text?: string;
   sentiment: SDoHSentiment;
   z_code: string | null;
   confidence: number;
@@ -287,15 +294,26 @@ export interface ComorbidityCategory {
   weight: number;
   detected: boolean;
   source: 'icd_code' | 'text_extraction' | 'both';
+  /** Human-readable description of the disease category. */
+  description?: string;
+  /** ICD-10-CM codes that matched this category. */
+  matched_codes?: string[];
+  /** Confidence score for text-based detection. */
+  confidence?: number;
 }
 
 export interface ComorbidityResult {
-  score: number;
+  /** Raw CCI score (sum of category weights). */
+  total_score: number;
+  /** Alias for total_score used by some backend serialisations. */
+  score?: number;
   age_adjusted_score: number | null;
   risk_group: RiskGroup;
-  ten_year_mortality: number;
+  /** 10-year mortality estimate via Charlson exponential survival. */
+  estimated_mortality: number | null;
+  ten_year_mortality?: number;
   categories: ComorbidityCategory[];
-  processing_time_ms: number;
+  processing_time_ms?: number;
 }
 
 // ─── Concept Normalization ───────────────────────────────────

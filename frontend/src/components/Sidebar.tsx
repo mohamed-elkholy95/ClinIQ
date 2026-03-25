@@ -14,6 +14,11 @@ import {
   Pill,
   ShieldOff,
   Layers,
+  AlertTriangle,
+  HeartPulse,
+  ClipboardCheck,
+  Users,
+  Calculator,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +34,11 @@ const navItems = [
   { to: '/summary', label: 'Summary', icon: FileText },
   { to: '/risk', label: 'Risk', icon: ShieldAlert },
   { to: '/medications', label: 'Medications', icon: Pill },
+  { to: '/allergies', label: 'Allergies', icon: AlertTriangle },
+  { to: '/vitals', label: 'Vital Signs', icon: HeartPulse },
+  { to: '/quality', label: 'Note Quality', icon: ClipboardCheck },
+  { to: '/sdoh', label: 'SDoH', icon: Users },
+  { to: '/comorbidity', label: 'Comorbidity', icon: Calculator },
   { to: '/deidentify', label: 'De-identify', icon: ShieldOff },
   { to: '/pipeline', label: 'Pipeline Explorer', icon: Layers },
   { to: '/timeline', label: 'Timeline', icon: Clock },
