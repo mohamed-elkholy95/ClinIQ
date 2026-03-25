@@ -12,7 +12,22 @@ import httpx
 import pytest
 
 from cliniq_client.client import ClinIQClient
-from cliniq_client.models import AnalysisResult, BatchJob
+from cliniq_client.models import (
+    AbbreviationResult,
+    AllergyResult,
+    AnalysisResult,
+    BatchJob,
+    ClassificationResult,
+    ComorbidityResult,
+    EnhancedAnalysisResult,
+    MedicationResult,
+    QualityReport,
+    RelationResult,
+    SDoHResult,
+    SearchResult,
+    SectionResult,
+    VitalSignResult,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -377,4 +392,402 @@ class TestErrorHandling:
         )
         with pytest.raises(httpx.HTTPStatusError):
             client.analyze("test")
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Enhanced analysis
+# ---------------------------------------------------------------------------
+
+
+class TestEnhancedAnalyze:
+    """Tests for the analyze_enhanced() method."""
+
+    def test_returns_enhanced_result(self) -> None:
+        transport = _MockTransport({
+            "/analyze/enhanced": {
+                "classification": {"predicted_type": "progress_note"},
+                "sections": {"section_count": 5},
+                "medications": {"medication_count": 3},
+                "processing_time_ms": 250.0,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.analyze_enhanced("Clinical note text...")
+        assert isinstance(result, EnhancedAnalysisResult)
+        assert result.classification["predicted_type"] == "progress_note"
+        assert result.processing_time_ms == 250.0
+        client.close()
+
+    def test_module_toggles_forwarded(self) -> None:
+        captured: dict = {}
+
+        class _Capture(httpx.BaseTransport):
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                captured["body"] = json.loads(request.content)
+                return httpx.Response(200, json={}, request=request)
+
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=_Capture(), headers=client._client.headers)
+        client.analyze_enhanced(
+            "test", enable_deidentification=True, enable_medications=False,
+        )
+        cfg = captured["body"]["config"]
+        assert cfg["enable_deidentification"] is True
+        assert cfg["enable_medications"] is False
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Document classification
+# ---------------------------------------------------------------------------
+
+
+class TestClassifyDocument:
+    def test_returns_classification_result(self) -> None:
+        transport = _MockTransport({
+            "/classify": {
+                "predicted_type": "discharge_summary",
+                "scores": [{"document_type": "discharge_summary", "confidence": 0.92}],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.classify_document("Discharge Summary: ...")
+        assert isinstance(result, ClassificationResult)
+        assert result.predicted_type == "discharge_summary"
+        client.close()
+
+    def test_list_document_types(self) -> None:
+        transport = _MockTransport({
+            "/classify/types": {"types": [{"name": "progress_note"}]},
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        types = client.list_document_types()
+        assert len(types) == 1
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Medication extraction
+# ---------------------------------------------------------------------------
+
+
+class TestMedications:
+    def test_extract_medications(self) -> None:
+        transport = _MockTransport({
+            "/medications": {
+                "medication_count": 1,
+                "medications": [{"drug_name": "metformin", "confidence": 0.9}],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.extract_medications("Metformin 1000mg BID")
+        assert isinstance(result, MedicationResult)
+        assert result.medications[0].drug_name == "metformin"
+        client.close()
+
+    def test_lookup_medication(self) -> None:
+        transport = _MockTransport({
+            "/medications/lookup/aspirin": {"generic_name": "aspirin", "brands": ["Bayer"]},
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.lookup_medication("aspirin")
+        assert result["generic_name"] == "aspirin"
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Allergy extraction
+# ---------------------------------------------------------------------------
+
+
+class TestAllergies:
+    def test_extract_allergies(self) -> None:
+        transport = _MockTransport({
+            "/allergies": {
+                "allergy_count": 1,
+                "no_known_allergies": False,
+                "allergies": [{"allergen": "penicillin", "severity": "severe"}],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.extract_allergies("Allergic to penicillin")
+        assert isinstance(result, AllergyResult)
+        assert result.allergies[0].allergen == "penicillin"
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Vital signs extraction
+# ---------------------------------------------------------------------------
+
+
+class TestVitals:
+    def test_extract_vitals(self) -> None:
+        transport = _MockTransport({
+            "/vitals": {
+                "vital_count": 1,
+                "vitals": [{"vital_type": "heart_rate", "value": 92, "unit": "bpm"}],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.extract_vitals("HR 92 bpm")
+        assert isinstance(result, VitalSignResult)
+        assert result.vital_count == 1
+        client.close()
+
+    def test_list_vital_types(self) -> None:
+        transport = _MockTransport({
+            "/vitals/types": {"types": [{"name": "heart_rate", "unit": "bpm"}]},
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        types = client.list_vital_types()
+        assert len(types) == 1
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Section parsing
+# ---------------------------------------------------------------------------
+
+
+class TestSections:
+    def test_parse_sections(self) -> None:
+        transport = _MockTransport({
+            "/sections": {
+                "section_count": 2,
+                "sections": [
+                    {"category": "chief_complaint", "header": "CC:", "confidence": 1.0},
+                ],
+                "categories_found": ["chief_complaint", "hpi"],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.parse_sections("CC: Chest pain")
+        assert isinstance(result, SectionResult)
+        assert result.section_count == 2
+        client.close()
+
+    def test_list_categories(self) -> None:
+        transport = _MockTransport({
+            "/sections/categories": {"categories": [{"name": "chief_complaint"}]},
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        cats = client.list_section_categories()
+        assert len(cats) == 1
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Abbreviation expansion
+# ---------------------------------------------------------------------------
+
+
+class TestAbbreviations:
+    def test_expand_abbreviations(self) -> None:
+        transport = _MockTransport({
+            "/abbreviations": {
+                "total_found": 1,
+                "expanded_text": "hypertension",
+                "matches": [{"abbreviation": "HTN", "expansion": "hypertension"}],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.expand_abbreviations("Patient has HTN")
+        assert isinstance(result, AbbreviationResult)
+        assert result.total_found == 1
+        client.close()
+
+    def test_lookup_abbreviation(self) -> None:
+        transport = _MockTransport({
+            "/abbreviations/lookup/HTN": {"abbreviation": "HTN", "expansion": "hypertension"},
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.lookup_abbreviation("HTN")
+        assert result["expansion"] == "hypertension"
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Quality analysis
+# ---------------------------------------------------------------------------
+
+
+class TestQuality:
+    def test_analyze_quality(self) -> None:
+        transport = _MockTransport({
+            "/quality": {
+                "overall_score": 85.0, "grade": "B",
+                "dimensions": [], "recommendation_count": 1,
+                "top_recommendations": ["Add vitals"],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.analyze_quality("Full clinical note...")
+        assert isinstance(result, QualityReport)
+        assert result.grade == "B"
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# SDoH extraction
+# ---------------------------------------------------------------------------
+
+
+class TestSDoH:
+    def test_extract_sdoh(self) -> None:
+        transport = _MockTransport({
+            "/sdoh": {
+                "extraction_count": 1, "adverse_count": 1, "protective_count": 0,
+                "extractions": [{"domain": "substance_use", "text": "current smoker"}],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.extract_sdoh("Current smoker, 1 PPD")
+        assert isinstance(result, SDoHResult)
+        assert result.extraction_count == 1
+        client.close()
+
+    def test_list_domains(self) -> None:
+        transport = _MockTransport({
+            "/sdoh/domains": {"domains": [{"name": "housing"}, {"name": "employment"}]},
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        domains = client.list_sdoh_domains()
+        assert len(domains) == 2
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Comorbidity scoring
+# ---------------------------------------------------------------------------
+
+
+class TestComorbidity:
+    def test_calculate(self) -> None:
+        transport = _MockTransport({
+            "/comorbidity": {
+                "raw_score": 3, "risk_group": "moderate",
+                "ten_year_mortality": 0.52, "category_count": 2,
+                "matched_categories": [],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.calculate_comorbidity(
+            icd_codes=["E11.9", "I10"], text="diabetes and HTN", age=65,
+        )
+        assert isinstance(result, ComorbidityResult)
+        assert result.raw_score == 3
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Relation extraction
+# ---------------------------------------------------------------------------
+
+
+class TestRelations:
+    def test_extract_relations(self) -> None:
+        transport = _MockTransport({
+            "/relations": {
+                "relation_count": 1, "pair_count": 1,
+                "relations": [
+                    {"subject": "metoprolol", "subject_type": "MEDICATION",
+                     "object": "HTN", "object_type": "DISEASE",
+                     "relation_type": "treats", "confidence": 0.87},
+                ],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.extract_relations(
+            "metoprolol treats HTN",
+            entities=[
+                {"text": "metoprolol", "entity_type": "MEDICATION", "start_char": 0, "end_char": 10},
+                {"text": "HTN", "entity_type": "DISEASE", "start_char": 18, "end_char": 21},
+            ],
+        )
+        assert isinstance(result, RelationResult)
+        assert result.relations[0].relation_type == "treats"
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Document search
+# ---------------------------------------------------------------------------
+
+
+class TestSearch:
+    def test_search(self) -> None:
+        transport = _MockTransport({
+            "/search": {
+                "hits": [{"document_id": "doc-1", "score": 0.92, "snippet": "..."}],
+                "total": 1, "reranked": True,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.search("diabetes management")
+        assert isinstance(result, SearchResult)
+        assert result.total == 1
+        assert result.reranked is True
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Concept normalization
+# ---------------------------------------------------------------------------
+
+
+class TestNormalization:
+    def test_normalize_concept(self) -> None:
+        transport = _MockTransport({
+            "/normalize": {
+                "matched": True, "cui": "C0020538",
+                "preferred_term": "Hypertensive disease",
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.normalize_concept("hypertension", entity_type="DISEASE")
+        assert result["cui"] == "C0020538"
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Infrastructure endpoints
+# ---------------------------------------------------------------------------
+
+
+class TestInfrastructure:
+    def test_get_metrics(self) -> None:
+        transport = _MockTransport({"/metrics": {"inference_count": 1234}})
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.get_metrics()
+        assert result["inference_count"] == 1234
+        client.close()
+
+    def test_get_drift_status(self) -> None:
+        transport = _MockTransport({"/drift/status": {"status": "stable"}})
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.get_drift_status()
+        assert result["status"] == "stable"
         client.close()
