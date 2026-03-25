@@ -784,8 +784,8 @@ class EnhancedClinicalPipeline:
                 try:
                     assertion = self._assertion_detector.detect(
                         text=text,
-                        entity_start=entity.start,
-                        entity_end=entity.end,
+                        entity_start=entity.start_char,
+                        entity_end=entity.end_char,
                     )
                     assertions.append({
                         "entity_text": assertion.entity_text,

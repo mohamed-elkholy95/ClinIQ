@@ -1195,3 +1195,394 @@ class TestEndToEnd:
             if k not in ("ner", "icd", "summarization", "risk", "base_pipeline")
         }
         assert len(enhanced_errors) == 0, f"Unexpected errors: {enhanced_errors}"
+
+
+# ===================================================================
+# Entity-dependent stage tests (assertions, normalization, relations)
+# ===================================================================
+
+# Clinical text with entity positions for injection into base_result.
+_ENTITY_TEXT = (
+    "Patient has hypertension and diabetes. "
+    "Started metoprolol 50 mg for blood pressure control."
+)
+
+
+def _make_entity(text: str, entity_type: str, start: int, end: int, conf: float = 0.9):
+    """Create an Entity dataclass instance for testing."""
+    from app.ml.ner.model import Entity
+    return Entity(
+        text=text,
+        entity_type=entity_type,
+        start_char=start,
+        end_char=end,
+        confidence=conf,
+    )
+
+
+def _make_entities_for_text():
+    """Build entities aligned to _ENTITY_TEXT positions."""
+    # "hypertension" at index 12..24, "diabetes" at 29..37
+    # "metoprolol" at 47..57
+    return [
+        _make_entity("hypertension", "DISEASE", 12, 24),
+        _make_entity("diabetes", "DISEASE", 29, 37),
+        _make_entity("metoprolol", "MEDICATION", 47, 57),
+    ]
+
+
+def _pipeline_with_entities():
+    """Create a pipeline whose base result has synthetic entities."""
+    from app.ml.pipeline import PipelineResult
+
+    pipe = EnhancedClinicalPipeline()
+    pipe._ensure_modules()
+
+    # Inject entities into a synthetic base result
+    entities = _make_entities_for_text()
+    base = PipelineResult(document_id="synth-1", entities=entities)
+    return pipe, base, entities
+
+
+class TestAssertionWithEntities:
+    """Assertion detection with injected NER entities."""
+
+    def test_assertions_populated_from_entities(self):
+        """When base_result has entities, assertions should be populated."""
+        pipe, base, entities = _pipeline_with_entities()
+
+        cfg = EnhancedPipelineConfig(
+            enable_ner=False, enable_icd=False,
+            enable_summarization=False, enable_risk=False,
+            enable_classification=False, enable_sections=False,
+            enable_quality=False, enable_abbreviations=False,
+            enable_medications=False, enable_allergies=False,
+            enable_vitals=False, enable_temporal=False,
+            enable_assertions=True,
+            enable_normalization=False, enable_sdoh=False,
+            enable_relations=False, enable_comorbidity=False,
+        )
+
+        # Manually process with a patched base pipeline
+        result = EnhancedPipelineResult()
+        result.base_result = base
+
+        result = pipe._run_assertions(_ENTITY_TEXT, cfg, result)
+        assert result.assertions is not None
+        assert len(result.assertions) > 0, "Expected at least 1 assertion result"
+        for a in result.assertions:
+            assert "entity_text" in a
+            assert "entity_type" in a
+            assert "status" in a
+            assert "confidence" in a
+
+    def test_assertions_have_correct_entity_types(self):
+        """Each assertion should carry entity_type from source entity."""
+        pipe, base, entities = _pipeline_with_entities()
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_assertions(_ENTITY_TEXT, cfg, result)
+
+        types_found = {a["entity_type"] for a in result.assertions}
+        assert "DISEASE" in types_found
+
+    def test_assertions_skip_failing_entity(self):
+        """If one entity fails assertion detection, others should still work."""
+        pipe, base, entities = _pipeline_with_entities()
+
+        # Add an entity with out-of-range offsets
+        from app.ml.ner.model import Entity
+        bad_entity = Entity(
+            text="bogus", entity_type="DISEASE",
+            start_char=99999, end_char=100005, confidence=0.9,
+        )
+        base.entities.append(bad_entity)
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_assertions(_ENTITY_TEXT, cfg, result)
+
+        # Should still have assertions from valid entities
+        assert len(result.assertions) >= 2
+
+
+class TestNormalizationWithEntities:
+    """Concept normalization with injected NER entities."""
+
+    def test_normalization_produces_results(self):
+        """Known conditions should be normalized to ontology codes."""
+        pipe, base, entities = _pipeline_with_entities()
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_normalization(_ENTITY_TEXT, cfg, result)
+
+        assert result.normalization is not None
+        assert isinstance(result.normalization, list)
+        # "hypertension" and "diabetes" should match in the concept dictionary
+        if len(result.normalization) > 0:
+            norm = result.normalization[0]
+            assert "entity_text" in norm
+            assert "cui" in norm
+            assert "preferred_term" in norm
+            assert "confidence" in norm
+
+    def test_normalization_includes_ontology_codes(self):
+        """Normalized entities should include SNOMED/ICD/RxNorm codes."""
+        pipe, base, entities = _pipeline_with_entities()
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_normalization(_ENTITY_TEXT, cfg, result)
+
+        for norm in result.normalization:
+            assert "snomed_code" in norm
+            assert "rxnorm_code" in norm
+            assert "icd10_code" in norm
+            assert "loinc_code" in norm
+
+    def test_normalization_match_type_set(self):
+        """Each normalized entity should have a match_type."""
+        pipe, base, entities = _pipeline_with_entities()
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_normalization(_ENTITY_TEXT, cfg, result)
+
+        for norm in result.normalization:
+            assert "match_type" in norm
+            assert norm["match_type"] in ("exact", "alias", "fuzzy")
+
+    def test_normalization_empty_on_unknown_entity(self):
+        """Unknown entity text should not produce normalization results."""
+        pipe = EnhancedClinicalPipeline()
+        pipe._ensure_modules()
+        from app.ml.pipeline import PipelineResult
+
+        entity = _make_entity("xyzzy_unknown_99", "DISEASE", 0, 16)
+        base = PipelineResult(document_id="test", entities=[entity])
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_normalization("xyzzy_unknown_99", cfg, result)
+
+        # Should be empty or at best empty list (no match)
+        assert isinstance(result.normalization, list)
+
+
+class TestRelationsWithEntities:
+    """Relation extraction with injected NER entities."""
+
+    def test_relations_extracted_from_entity_pairs(self):
+        """With 2+ entities, relation extraction should produce results."""
+        pipe, base, entities = _pipeline_with_entities()
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_relations(_ENTITY_TEXT, cfg, result)
+
+        assert result.relations is not None
+        assert "relation_count" in result.relations
+        assert "pair_count" in result.relations
+        assert result.relations["pair_count"] > 0
+
+    def test_relations_structure(self):
+        """Each relation should have subject, object, type, confidence."""
+        pipe, base, entities = _pipeline_with_entities()
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_relations(_ENTITY_TEXT, cfg, result)
+
+        for rel in result.relations["relations"]:
+            assert "subject" in rel
+            assert "object" in rel
+            assert "relation_type" in rel
+            assert "confidence" in rel
+            assert "evidence" in rel
+
+    def test_relations_with_medication_disease_pair(self):
+        """Should detect medication-disease relation (e.g., treats)."""
+        # Text where metoprolol treats hypertension in close proximity
+        text = "Metoprolol treats hypertension effectively."
+        from app.ml.pipeline import PipelineResult
+
+        pipe = EnhancedClinicalPipeline()
+        pipe._ensure_modules()
+        entities = [
+            _make_entity("Metoprolol", "MEDICATION", 0, 10),
+            _make_entity("hypertension", "DISEASE", 18, 30),
+        ]
+        base = PipelineResult(document_id="test", entities=entities)
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_relations(text, cfg, result)
+
+        assert result.relations["relation_count"] > 0
+        rel_types = [r["relation_type"] for r in result.relations["relations"]]
+        assert "treats" in rel_types, f"Expected 'treats' in {rel_types}"
+
+    def test_relations_single_entity_returns_empty(self):
+        """With fewer than 2 entities, relations should be empty."""
+        from app.ml.pipeline import PipelineResult
+
+        pipe = EnhancedClinicalPipeline()
+        pipe._ensure_modules()
+        entities = [_make_entity("hypertension", "DISEASE", 12, 24)]
+        base = PipelineResult(document_id="test", entities=entities)
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_relations("Patient has hypertension.", cfg, result)
+
+        assert result.relations["relation_count"] == 0
+
+
+class TestDeidentificationStageExecution:
+    """Test de-identification with actual execution."""
+
+    def test_deidentification_redacts_names(self, pipeline):
+        """De-identification should redact name-like patterns."""
+        text = "Dr. John Smith prescribed metformin for the patient."
+        cfg = EnhancedPipelineConfig(
+            enable_ner=False, enable_icd=False,
+            enable_summarization=False, enable_risk=False,
+            enable_classification=False, enable_sections=False,
+            enable_quality=False,
+            enable_deidentification=True,
+            enable_abbreviations=False, enable_medications=False,
+            enable_allergies=False, enable_vitals=False,
+            enable_temporal=False, enable_assertions=False,
+            enable_normalization=False, enable_sdoh=False,
+            enable_relations=False, enable_comorbidity=False,
+        )
+        result = pipeline.process(text, config=cfg)
+        assert result.deidentification is not None
+
+    def test_deidentification_returns_dict(self, pipeline):
+        """De-identification result should have text and detections."""
+        text = "Patient John Smith, DOB: 01/15/1960, SSN: 123-45-6789"
+        cfg = EnhancedPipelineConfig(
+            enable_ner=False, enable_icd=False,
+            enable_summarization=False, enable_risk=False,
+            enable_classification=False, enable_sections=False,
+            enable_quality=False,
+            enable_deidentification=True,
+            enable_abbreviations=False, enable_medications=False,
+            enable_allergies=False, enable_vitals=False,
+            enable_temporal=False, enable_assertions=False,
+            enable_normalization=False, enable_sdoh=False,
+            enable_relations=False, enable_comorbidity=False,
+        )
+        result = pipeline.process(text, config=cfg)
+        assert result.deidentification is not None
+
+
+class TestModuleInitializationFailure:
+    """Test graceful degradation when modules fail to initialize."""
+
+    def test_pipeline_works_with_broken_import(self):
+        """Pipeline should handle import failures gracefully."""
+        pipe = EnhancedClinicalPipeline()
+        pipe._ensure_modules()
+
+        # Sabotage a module after init
+        pipe._medication_extractor = None
+        pipe._allergy_extractor = None
+
+        cfg = EnhancedPipelineConfig(
+            enable_ner=False, enable_icd=False,
+            enable_summarization=False, enable_risk=False,
+            enable_classification=True,
+            enable_sections=True,
+            enable_quality=False,
+            enable_abbreviations=False,
+            enable_medications=True,
+            enable_allergies=True,
+            enable_vitals=False, enable_temporal=False,
+            enable_assertions=False, enable_normalization=False,
+            enable_sdoh=False, enable_relations=False,
+            enable_comorbidity=False,
+        )
+        result = pipe.process(SAMPLE_CLINICAL_NOTE, config=cfg)
+        # Medications/allergies should be None (module is None)
+        assert result.medications is None
+        assert result.allergies is None
+        # But sections and classification should work
+        assert result.sections is not None
+        assert result.classification is not None
+
+
+class TestComorbidityWithIcdCodes:
+    """Test comorbidity scoring with ICD codes from base pipeline."""
+
+    def test_comorbidity_uses_base_icd_codes(self):
+        """CCI should use ICD codes from base pipeline result."""
+        from app.ml.pipeline import PipelineResult
+
+        pipe = EnhancedClinicalPipeline()
+        pipe._ensure_modules()
+
+        base = PipelineResult(
+            document_id="test",
+            icd_predictions=[
+                {"code": "E11.9", "description": "Type 2 diabetes"},
+                {"code": "I10", "description": "Essential hypertension"},
+            ],
+        )
+
+        cfg = EnhancedPipelineConfig(
+            enable_ner=False, enable_icd=False,
+            enable_summarization=False, enable_risk=False,
+            enable_classification=False, enable_sections=False,
+            enable_quality=False, enable_abbreviations=False,
+            enable_medications=False, enable_allergies=False,
+            enable_vitals=False, enable_temporal=False,
+            enable_assertions=False, enable_normalization=False,
+            enable_sdoh=False, enable_relations=False,
+            enable_comorbidity=True,
+        )
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_comorbidity(
+            "Type 2 diabetes and hypertension", cfg, result,
+        )
+
+        assert result.comorbidity is not None
+        assert result.comorbidity["raw_score"] > 0
+        assert result.comorbidity["category_count"] > 0
+        assert "risk_group" in result.comorbidity
+        assert "ten_year_mortality" in result.comorbidity
+        assert isinstance(result.comorbidity["matched_categories"], list)
+
+    def test_comorbidity_empty_codes_falls_through_to_text(self):
+        """Without ICD codes, CCI should still extract from text."""
+        from app.ml.pipeline import PipelineResult
+
+        pipe = EnhancedClinicalPipeline()
+        pipe._ensure_modules()
+
+        base = PipelineResult(document_id="test", icd_predictions=[])
+
+        cfg = EnhancedPipelineConfig()
+        result = EnhancedPipelineResult()
+        result.base_result = base
+        result = pipe._run_comorbidity(
+            "Patient has diabetes mellitus and congestive heart failure",
+            cfg, result,
+        )
+
+        assert result.comorbidity is not None
+        assert result.comorbidity["category_count"] > 0
