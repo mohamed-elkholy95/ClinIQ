@@ -23,12 +23,10 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.ml.vitals.extractor import (
-    ClinicalInterpretation,
-    ClinicalVitalSignsExtractor,
-    VitalSignType,
     _ADULT_RANGES,
     _DIASTOLIC_RANGES,
-    _VALID_RANGES,
+    ClinicalVitalSignsExtractor,
+    VitalSignType,
 )
 
 logger = logging.getLogger(__name__)
