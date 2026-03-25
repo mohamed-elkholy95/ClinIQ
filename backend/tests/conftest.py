@@ -160,7 +160,10 @@ async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, 
 
     app.dependency_overrides[get_db_session] = override_get_db
 
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    import httpx
+
+    transport = httpx.ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
 
     app.dependency_overrides.clear()
