@@ -18,6 +18,7 @@ from app.api.v1.routes.assertions import router as assertions_router
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.batch import router as batch_router
 from app.api.v1.routes.classify import router as classify_router
+from app.api.v1.routes.comorbidity import router as comorbidity_router
 from app.api.v1.routes.deidentify import router as deidentify_router
 from app.api.v1.routes.drift import router as drift_router
 from app.api.v1.routes.health import router as health_router
@@ -72,7 +73,10 @@ api_router.include_router(quality_router)    # POST /quality, POST /quality/batc
 api_router.include_router(assertions_router)  # POST /assertions, POST /assertions/batch, GET /assertions/statuses, GET /assertions/stats
 
 # Concept normalization / entity linking
-api_router.include_router(normalization_router)  # POST /normalize, POST /normalize/batch, GET /normalize/lookup/{cui}, GET /normalize/dictionary/stats
+api_router.include_router(normalization_router)
+
+# Comorbidity scoring (Charlson Comorbidity Index)
+api_router.include_router(comorbidity_router)  # POST /comorbidity, POST /comorbidity/batch, GET /comorbidity/categories  # POST /normalize, POST /normalize/batch, GET /normalize/lookup/{cui}, GET /normalize/dictionary/stats
 
 # Async batch processing
 api_router.include_router(batch_router)    # POST /batch, GET /batch/{job_id}
