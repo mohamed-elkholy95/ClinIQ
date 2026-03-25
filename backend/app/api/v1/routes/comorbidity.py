@@ -69,7 +69,7 @@ class CCIRequest(BaseModel):
 
     @field_validator("icd_codes", "text")
     @classmethod
-    def at_least_one_input(cls, v: Any, info: Any) -> Any:
+    def at_least_one_input(cls, v: Any, _info: Any) -> Any:
         """Validate on model level; actual check in endpoint."""
         return v
 

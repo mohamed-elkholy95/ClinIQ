@@ -20,6 +20,10 @@ from __future__ import annotations
 import pytest
 
 from app.ml.normalization.normalizer import (
+    _ALIAS_INDEX,
+    _CONCEPT_DATA,
+    _EXACT_INDEX,
+    _GROUP_INDEX,
     BatchNormalizationResult,
     ClinicalConceptNormalizer,
     ConceptEntry,
@@ -27,13 +31,8 @@ from app.ml.normalization.normalizer import (
     NormalizationResult,
     NormalizerConfig,
     OntologySource,
-    _ALIAS_INDEX,
-    _CONCEPT_DATA,
-    _EXACT_INDEX,
-    _GROUP_INDEX,
     get_dictionary_stats,
 )
-
 
 # ---------------------------------------------------------------------------
 # Enum & data structure tests

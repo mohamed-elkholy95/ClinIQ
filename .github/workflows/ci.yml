@@ -31,9 +31,7 @@ jobs:
 
       - name: Install lint/typecheck dependencies
         run: |
-          pip install ruff mypy
-          cd backend
-          pip install -e .
+          pip install ruff mypy pydantic
 
       - name: Run Ruff (lint + import sorting)
         run: ruff check backend/
@@ -57,7 +55,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: test
-          POSTGRES_PASSWORD: ${CI_DB_PASSWORD:-test_password}
+          POSTGRES_PASSWORD: test_password
           POSTGRES_DB: cliniq_test
         ports:
           - 5432:5432
@@ -93,7 +91,7 @@ jobs:
 
       - name: Run tests with coverage
         env:
-          DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/cliniq_test
+          DATABASE_URL: postgresql+asyncpg://test:test_password@localhost:5432/cliniq_test
           REDIS_URL: redis://localhost:6379/0
           SECRET_KEY: test-secret-key-for-ci
           ENVIRONMENT: test

@@ -11,16 +11,13 @@ Covers:
 import pytest
 
 from app.api.v1.routes.comorbidity import (
+    CategoryInfoResponse,
     CCIBatchRequest,
-    CCIBatchResponse,
     CCIRequest,
     CCIResponse,
-    CategoryInfoResponse,
-    _get_calculator,
     _result_to_response,
 )
 from app.ml.comorbidity import CharlsonCalculator, CharlsonConfig
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

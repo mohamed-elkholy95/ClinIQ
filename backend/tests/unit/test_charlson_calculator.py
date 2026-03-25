@@ -14,26 +14,23 @@ Covers:
 """
 
 import math
-import re
 
 import pytest
 
 from app.ml.comorbidity.charlson import (
-    CATEGORY_DESCRIPTIONS,
-    CATEGORY_WEIGHTS,
-    CCICategory,
-    CCIResult,
-    CharlsonCalculator,
-    CharlsonConfig,
-    ComorbidityMatch,
-    ICD10_PREFIXES,
-    MortalityEstimate,
     _HIERARCHICAL_PAIRS,
     _PREFIX_LOOKUP,
     _SORTED_PREFIXES,
     _TEXT_PATTERNS,
+    CATEGORY_DESCRIPTIONS,
+    CATEGORY_WEIGHTS,
+    ICD10_PREFIXES,
+    CCICategory,
+    CharlsonCalculator,
+    CharlsonConfig,
+    ComorbidityMatch,
+    MortalityEstimate,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

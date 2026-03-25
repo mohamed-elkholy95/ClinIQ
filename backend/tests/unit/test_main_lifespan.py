@@ -6,9 +6,27 @@ exception handler, general exception handler, and process-time middleware.
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import _error_code_to_http_status, app
+from app.middleware.rate_limit import RateLimitMiddleware
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Clear the in-memory rate limiter between tests."""
+    for mw in app.user_middleware:
+        if mw.cls is RateLimitMiddleware:
+            break
+    # The actual middleware instance lives on the built middleware stack;
+    # walk the ASGI app wrappers to find it.
+    obj = app.middleware_stack
+    while obj is not None:
+        if isinstance(obj, RateLimitMiddleware):
+            obj._local_store.clear()
+            break
+        obj = getattr(obj, "app", None)
 
 # ---------------------------------------------------------------------------
 # Lifespan

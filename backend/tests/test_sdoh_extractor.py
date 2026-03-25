@@ -29,7 +29,6 @@ from app.ml.sdoh.extractor import (
     SDoHSentiment,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -63,7 +62,7 @@ class TestSDoHDomain:
             assert domain.value == domain.value.lower()
 
     def test_string_enum_serialisation(self) -> None:
-        assert str(SDoHDomain.HOUSING) == "SDoHDomain.HOUSING"
+        assert str(SDoHDomain.HOUSING) == "housing"
         assert SDoHDomain.HOUSING.value == "housing"
 
     def test_known_domains(self) -> None:
@@ -182,7 +181,7 @@ class TestPatternLibrary:
         assert count >= 80
 
     def test_triggers_have_required_keys(self) -> None:
-        for domain, triggers in PATTERN_LIBRARY.items():
+        for _domain, triggers in PATTERN_LIBRARY.items():
             for trigger in triggers:
                 assert "pattern" in trigger
                 assert "sentiment" in trigger
@@ -217,7 +216,7 @@ class TestZCodeMapping:
                 )
 
     def test_z_code_entries_have_description(self) -> None:
-        for domain, entries in DOMAIN_Z_CODES.items():
+        for _domain, entries in DOMAIN_Z_CODES.items():
             for entry in entries:
                 assert "description" in entry
                 assert len(entry["description"]) > 5

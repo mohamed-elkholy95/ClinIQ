@@ -42,7 +42,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class SDoHDomain(str, Enum):
+class SDoHDomain(StrEnum):
     """Eight social determinant domains aligned with Healthy People 2030.
 
     Values are lowercase identifiers used in API responses and Z-code
@@ -70,7 +70,7 @@ class SDoHDomain(str, Enum):
     FINANCIAL = "financial"
 
 
-class SDoHSentiment(str, Enum):
+class SDoHSentiment(StrEnum):
     """Whether the extracted factor is adverse, protective, or neutral.
 
     * ADVERSE — risk factor present (e.g., "currently homeless")

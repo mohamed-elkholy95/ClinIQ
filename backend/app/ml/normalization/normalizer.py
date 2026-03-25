@@ -44,7 +44,7 @@ import re
 import time
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-from enum import Enum
+from enum import StrEnum
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class OntologySource(str, Enum):
+class OntologySource(StrEnum):
     """Supported medical ontology systems."""
 
     UMLS = "UMLS"
@@ -64,7 +64,7 @@ class OntologySource(str, Enum):
     LOINC = "LOINC"
 
 
-class EntityTypeGroup(str, Enum):
+class EntityTypeGroup(StrEnum):
     """Broad entity type groupings for ontology filtering."""
 
     CONDITION = "CONDITION"  # DISEASE, SYMPTOM
@@ -809,10 +809,8 @@ class ClinicalConceptNormalizer:
             if not self._type_matches(concept, type_group):
                 continue
             ratio = SequenceMatcher(None, key, alias).ratio()
-            if ratio >= min_sim:
-                # Avoid duplicates with same concept
-                if not any(c.cui == concept.cui for _, c in candidates):
-                    candidates.append((ratio, concept))
+            if ratio >= min_sim and not any(c.cui == concept.cui for _, c in candidates):
+                candidates.append((ratio, concept))
 
         if not candidates:
             return None

@@ -25,7 +25,6 @@ from pydantic import BaseModel, Field
 from app.ml.sdoh.extractor import (
     ClinicalSDoHExtractor,
     SDoHDomain,
-    SDoHSentiment,
 )
 
 logger = logging.getLogger(__name__)

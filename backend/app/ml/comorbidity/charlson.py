@@ -50,7 +50,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class CCICategory(str, Enum):
+class CCICategory(StrEnum):
     """The 17 Charlson Comorbidity Index disease categories.
 
     Each category carries an integer weight (1, 2, 3, or 6) reflecting
