@@ -8,6 +8,17 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 15 (2026-03-24)
+- [x] **Frontend page test coverage expanded from 14 to 238 tests** — 125 new tests across 6 new page test modules (~1,230 lines):
+  - `DocumentUpload.test.tsx` (22 tests) — text input, file upload zone, Load sample prefill, word count, analyze button enable/disable, simulated analysis delay with fake timers, result rendering (annotated text, entity tags, ICD codes, risk gauge, clinical summary, key findings, processing time)
+  - `EntityViewer.test.tsx` (18 tests) — entity list rendering, search filtering, type dropdown filter, combined filters, frequency chart heading, entity detail panel with type/confidence/CUI/span, result counts, empty state
+  - `ICDResults.test.tsx` (17 tests) — chapter grouping/headers, expand/collapse per chapter, expand-all/collapse-all, search by code and description, confidence slider, evidence tags, WHO external links, prediction counts
+  - `ClinicalSummary.test.tsx` (17 tests) — detail level selector (brief/standard/detailed), summary text switching, word count per level, key findings count per level, metadata section
+  - `RiskAssessment.test.tsx` (17 tests) — overall risk gauge (score + level), category risk scores chart, all 6 risk factors with scores/descriptions/categories, 8 numbered recommendations, risk level legend with score ranges
+  - `Timeline.test.tsx` (16 tests) — chronological event rendering, type filter buttons (All + 6 types), filtering to specific types, empty state on no-match, expand/collapse entity details, date formatting, source text labels
+  - `ModelManagement.test.tsx` (18 tests) — summary stats (total/active/training counts), 6 model cards with names/versions/types, status badges (Active/Training/Inactive), metric labels (Accuracy/F1/Precision/Recall), descriptions, training/deployment timestamps
+- [x] **Total frontend tests: 238 passing** (was 113), 0 failures
+
 #### Post-PRD Enhancements — Session 14 (2026-03-24)
 - [x] **Test coverage pushed from 97% to 99%** (4142 statements, 52 missed) — 80 new tests across 8 modules:
   - `test_coverage_final.py` (36 tests) — targeted edge cases: TransformerNER BIO tag extraction (continuation, special tokens, O-after-entity), CompositeNER intersection/majority/overlap, SklearnICD 1D proba reshape + decision_function sigmoid + batch predict, DentalNER quadrant mapping + surface validation, TextDistributionMonitor empty records + vocab diversity, PredictionMonitor confidence/label drift, ModelMetrics gauge methods, main.py exception handlers via TestClient, ExtractiveSummarizer InferenceError, AnalysisService error wrapping, AnalysisRequest validation, SHAP format_explanation
