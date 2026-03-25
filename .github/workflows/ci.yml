@@ -29,9 +29,10 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install linters
+      - name: Install lint/typecheck dependencies
         run: |
-          pip install ruff mypy
+          cd backend
+          pip install -e ".[dev]"
 
       - name: Run Ruff (lint + import sorting)
         run: ruff check backend/
