@@ -67,6 +67,7 @@ The API documentation is available at `http://localhost:8000/docs` (Swagger UI) 
 | **Clinical Text Summarization** | Generate concise summaries of clinical notes via extractive (TextRank with clinical relevance weighting) or abstractive (BART/T5) methods. Three detail levels: brief, standard, detailed. |
 | **Risk Scoring** | Assess medication risk, diagnostic complexity, and follow-up urgency. Rule-based scorer with weighted polypharmacy, drug interaction, and ICD chapter analysis. Generates actionable clinical recommendations. |
 | **Dental NLP Module** | Specialized NER for dental records: tooth numbering (Universal, FDI, Palmer), surface identification, periodontal measurements, CDT code prediction, and periodontal risk assessment. |
+| **PHI De-identification** | HIPAA Safe Harbor compliant PHI detection and redaction covering all 18 identifier categories. Three replacement strategies: redact (tag), mask (asterisks), surrogate (synthetic values). Contextual confidence scoring and pluggable custom detectors. |
 
 ---
 
@@ -96,6 +97,8 @@ The API documentation is available at `http://localhost:8000/docs` (Swagger UI) 
 | `GET`  | `/api/v1/batch/{job_id}` | Poll batch job status |
 | `GET`  | `/api/v1/models` | List loaded models |
 | `GET`  | `/api/v1/models/{name}` | Model details |
+| `POST` | `/api/v1/deidentify` | PHI de-identification (single text) |
+| `POST` | `/api/v1/deidentify/batch` | Batch PHI de-identification |
 | `GET`  | `/api/v1/health` | Health check (liveness + readiness) |
 | `POST` | `/api/v1/auth/token` | Obtain JWT access token |
 | `POST` | `/api/v1/auth/register` | Register new user |
