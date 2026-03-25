@@ -37,6 +37,8 @@ from app.api.v1.routes.stream import router as stream_router
 from app.api.v1.routes.summarize import router as summarize_router
 from app.api.v1.routes.temporal import router as temporal_router
 from app.api.v1.routes.abbreviations import router as abbreviations_router
+from app.api.v1.routes.allergies import router as allergies_router
+from app.api.v1.routes.sections import router as sections_router
 from app.api.v1.routes.vitals import router as vitals_router
 
 # ---------------------------------------------------------------------------
@@ -88,7 +90,13 @@ api_router.include_router(comorbidity_router)
 api_router.include_router(vitals_router)
 
 # Clinical abbreviation expansion
-api_router.include_router(abbreviations_router)  # POST /abbreviations, POST /abbreviations/batch, GET /abbreviations/lookup/{abbrev}, GET /abbreviations/dictionary/stats, GET /abbreviations/domains       # POST /vitals, POST /vitals/batch, GET /vitals/types, GET /vitals/ranges  # POST /comorbidity, POST /comorbidity/batch, GET /comorbidity/categories  # POST /normalize, POST /normalize/batch, GET /normalize/lookup/{cui}, GET /normalize/dictionary/stats
+api_router.include_router(abbreviations_router)
+
+# Clinical section parsing
+api_router.include_router(sections_router)   # POST /sections, POST /sections/batch, POST /sections/query, GET /sections/categories
+
+# Clinical allergy extraction
+api_router.include_router(allergies_router)  # POST /allergies, POST /allergies/batch, GET /allergies/dictionary/stats, GET /allergies/categories  # POST /abbreviations, POST /abbreviations/batch, GET /abbreviations/lookup/{abbrev}, GET /abbreviations/dictionary/stats, GET /abbreviations/domains       # POST /vitals, POST /vitals/batch, GET /vitals/types, GET /vitals/ranges  # POST /comorbidity, POST /comorbidity/batch, GET /comorbidity/categories  # POST /normalize, POST /normalize/batch, GET /normalize/lookup/{cui}, GET /normalize/dictionary/stats
 
 # Async batch processing
 api_router.include_router(batch_router)    # POST /batch, GET /batch/{job_id}
