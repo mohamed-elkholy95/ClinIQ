@@ -8,6 +8,19 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 48 (2026-03-26)
+- [x] **Input sanitization middleware** (`app.middleware.sanitize`) — Production-hardening middleware that strips encoding artifacts from JSON request bodies before they reach ML inference or database storage:
+  - `InputSanitizationMiddleware` registered in FastAPI stack with configurable body size (2 MB) and text length (500K char) limits
+  - `sanitize_text()` — removes null bytes (breaks PostgreSQL TEXT), byte-order marks (Windows UTF-8), C0 control characters (\x00–\x08, \x0b, \x0e–\x1f, \x7f); preserves tabs, newlines, CR, and medical symbols (°, µ, ±)
+  - `sanitize_dict()` / `_sanitize_list()` — recursive cleaning of nested JSON payloads
+  - HTTP 413 response for oversized request bodies before parsing
+- [x] **NotFound (404) page** — Catch-all `*` route in App.tsx (29th route) rendering accessible error page with MapPinOff icon, descriptive heading, body text, and "Back to Dashboard" link; matches ErrorBoundary visual language for consistent error UX
+- [x] **Reusable React hooks** — Extracted common patterns into `frontend/src/hooks/` with barrel export:
+  - `useAnalysis<T>` — Generic loading/error/data state wrapper with stale-request protection (request ID tracking) for concurrent API calls; replaces 20+ lines of useState/try-catch boilerplate per page
+  - `useDebounce<T>` — Delays rapidly-changing values with timer cleanup on unmount; useful for search inputs and autocomplete
+- [x] **55 new tests**: `test_sanitize.py` (32 backend — null bytes 2, BOM 2, control chars 5, preservation 3, truncation 2, combined artifacts 1, dict sanitization 7, list sanitization 5, middleware config 2, edge cases 3), `NotFound.test.tsx` (5 frontend — heading, body text, link, aria-hidden icon, focus ring), `useAnalysis.test.tsx` (11 — initial state, loading, success, args passthrough, error capture, non-Error throws, reset, stale request protection), `useDebounce.test.tsx` (7 — initial value, delay timing, timer reset, default delay, non-string types, unmount cleanup)
+- [x] **Total test suite: 3094 passing** (backend: 3094, frontend: 675, SDK: 127), 0 failures
+
 #### Post-PRD Enhancements — Session 47 (2026-03-26)
 - [x] **3 new frontend pages for previously UI-less backend modules** — Completing UI coverage for all clinical NLP endpoint groups by adding dedicated interactive pages for abbreviation expansion, section parsing, and concept normalization:
   - **AbbreviationExpander page** (`/abbreviations`) — 28th page providing interactive access to the abbreviation expansion API (120+ entries across 12 clinical domains); domain-coloured badges, ambiguous/clear status indicators, expanded text preview with toggle, domain distribution summary chart, confidence threshold slider; 3 preloaded sample notes (ED assessment, dental progress, discharge summary)
