@@ -22,6 +22,9 @@ import { TemporalExtractor } from './pages/TemporalExtractor';
 import { AssertionDetector } from './pages/AssertionDetector';
 import { RelationExplorer } from './pages/RelationExplorer';
 import { DocumentClassifier } from './pages/DocumentClassifier';
+import { SearchExplorer } from './pages/SearchExplorer';
+import { DriftMonitor } from './pages/DriftMonitor';
+import { StreamingAnalysis } from './pages/StreamingAnalysis';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +68,9 @@ export default function App() {
               <Route path="/relations" element={<RelationExplorer />} />
               <Route path="/classify" element={<DocumentClassifier />} />
               <Route path="/pipeline" element={<PipelineExplorer />} />
+              <Route path="/search" element={<SearchExplorer />} />
+              <Route path="/drift" element={<DriftMonitor />} />
+              <Route path="/stream" element={<StreamingAnalysis />} />
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/models" element={<ModelManagement />} />
             </Route>

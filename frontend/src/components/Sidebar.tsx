@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   GitBranch,
   FileSearch,
+  Search,
+  Radio,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -49,6 +51,9 @@ const navItems = [
   { to: '/relations', label: 'Relations', icon: GitBranch },
   { to: '/classify', label: 'Classify', icon: FileSearch },
   { to: '/pipeline', label: 'Pipeline Explorer', icon: Layers },
+  { to: '/search', label: 'Search', icon: Search },
+  { to: '/drift', label: 'Drift Monitor', icon: Activity },
+  { to: '/stream', label: 'Streaming', icon: Radio },
   { to: '/timeline', label: 'Timeline', icon: Clock },
   { to: '/models', label: 'Models', icon: Cpu },
 ];
