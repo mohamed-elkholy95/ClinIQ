@@ -8,6 +8,19 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 43 (2026-03-26)
+- [x] **Educational inline comments across 7 core ML modules** — Added comprehensive design-decision documentation (WHY, not just WHAT) to early-phase modules that previously had minimal docstrings:
+  - `ner/model.py` — Full architecture overview (rule-based vs scispaCy vs transformer vs composite), BIO tagging explanation with sub-word tokenisation rationale, ensemble voting strategy trade-offs (union for recall, intersection for precision, majority for balance), negation detection as lightweight NegEx approximation, INN stem patterns for novel drug detection
+  - `icd/model.py` — Multi-label vs multi-class decision (sigmoid not softmax for multiple codes per encounter), top-k with confidence for human-in-the-loop review, contributing text for clinical audit support, ~400 high-frequency code dictionary rationale
+  - `risk/scorer.py` — Rule-based vs validated calculator trade-offs, additive factor model for transparency and explainability, normalised [0,1] score rationale, complementary role to Charlson CCI
+  - `utils/text_preprocessing.py` — 5 clinical text characteristics vs general NLP (abbreviations, section structure, mixed formatting, meaningful whitespace, OCR artifacts), abbreviation expansion opt-in rationale (ambiguity risk), sentence segmentation protection for medical abbreviations and decimals
+  - `utils/feature_engineering.py` — TF-IDF + hand-crafted feature architecture, medical stopwords vs sklearn English stopwords (classification-specific vs NER-safe), bigram rationale for clinical multi-word terms, max_df=0.95 for boilerplate filtering, sparse hstack for memory efficiency
+  - `utils/metrics.py` — Macro/micro/weighted F1 for imbalanced ICD-10 codes, exact span matching vs token-level for NER (community standard for i2b2/n2c2), ROUGE + length ratio for summarisation, lazy sklearn imports for lightweight environments
+  - `api/v1/routes/metrics.py` — Fixed last missing public function docstring (JSON encoder `default()`)
+- [x] **Inference benchmarks documentation** — `docs/benchmarks/inference-benchmarks.md` with latency (avg + p95), throughput (docs/s), and memory usage for all modules: 15 rule-based modules (<1–5 ms each), 6 ML models (15–150 ms CPU, 10–25 ms GPU), search pipeline (5–130 ms), enhanced pipeline configurations (30–400 ms), ONNX optimisation (~2.5× speedup), memory footprint per component (50 MB rule-based to 420 MB per transformer), scaling characteristics (Celery HPA, batch processing, inference caching, graceful degradation)
+- [x] **Zero missing public function docstrings** (was 1, now 0)
+- [x] **Total test suite: 2987 passing** (backend: 2987, frontend: 566), 0 failures
+
 #### Post-PRD Enhancements — Session 42 (2026-03-26)
 - [x] **Conversation memory REST API (5 new endpoints)** — Exposed the existing in-memory `ConversationMemory` module through a full REST interface, enabling session-scoped context tracking for sequential clinical analyses:
   - `POST /conversation/turns` — Record analysis turns with entities, ICD codes, risk scores, summary, document ID, and arbitrary metadata; Pydantic-validated request with constraints on session_id (1–256), text (1–500K), risk_score (0–1); returns assigned turn_id and updated turn_count
