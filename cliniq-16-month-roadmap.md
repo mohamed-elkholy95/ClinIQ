@@ -4,9 +4,18 @@
 
 *A complete engineering plan for building a professional-grade clinical NLP application from zero to production, designed specifically to demonstrate ML Engineering mastery and healthcare domain expertise.*
 
-### Build Status (2026-03-25)
+### Build Status (2026-03-26)
 
 All phases are **COMPLETE**.
+
+#### Post-PRD Enhancements — Session 40 (2026-03-26)
+- [x] **Targeted test coverage expansion: 95% → 97%** — 61 new unit tests surgically targeting the 5 lowest-coverage modules, eliminating coverage gaps in critical infrastructure and ML components:
+  - **ONNX Runtime serving** (62% → 98%, 18 tests) — Full `load()` success path with mocked `onnxruntime` (`SessionOptions`, `InferenceSession`, input/output name extraction), `_load_tokenizer()` success/ImportError/missing-directory/None-path paths, `_tokenize()` with mocked HuggingFace tokenizer including input-name filtering, `predict(text=...)` through tokenizer→session pipeline, `predict_batch(texts=...)` iteration, `ensure_loaded()` triggering `load()`, `InferenceSession` creation failure wrapping in `ModelLoadError`, `export_from_pytorch()` with parent directory creation/default output names/custom axes/export failure
+  - **Document classifier** (80% → 100%, 15 tests) — `_section_score`/`_keyword_score`/`_structural_score` returning zero for `UNKNOWN` type (no patterns/keywords/profiles), `classify()` exception→`InferenceError` wrapping, `_count_sections` edge cases (empty text, ALL-CAPS headers, colon-terminated headers, >60 char exclusion, blank line skipping), `TransformerDocumentClassifier.load()` success and failure paths, `classify()` with loaded transformer (full mock inference chain), fallback on not-loaded, fallback on exception, unknown label skipping
+  - **Relation extractor** (75% → 98%, 15 tests) — `TransformerRelationExtractor.load()` success/failure/skip-if-already-loaded/skip-if-already-failed/label-map-from-config (with unknown label warning), `extract()` fallback annotating model_name, `_extract_with_model()` full transformer inference with confidence filtering/overlapping entity skip/unknown label skip/max-distance filtering, `RuleBasedRelationExtractor` proximity bonus verification/sentence bonus verification/empty entities/single entity
+  - **Search route** (77% → 100%, 7 tests) — Full `search_documents()` handler via `AsyncClient`: basic query without expansion/rerank, query expansion with expanded terms, expansion with zero new terms (null expansion_info), re-ranking with multiple results, single-result reranking skip, `reindex()` endpoint, empty results
+  - **Metrics route** (81% → 97%, 6 tests) — `/metrics` Prometheus text format with mocked `prometheus_client`, JSON fallback, `/metrics/models` structured summary, `_json_encode` with datetime ISO serialisation/set→list conversion/nested dict
+- [x] **Total test suite: 2961 passing** (backend: 2961, frontend: 542), 0 failures, overall coverage 97%
 
 #### Post-PRD Enhancements — Session 39 (2026-03-25)
 - [x] **Comprehensive integration test suite for all 29 endpoint groups** — 70 new integration tests exercising the full FastAPI application stack with real rule-based ML modules (no mocking) against in-memory SQLite, validating request/response schemas and business logic end-to-end:
