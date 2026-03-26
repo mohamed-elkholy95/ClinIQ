@@ -8,6 +8,22 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 45 (2026-03-26)
+- [x] **EvaluationDashboard frontend page** (`/evaluate`) — 25th page providing interactive access to all 7 evaluation API endpoints (session 44); tabbed interface with 6 metric panels (Classification, Agreement, NER, ROUGE, ICD-10, AUPRC), each with preloaded sample data and colour-coded result visualisations:
+  - **Classification panel** — MCC score display, 3×2 confusion matrix grid (TP/FP/FN/TN with green/red cell colouring), accuracy stat card, calibration section (ECE, Brier score, bin count) when y_prob provided
+  - **Agreement panel** — Cohen's Kappa score with 6-level interpretation labels (Almost Perfect/Substantial/Moderate/Fair/Slight/Poor), observed vs expected agreement percentage cards, colour-coded score card (green ≥0.8, blue ≥0.6, yellow ≥0.4, red <0.4)
+  - **NER panel** — Triple F1 score cards (exact, partial, type-weighted) with threshold-based colouring, entity count stats (gold/pred/exact matches/partial matches), mean overlap percentage, unmatched prediction count
+  - **ROUGE panel** — Three ROUGE variant cards (1/2/L) showing F1 prominently with precision/recall breakdown below; reference length, hypothesis length, and compression ratio stat cards
+  - **ICD-10 panel** — Horizontal accuracy bars for chapter/block/full-code hierarchy levels, colour-coded by accuracy (green ≥80%, blue ≥50%, yellow <50%), match counts (n/N), informational tooltip explaining hierarchy significance
+  - **AUPRC panel** — Large score display with label name, positives/total/prevalence stat cards, informational note explaining AUPRC advantage over AUROC for imbalanced clinical datasets with dynamic prevalence baseline
+- [x] **Evaluation type system** (`types/clinical.ts`) — 14 new TypeScript interfaces: ClassificationEvalRequest/Response, CalibrationResult, KappaRequest/Response, EntitySpan, NEREvalRequest/Response, ROUGERequest/Response, ICDEvalRequest/Response, AUPRCRequest/Response, EvaluationMetricInfo, EvaluationMetricsCatalogue
+- [x] **Evaluation service layer** (`services/clinical.ts`) — 7 new typed API functions: evaluateClassification, evaluateAgreement, evaluateNER, evaluateROUGE, evaluateICD, evaluateAUPRC, listEvaluationMetrics
+- [x] **Router & navigation** — Route at /evaluate in App.tsx (25 total routes); Sidebar updated with BarChart3 icon from lucide-react
+- [x] **API reference expansion** — Added evaluation section with 7 endpoint documentation including curl examples and response schemas for classification, agreement, NER, ROUGE, ICD, AUPRC, and metrics catalogue; table of contents updated to 27 sections
+- [x] **README update** — Test badges corrected from 2961→3062 backend, 542→596 frontend; endpoint groups updated 29→31; added evaluation framework and conversation memory to capabilities list
+- [x] **30 new frontend tests**: `EvaluationDashboard.test.tsx` (30 tests — page structure 5, tab navigation 6, classification results 4, agreement results 3, NER results 2, ROUGE results 2, ICD-10 results 2, AUPRC results 4, error handling 2)
+- [x] **Total test suite: 3062 passing** (backend: 3062, frontend: 596), 0 failures
+
 #### Post-PRD Enhancements — Session 44 (2026-03-26)
 - [x] **Advanced evaluation metrics framework** (`app.ml.utils.advanced_metrics`) — Comprehensive benchmarking module implementing 7 clinical-NLP-specific evaluation metrics with zero external dependencies beyond numpy:
   - **Cohen's Kappa** — Inter-annotator agreement correcting for chance agreement; confusion matrix construction from categorical labels; handles integer and string label types; standard metric for i2b2/n2c2 clinical annotation quality validation
