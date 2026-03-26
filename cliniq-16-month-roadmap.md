@@ -8,6 +8,16 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 47 (2026-03-26)
+- [x] **3 new frontend pages for previously UI-less backend modules** — Completing UI coverage for all clinical NLP endpoint groups by adding dedicated interactive pages for abbreviation expansion, section parsing, and concept normalization:
+  - **AbbreviationExpander page** (`/abbreviations`) — 28th page providing interactive access to the abbreviation expansion API (120+ entries across 12 clinical domains); domain-coloured badges, ambiguous/clear status indicators, expanded text preview with toggle, domain distribution summary chart, confidence threshold slider; 3 preloaded sample notes (ED assessment, dental progress, discharge summary)
+  - **SectionParser page** (`/sections`) — 29th page for parsing clinical documents into structured sections with automatic category detection; colour-coded collapsible section cards with 20+ category styles and icons, auto-expands first 5 sections, character position metadata; category summary with counts; 3 sample clinical notes (H&P, discharge, dental treatment)
+  - **ConceptNormalizer page** (`/normalize`) — 30th page for mapping clinical terms to standardized medical concepts (CUI, ICD-10, SNOMED, RxNorm, LOINC); single-term and batch input modes with toggle, result cards showing preferred term, CUI code, colour-coded coding system badges, confidence progress bars; match-type breakdown stats (exact/alias/fuzzy/none), match rate percentage; 3 sample batches (conditions, drugs, lab tests)
+- [x] **Fixed broken JSDoc in services/clinical.ts** — Missing `/**` opener for `analyzeStream` function causing TypeScript compilation errors in the streaming analysis service
+- [x] **Router & navigation** — 3 new routes in App.tsx (28 total); Sidebar updated with BookOpen (Abbreviations), FileStack (Sections), Microscope (Normalize) icons from lucide-react
+- [x] **56 new frontend tests**: `AbbreviationExpander.test.tsx` (18 tests — page structure 5, sample notes 4, API integration 7, error handling 2), `SectionParser.test.tsx` (17 tests — page structure 4, sample notes 4, API integration 7, error handling 2), `ConceptNormalizer.test.tsx` (21 tests — page structure 4, mode toggle 5, single term 5, batch 5, error handling 2)
+- [x] **Total test suite: 3062 passing** (backend: 3062, frontend: 652, SDK: 127), 0 failures
+
 #### Post-PRD Enhancements — Session 46 (2026-03-26)
 - [x] **Python SDK v0.3.0 — evaluation framework and conversation memory endpoints** — Expanded SDK from 29 to 31 endpoint groups, adding typed client methods, response dataclasses, and comprehensive test coverage for the two newest API modules:
   - **Evaluation framework (7 new client methods)**: `evaluate_classification()` (MCC + confusion matrix + optional calibration via y_prob), `evaluate_agreement()` (Cohen's Kappa inter-annotator agreement), `evaluate_ner()` (partial span matching with configurable Jaccard overlap threshold), `evaluate_rouge()` (ROUGE-1/2/L with full precision/recall/F1 per variant), `evaluate_icd()` (hierarchical ICD-10 accuracy at chapter/block/full-code levels), `evaluate_auprc()` (Area Under Precision-Recall Curve with custom label), `list_evaluation_metrics()` (metric catalogue)
