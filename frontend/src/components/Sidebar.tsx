@@ -19,6 +19,10 @@ import {
   ClipboardCheck,
   Users,
   Calculator,
+  CalendarClock,
+  ShieldCheck,
+  GitBranch,
+  FileSearch,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -40,6 +44,10 @@ const navItems = [
   { to: '/sdoh', label: 'SDoH', icon: Users },
   { to: '/comorbidity', label: 'Comorbidity', icon: Calculator },
   { to: '/deidentify', label: 'De-identify', icon: ShieldOff },
+  { to: '/temporal', label: 'Temporal', icon: CalendarClock },
+  { to: '/assertions', label: 'Assertions', icon: ShieldCheck },
+  { to: '/relations', label: 'Relations', icon: GitBranch },
+  { to: '/classify', label: 'Classify', icon: FileSearch },
   { to: '/pipeline', label: 'Pipeline Explorer', icon: Layers },
   { to: '/timeline', label: 'Timeline', icon: Clock },
   { to: '/models', label: 'Models', icon: Cpu },

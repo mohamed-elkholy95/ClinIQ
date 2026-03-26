@@ -18,6 +18,10 @@ import { SDoHExtractor } from './pages/SDoHExtractor';
 import { ComorbidityCalculator } from './pages/ComorbidityCalculator';
 import { Deidentification } from './pages/Deidentification';
 import { PipelineExplorer } from './pages/PipelineExplorer';
+import { TemporalExtractor } from './pages/TemporalExtractor';
+import { AssertionDetector } from './pages/AssertionDetector';
+import { RelationExplorer } from './pages/RelationExplorer';
+import { DocumentClassifier } from './pages/DocumentClassifier';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +60,10 @@ export default function App() {
               <Route path="/sdoh" element={<SDoHExtractor />} />
               <Route path="/comorbidity" element={<ComorbidityCalculator />} />
               <Route path="/deidentify" element={<Deidentification />} />
+              <Route path="/temporal" element={<TemporalExtractor />} />
+              <Route path="/assertions" element={<AssertionDetector />} />
+              <Route path="/relations" element={<RelationExplorer />} />
+              <Route path="/classify" element={<DocumentClassifier />} />
               <Route path="/pipeline" element={<PipelineExplorer />} />
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/models" element={<ModelManagement />} />
