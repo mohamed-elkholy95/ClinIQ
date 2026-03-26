@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliniq-frontend
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cliniq-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cliniq-frontend
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: cliniq/frontend:latest
+          ports:
+            - containerPort: 80
+              protocol: TCP
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      terminationGracePeriodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cliniq-frontend
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cliniq-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

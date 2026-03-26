@@ -46,6 +46,108 @@ This document describes the system architecture of the ClinIQ clinical NLP platf
       Observability: Prometheus -> Grafana
 ```
 
+### Mermaid Diagram
+
+```mermaid
+graph TB
+    subgraph Clients
+        SPA["React SPA<br/>(23 pages)"]
+        SDK["Python SDK"]
+        CLI["REST / cURL"]
+    end
+
+    subgraph Gateway["Nginx / K8s Ingress"]
+        TLS["TLS Termination"]
+        RL["Rate Limiting"]
+        CORS["CORS"]
+    end
+
+    subgraph API["FastAPI (29 endpoint groups)"]
+        Auth["JWT + API Key Auth"]
+        Routes["API Routes v1"]
+        Middleware["Logging · Rate Limit · Timing"]
+    end
+
+    subgraph Pipeline["ML Pipeline (14 modules)"]
+        direction LR
+        subgraph Phase1["Phase 1 — Pre-processing"]
+            Classify["Document<br/>Classifier"]
+            Sections["Section<br/>Parser"]
+            Quality["Quality<br/>Analyzer"]
+            Deident["PHI<br/>De-identification"]
+            Abbrev["Abbreviation<br/>Expansion"]
+        end
+        subgraph Phase2["Phase 2 — Extraction"]
+            NER["NER<br/>(scispaCy/BioBERT)"]
+            ICD["ICD-10<br/>Prediction"]
+            Meds["Medication<br/>Extraction"]
+            Allergies["Allergy<br/>Extraction"]
+            Vitals["Vital Signs"]
+            Temporal["Temporal<br/>Extraction"]
+            Assertions["Assertion<br/>Detection"]
+            Normalize["Concept<br/>Normalization"]
+            Relations["Relation<br/>Extraction"]
+        end
+        subgraph Scoring["Scoring"]
+            Risk["Risk<br/>Scoring"]
+            SDoH["SDoH<br/>Extraction"]
+            CCI["Comorbidity<br/>Index"]
+            Summarize["Clinical<br/>Summarization"]
+            Dental["Dental<br/>NLP"]
+        end
+    end
+
+    subgraph Search["Search Engine"]
+        BM25["BM25 + TF-IDF"]
+        QE["Query Expansion"]
+        Rerank["Cross-encoder<br/>Reranker"]
+    end
+
+    subgraph Resilience["Resilience"]
+        CB["Circuit Breaker"]
+        Cache["Inference Cache"]
+        ONNX["ONNX Runtime"]
+    end
+
+    subgraph Workers["Celery Workers"]
+        Batch["Batch Processing"]
+        Stream["SSE Streaming"]
+    end
+
+    subgraph Data["Data Layer"]
+        PG["PostgreSQL 16<br/>(Audit, PHI, Documents)"]
+        Redis["Redis 7<br/>(Cache, Queue)"]
+        MinIO["MinIO<br/>(Model Artifacts)"]
+        MLflow["MLflow<br/>(Experiment Tracking)"]
+    end
+
+    subgraph Observability["Observability"]
+        Prom["Prometheus"]
+        Graf["Grafana<br/>(2 dashboards)"]
+        Drift["Drift Monitor"]
+    end
+
+    SPA & SDK & CLI --> Gateway
+    Gateway --> API
+    API --> Pipeline
+    API --> Search
+    API --> Workers
+    Pipeline --> Resilience
+    Workers --> Redis
+    Pipeline --> PG
+    Search --> PG
+    Resilience --> ONNX
+    Pipeline --> MLflow
+    Pipeline --> MinIO
+    API --> PG
+    API --> Redis
+    Prom --> API
+    Prom --> Redis
+    Prom --> PG
+    Graf --> Prom
+    Drift --> Prom
+```
+
 ---
 
 ## Component Descriptions

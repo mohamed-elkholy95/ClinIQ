@@ -1,0 +1,199 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliniq-prometheus
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-prometheus
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cliniq-prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cliniq-prometheus
+        app.kubernetes.io/component: monitoring
+    spec:
+      serviceAccountName: cliniq-prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:latest
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time=30d
+            - --web.enable-lifecycle
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+              name: http
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: prometheus-config
+              mountPath: /etc/prometheus
+            - name: prometheus-data
+              mountPath: /prometheus
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: cliniq-prometheus-config
+        - name: prometheus-data
+          persistentVolumeClaim:
+            claimName: cliniq-prometheus-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-prometheus
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cliniq-prometheus
+  ports:
+    - name: http
+      port: 9090
+      targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cliniq-prometheus
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-prometheus
+    app.kubernetes.io/part-of: cliniq-platform
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cliniq-prometheus
+  labels:
+    app.kubernetes.io/name: cliniq-prometheus
+    app.kubernetes.io/part-of: cliniq-platform
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cliniq-prometheus
+  labels:
+    app.kubernetes.io/name: cliniq-prometheus
+    app.kubernetes.io/part-of: cliniq-platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cliniq-prometheus
+subjects:
+  - kind: ServiceAccount
+    name: cliniq-prometheus
+    namespace: cliniq
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliniq-grafana
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-grafana
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cliniq-grafana
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cliniq-grafana
+        app.kubernetes.io/component: monitoring
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:latest
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+              name: http
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cliniq-secrets
+                  key: grafana-admin-password
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-clock-panel,grafana-piechart-panel"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: grafana-provisioning
+              mountPath: /etc/grafana/provisioning
+      volumes:
+        - name: grafana-provisioning
+          configMap:
+            name: cliniq-grafana-provisioning
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-grafana
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cliniq-grafana
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

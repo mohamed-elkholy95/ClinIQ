@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cliniq-models-pvc
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-models
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cliniq-postgres-pvc
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-postgres
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cliniq-redis-pvc
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-redis
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cliniq-minio-pvc
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-minio
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cliniq-prometheus-pvc
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-prometheus
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard

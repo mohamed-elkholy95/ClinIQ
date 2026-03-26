@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliniq-postgres
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cliniq-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cliniq-postgres
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: cliniq
+            - name: POSTGRES_USER
+              value: cliniq
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cliniq-secrets
+                  key: grafana-admin-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - cliniq
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - cliniq
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: cliniq-postgres-pvc
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cliniq-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP

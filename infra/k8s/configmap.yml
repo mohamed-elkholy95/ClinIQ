@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cliniq-config
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-config
+    app.kubernetes.io/part-of: cliniq-platform
+data:
+  # Application settings
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+
+  # API configuration
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  API_WORKERS: "4"
+  API_TIMEOUT: "120"
+
+  # CORS origins (comma-separated)
+  CORS_ORIGINS: "https://cliniq.example.com"
+
+  # Rate limiting
+  RATE_LIMIT_PER_MINUTE: "60"
+  RATE_LIMIT_BURST: "10"
+
+  # ML pipeline defaults
+  NER_MODEL: "scispacy"
+  ICD_MODEL: "sklearn"
+  SUMMARIZER_MODEL: "extractive"
+  MAX_TEXT_LENGTH: "500000"
+
+  # Celery
+  CELERY_TASK_SOFT_TIME_LIMIT: "300"
+  CELERY_TASK_TIME_LIMIT: "600"
+  CELERY_WORKER_CONCURRENCY: "4"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "100"
+
+  # MLflow
+  MLFLOW_TRACKING_URI: "http://mlflow:5000"
+
+  # MinIO
+  MINIO_ENDPOINT: "minio:9000"
+  MINIO_BUCKET: "cliniq-models"
+  MINIO_USE_SSL: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cliniq-prometheus-config
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-prometheus
+    app.kubernetes.io/part-of: cliniq-platform
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      scrape_timeout: 10s
+      external_labels:
+        cluster: cliniq-prod
+        environment: production
+
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: ["localhost:9090"]
+
+      - job_name: cliniq-api
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ["cliniq"]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: (.+)
+            replacement: ${1}:$1
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+            target_label: component
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod

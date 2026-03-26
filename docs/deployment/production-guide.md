@@ -125,17 +125,31 @@ kubectl create secret generic cliniq-secrets \
 ### 2. Deploy Application
 
 ```bash
-# Deploy API
+# Storage and configuration
+kubectl apply -f infra/k8s/storage.yml
+kubectl apply -f infra/k8s/configmap.yml
+
+# Data layer
+kubectl apply -f infra/k8s/postgres-deployment.yml
+kubectl apply -f infra/k8s/redis-deployment.yml
+
+# Application
 kubectl apply -f infra/k8s/api-deployment.yml
 kubectl apply -f infra/k8s/api-service.yml
+kubectl apply -f infra/k8s/frontend-deployment.yml
+kubectl apply -f infra/k8s/worker-deployment.yml
 
-# Deploy Ingress
+# Monitoring
+kubectl apply -f infra/k8s/monitoring-deployment.yml
+
+# Ingress
 kubectl apply -f infra/k8s/ingress.yml
 
 # Verify
 kubectl get pods -n cliniq
 kubectl get svc -n cliniq
 kubectl get ingress -n cliniq
+kubectl get hpa -n cliniq
 ```
 
 ### 3. Kubernetes Resource Configuration

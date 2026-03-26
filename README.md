@@ -4,8 +4,8 @@ Clinical NLP platform that extracts structured data from unstructured medical te
 
 [![CI/CD](https://github.com/mohamed-elkholy95/ClinIQ/actions/workflows/ci.yml/badge.svg)](https://github.com/mohamed-elkholy95/ClinIQ/actions/workflows/ci.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-2806%20backend%20%7C%20238%20frontend-brightgreen)](backend/tests/)
-[![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](backend/tests/)
+[![Tests](https://img.shields.io/badge/tests-2961%20backend%20%7C%20542%20frontend-brightgreen)](backend/tests/)
+[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](backend/tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## What it does

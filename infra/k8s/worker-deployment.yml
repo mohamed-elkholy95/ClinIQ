@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliniq-worker
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-worker
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cliniq-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cliniq-worker
+        app.kubernetes.io/component: worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9101"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: worker
+          image: cliniq/api:latest
+          command:
+            - celery
+            - -A
+            - app.worker.celery_app
+            - worker
+            - --loglevel=info
+            - --concurrency=4
+            - --max-tasks-per-child=100
+            - --without-heartbeat
+          env:
+            - name: ENVIRONMENT
+              value: production
+            - name: LOG_LEVEL
+              value: info
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cliniq-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cliniq-secrets
+                  key: redis-url
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cliniq-secrets
+                  key: secret-key
+            - name: MINIO_ENDPOINT
+              value: minio:9000
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cliniq-secrets
+                  key: minio-access-key
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cliniq-secrets
+                  key: minio-secret-key
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow:5000
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          livenessProbe:
+            exec:
+              command:
+                - celery
+                - -A
+                - app.worker.celery_app
+                - inspect
+                - ping
+                - --timeout=10
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 3
+          volumeMounts:
+            - name: models
+              mountPath: /app/models
+              readOnly: true
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: cliniq-models-pvc
+      terminationGracePeriodSeconds: 120
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cliniq-worker-hpa
+  namespace: cliniq
+  labels:
+    app.kubernetes.io/name: cliniq-worker
+    app.kubernetes.io/part-of: cliniq-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cliniq-worker
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 120
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 300
