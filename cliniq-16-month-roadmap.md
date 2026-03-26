@@ -8,6 +8,32 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 49 (2026-03-26)
+- [x] **CONTRIBUTING.md** — Comprehensive contributor guide (270+ lines) covering the full development lifecycle:
+  - Prerequisites table (Python ≥3.11, Node ≥18, Docker, Git)
+  - Step-by-step local setup: clone, venv, npm install, pre-commit, Docker Compose, migrations, seed data, dev servers
+  - Project structure overview mapping all major directories
+  - Python coding standards: type hints, Pydantic schemas, async, DI, structured logging, docstring format with Parameters/Returns/Raises
+  - TypeScript standards: strict mode, functional components, error boundaries, loading states, ARIA, mobile-first
+  - Testing guidelines: running tests (make targets + npm), coverage targets (80% backend, 70% frontend), test structure examples
+  - Conventional commit rules with type table and good/bad examples
+  - Pull request process (6 steps) with PR template including checklist
+  - ML module addition checklist (9 steps from directory creation through model card)
+  - Frontend page addition checklist (6 steps from component through tests)
+- [x] **Clinical error analysis** (`docs/ml/clinical-error-analysis.md`) — Systematic analysis of error patterns across all 14 ML modules (440+ lines), informed by clinical domain expertise:
+  - **NER errors**: anatomical ambiguity ("crown" dental vs anatomy), negated entities (double negatives), abbreviation collisions (MS, PT, CA), span boundary errors
+  - **ICD-10 errors**: specificity mismatch (E11.9 vs E11.319), comorbidity splitting (component vs combination codes), present-on-admission confusion
+  - **Risk scoring errors**: missing upstream entities from NER propagation, additive model limitations vs non-linear clinical interactions
+  - **Summarisation errors**: hallucination prevention (extractive design decision rationale), section weighting bias suppressing SDoH
+  - **Dental NLP errors**: tooth numbering system confusion (Universal/Palmer/FDI), periodontal measurement parsing from OCR
+  - **Medication errors**: discontinued vs active status classification, dosage unit ambiguity with validation
+  - **De-identification errors**: contextual PHI in family history, structured data leakage in fax/header lines
+  - **Cross-module error propagation**: cascading analysis (NER→ICD→Risk→Summary), mitigation via fail-safe defaults, confidence propagation, independent fallback paths, circuit breaker
+  - **Clinical safety taxonomy**: 5 critical, 4 moderate, 3 low error categories with module mapping
+  - **Recommendations**: 9 action items across short/medium/long-term horizons
+- [x] **Root `.env.example`** — Project-level environment template for Docker Compose with placeholder values for PostgreSQL, Redis, MinIO, backend connection overrides, frontend API URL, MLflow tracking URI, and Grafana admin credentials
+- [x] **Total test suite: 3094 passing** (backend: 3094, frontend: 675, SDK: 127), 0 failures
+
 #### Post-PRD Enhancements — Session 48 (2026-03-26)
 - [x] **Input sanitization middleware** (`app.middleware.sanitize`) — Production-hardening middleware that strips encoding artifacts from JSON request bodies before they reach ML inference or database storage:
   - `InputSanitizationMiddleware` registered in FastAPI stack with configurable body size (2 MB) and text length (500K char) limits
