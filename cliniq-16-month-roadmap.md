@@ -8,6 +8,21 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 42 (2026-03-26)
+- [x] **Conversation memory REST API (5 new endpoints)** — Exposed the existing in-memory `ConversationMemory` module through a full REST interface, enabling session-scoped context tracking for sequential clinical analyses:
+  - `POST /conversation/turns` — Record analysis turns with entities, ICD codes, risk scores, summary, document ID, and arbitrary metadata; Pydantic-validated request with constraints on session_id (1–256), text (1–500K), risk_score (0–1); returns assigned turn_id and updated turn_count
+  - `POST /conversation/context` — Retrieve aggregated context with configurable last_n (1–50); returns deduplicated unique_entities, unique_icd_codes, overall_risk_trend, and per-turn context dicts
+  - `DELETE /conversation/{session_id}` — Clear session history with 404 on unknown sessions
+  - `GET /conversation/stats` — Memory usage statistics (active_sessions, total_turns, configuration limits)
+  - `GET /conversation/sessions` — List active sessions sorted by recency with turn_count, oldest/newest turn IDs, and last_access timestamps
+  - Singleton ConversationMemory: 50 turns/session, 2h TTL, 5000 max sessions; route registry updated to 30 endpoint groups
+- [x] **API reference expansion** — Added conversation memory section with curl examples and response schemas for all 5 endpoints; updated table of contents (26 sections)
+- [x] **ConversationMemory frontend page** (`/conversation`) — 24th page with stats cards, 3 preloaded sample notes (ER/follow-up/dental), risk trend bars, entity/ICD pills, expandable turn detail JSON, active sessions table, session clearing; Sidebar with MessageSquare icon
+- [x] **Clinical service layer** — 5 new typed API functions, 8 new TypeScript interfaces
+- [x] **Model card** — `docs/ml/model-card-conversation-memory.md` (architecture, data model, endpoints, configuration, design decisions, performance, limitations)
+- [x] **50 new tests**: `test_conversation_route.py` (26 backend — AddTurn 10, GetContext 6, ClearSession 3, Stats 2, ListSessions 4, Workflow 1), `ConversationMemory.test.tsx` (24 frontend — structure 5, stats 4, turns 4, context 6, empty state 1, sessions 3, error 1)
+- [x] **Total test suite: 2987 passing** (backend: 2987, frontend: 566), 0 failures
+
 #### Post-PRD Enhancements — Session 41 (2026-03-26)
 - [x] **Complete Kubernetes manifests (7 new files)** — Production-grade K8s deployment expanding from 4 manifests (namespace, API deployment, API service, ingress) to 11, covering the full platform stack:
   - **Frontend deployment** (`frontend-deployment.yml`) — React SPA with nginx (2 replicas), liveness/readiness probes on `/`, ClusterIP service
