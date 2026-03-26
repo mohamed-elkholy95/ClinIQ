@@ -8,6 +8,26 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 41 (2026-03-26)
+- [x] **Complete Kubernetes manifests (7 new files)** — Production-grade K8s deployment expanding from 4 manifests (namespace, API deployment, API service, ingress) to 11, covering the full platform stack:
+  - **Frontend deployment** (`frontend-deployment.yml`) — React SPA with nginx (2 replicas), liveness/readiness probes on `/`, ClusterIP service
+  - **Celery worker deployment** (`worker-deployment.yml`) — Background task workers using same API image with celery command override; `--max-tasks-per-child=100` for memory leak prevention; HPA scaling 2–8 replicas at 75% CPU with conservative scale-down (600s stabilization); 120s termination grace for in-flight tasks; Prometheus scrape annotations on port 9101
+  - **PostgreSQL deployment** (`postgres-deployment.yml`) — PostgreSQL 16-alpine with `pg_isready` probes, 20Gi PVC, Recreate strategy for data safety
+  - **Redis deployment** (`redis-deployment.yml`) — Redis 7-alpine with password auth, 512MB LRU eviction, AOF persistence (everysec fsync), 2Gi PVC
+  - **Monitoring deployment** (`monitoring-deployment.yml`) — Prometheus with 30d retention, web lifecycle API, RBAC (ServiceAccount + ClusterRole for pod/service/endpoint discovery), ConfigMap-mounted config; Grafana with auto-provisioning ConfigMap mount, plugin installation (clock, piechart)
+  - **Storage** (`storage.yml`) — 5 PVCs: models (10Gi ReadOnlyMany), PostgreSQL (20Gi), Redis (2Gi), MinIO (50Gi), Prometheus (10Gi)
+  - **ConfigMap** (`configmap.yml`) — Application config (API workers, CORS, rate limits, ML model defaults, Celery timeouts) + Prometheus K8s-native service discovery config with pod annotation-based scrape targeting
+  - **Secrets template** (`secrets.yml`) — All 6 required secrets as `stringData` with CHANGE_ME placeholders and generation instructions
+- [x] **ML Inference Grafana dashboard (22 panels)** — Dedicated monitoring dashboard for ML pipeline health alongside the existing platform overview dashboard:
+  - **Pipeline overview** (6 stat/gauge panels): total inferences (24h), avg inference latency, inference errors (24h), cache hit rate gauge (red/yellow/green thresholds), circuit breaker count, drift PSI score
+  - **Per-model inference** (4 panels): inference rate by model (timeseries with table legend), latency percentiles p50/p95/p99 by model, error rate by model with 5% threshold line, batch size distribution histogram
+  - **Pipeline stages** (3 panels): enhanced pipeline stage latency (stacked bars), NER entity type distribution (donut piechart), ICD-10 chapter distribution (donut piechart)
+  - **Model health** (4 panels): prediction confidence distribution by model (0–1 scale with thresholds), confidence drift per model with warning/critical areas, input text length distribution histogram, risk score distribution histogram
+  - **Template variable**: model selector for filtering all panels to specific models
+- [x] **Architecture diagram update** — Added Mermaid system architecture diagram to `docs/architecture.md` covering all 14 ML pipeline modules (Phase 1 pre-processing + Phase 2 extraction + scoring), search engine (BM25, query expansion, reranker), resilience layer (circuit breaker, inference cache, ONNX runtime), data layer (PostgreSQL, Redis, MinIO, MLflow), observability stack (Prometheus, Grafana, drift monitor), and client surface (React SPA 23 pages, Python SDK, REST)
+- [x] **README badge update** — Test counts corrected from 2806→2961 backend, 238→542 frontend; coverage badge 99%→97% (reflecting actual measured coverage)
+- [x] **Deployment guide update** — Kubernetes section expanded with full manifest apply sequence: storage → configmap → data layer (postgres, redis) → application (API, frontend, worker) → monitoring (prometheus, grafana) → ingress; includes `kubectl get hpa` verification step
+
 #### Post-PRD Enhancements — Session 40 (2026-03-26)
 - [x] **Targeted test coverage expansion: 95% → 97%** — 61 new unit tests surgically targeting the 5 lowest-coverage modules, eliminating coverage gaps in critical infrastructure and ML components:
   - **ONNX Runtime serving** (62% → 98%, 18 tests) — Full `load()` success path with mocked `onnxruntime` (`SessionOptions`, `InferenceSession`, input/output name extraction), `_load_tokenizer()` success/ImportError/missing-directory/None-path paths, `_tokenize()` with mocked HuggingFace tokenizer including input-name filtering, `predict(text=...)` through tokenizer→session pipeline, `predict_batch(texts=...)` iteration, `ensure_loaded()` triggering `load()`, `InferenceSession` creation failure wrapping in `ModelLoadError`, `export_from_pytorch()` with parent directory creation/default output names/custom axes/export failure
