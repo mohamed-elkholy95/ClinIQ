@@ -8,6 +8,28 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 44 (2026-03-26)
+- [x] **Advanced evaluation metrics framework** (`app.ml.utils.advanced_metrics`) — Comprehensive benchmarking module implementing 7 clinical-NLP-specific evaluation metrics with zero external dependencies beyond numpy:
+  - **Cohen's Kappa** — Inter-annotator agreement correcting for chance agreement; confusion matrix construction from categorical labels; handles integer and string label types; standard metric for i2b2/n2c2 clinical annotation quality validation
+  - **Matthews Correlation Coefficient (MCC)** — Balanced binary classification metric using all four confusion matrix quadrants (TP/FP/FN/TN); ideal for extremely imbalanced ICD-10 coding where most codes are absent per encounter; returns -1 to +1 range
+  - **Calibration metrics (ECE + Brier score)** — Expected Calibration Error via equal-width binning with per-bin accuracy/confidence breakdowns for reliability diagrams; Brier score as MSE between probabilities and outcomes; essential for clinical decision support where 90% confidence should mean ~90% accuracy
+  - **Partial NER span matching** — Jaccard-overlap-based entity evaluation complementing exact matching; greedy matching with configurable overlap threshold; type-weighted scoring (type mismatch halves credit); reports exact F1, partial F1, type-weighted F1, mean overlap, and detailed match/unmatch counts
+  - **Full ROUGE F-measure** — ROUGE-1/2/L with precision, recall, and F1 (not recall-only); clipped n-gram counting for ROUGE-1/2; LCS via dynamic programming for ROUGE-L; length ratio for compression analysis
+  - **Hierarchical ICD-10 evaluation** — Three-level accuracy: full code (E11.65), 3-character block (E11), and chapter (E); case-insensitive with dot normalisation; reveals whether errors are catastrophic (wrong organ system) or specificity mismatches
+  - **AUPRC (Area Under Precision-Recall Curve)** — Trapezoidal integration of precision-recall curve from sorted scores; more informative than AUROC for imbalanced clinical datasets; returns class statistics
+- [x] **Evaluation REST API (7 endpoints, route group #31)** — Stateless evaluation endpoints accepting batch arrays per request (no server-side data retention for HIPAA compliance):
+  - `POST /evaluate/classification` — MCC + confusion matrix + optional calibration (ECE, Brier, bin breakdowns) when y_prob provided; validates equal-length inputs; returns processing_time_ms
+  - `POST /evaluate/agreement` — Cohen's Kappa between two annotators with observed/expected agreement; validates equal-length sequences
+  - `POST /evaluate/ner` — Exact + partial span matching with configurable overlap threshold; accepts entity spans as {entity_type, start, end}
+  - `POST /evaluate/rouge` — Full ROUGE-1/2/L with P/R/F1 per variant; reference and hypothesis length and compression ratio
+  - `POST /evaluate/icd` — Hierarchical ICD-10 accuracy at chapter/block/full-code levels; case-insensitive, dot-normalised
+  - `POST /evaluate/auprc` — AUPRC with custom label name and class statistics
+  - `GET /evaluate/metrics` — Catalogue of 6 available evaluation metrics with descriptions and use cases
+  - Route registry updated to 31 endpoint groups; Pydantic request validation with field constraints
+- [x] **Model card** — `docs/ml/model-card-evaluation.md` (architecture diagram, 8 metrics table with ranges, design decision rationale for each metric choice vs alternatives, performance characteristics, limitations, academic references)
+- [x] **84 new tests**: `test_advanced_metrics.py` (61 unit — Kappa 8, MCC 7, Calibration 9, Partial NER 10, ROUGE 9, Hierarchical ICD 10, AUPRC 8), `test_evaluation_route.py` (23 route — Classification 5, Agreement 3, NER 4, ROUGE 3, ICD 3, AUPRC 3, Metrics catalogue 2)
+- [x] **Total test suite: 3062 passing** (backend: 3062, frontend: 566), 0 failures
+
 #### Post-PRD Enhancements — Session 43 (2026-03-26)
 - [x] **Educational inline comments across 7 core ML modules** — Added comprehensive design-decision documentation (WHY, not just WHAT) to early-phase modules that previously had minimal docstrings:
   - `ner/model.py` — Full architecture overview (rule-based vs scispaCy vs transformer vs composite), BIO tagging explanation with sub-word tokenisation rationale, ensemble voting strategy trade-offs (union for recall, intersection for precision, majority for balance), negation detection as lightweight NegEx approximation, INN stem patterns for novel drug detection
