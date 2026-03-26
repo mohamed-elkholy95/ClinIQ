@@ -544,3 +544,126 @@ export interface SessionsListResponse {
   sessions: SessionInfo[];
   total: number;
 }
+
+// ─── Evaluation ──────────────────────────────────────────────
+
+export interface ClassificationEvalRequest {
+  y_true: number[];
+  y_pred: number[];
+  y_prob?: number[];
+  n_calibration_bins?: number;
+}
+
+export interface CalibrationResult {
+  expected_calibration_error: number;
+  brier_score: number;
+  n_bins: number;
+  bin_accuracies: number[];
+  bin_confidences: number[];
+  bin_counts: number[];
+}
+
+export interface ClassificationEvalResponse {
+  mcc: number;
+  tp: number;
+  fp: number;
+  fn: number;
+  tn: number;
+  calibration: CalibrationResult | null;
+  processing_time_ms: number;
+}
+
+export interface KappaRequest {
+  rater_a: (string | number)[];
+  rater_b: (string | number)[];
+}
+
+export interface KappaResponse {
+  kappa: number;
+  observed_agreement: number;
+  expected_agreement: number;
+  n_items: number;
+  processing_time_ms: number;
+}
+
+export interface EntitySpan {
+  entity_type: string;
+  start: number;
+  end: number;
+}
+
+export interface NEREvalRequest {
+  gold_entities: EntitySpan[];
+  pred_entities: EntitySpan[];
+  overlap_threshold?: number;
+}
+
+export interface NEREvalResponse {
+  exact_f1: number;
+  partial_f1: number;
+  type_weighted_f1: number;
+  mean_overlap: number;
+  n_gold: number;
+  n_pred: number;
+  n_exact_matches: number;
+  n_partial_matches: number;
+  n_unmatched_pred: number;
+  n_unmatched_gold: number;
+  processing_time_ms: number;
+}
+
+export interface ROUGERequest {
+  reference: string;
+  hypothesis: string;
+}
+
+export interface ROUGEResponse {
+  rouge1: { precision: number; recall: number; f1: number };
+  rouge2: { precision: number; recall: number; f1: number };
+  rougeL: { precision: number; recall: number; f1: number };
+  reference_length: number;
+  hypothesis_length: number;
+  length_ratio: number;
+  processing_time_ms: number;
+}
+
+export interface ICDEvalRequest {
+  gold_codes: string[];
+  pred_codes: string[];
+}
+
+export interface ICDEvalResponse {
+  full_code_accuracy: number;
+  block_accuracy: number;
+  chapter_accuracy: number;
+  n_samples: number;
+  full_code_matches: number;
+  block_matches: number;
+  chapter_matches: number;
+  processing_time_ms: number;
+}
+
+export interface AUPRCRequest {
+  y_true: number[];
+  y_scores: number[];
+  label?: string;
+}
+
+export interface AUPRCResponse {
+  label: string;
+  auprc: number;
+  n_positive: number;
+  n_total: number;
+  processing_time_ms: number;
+}
+
+export interface EvaluationMetricInfo {
+  name: string;
+  endpoint: string;
+  description: string;
+  use_case: string;
+}
+
+export interface EvaluationMetricsCatalogue {
+  metrics: EvaluationMetricInfo[];
+}

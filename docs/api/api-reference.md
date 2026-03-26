@@ -94,16 +94,24 @@ Interactive documentation: `http://localhost:8000/docs` (Swagger UI) or `http://
     - [DELETE /conversation/{session_id}](#delete-apiv1conversationsessionid)
     - [GET /conversation/stats](#get-apiv1conversationstats)
     - [GET /conversation/sessions](#get-apiv1conversationsessions)
-22. [Document Search](#document-search)
+22. [Evaluation](#evaluation)
+    - [POST /evaluate/classification](#post-apiv1evaluateclassification)
+    - [POST /evaluate/agreement](#post-apiv1evaluateagreement)
+    - [POST /evaluate/ner](#post-apiv1evaluatener)
+    - [POST /evaluate/rouge](#post-apiv1evaluaterouge)
+    - [POST /evaluate/icd](#post-apiv1evaluateicd)
+    - [POST /evaluate/auprc](#post-apiv1evaluateauprc)
+    - [GET /evaluate/metrics](#get-apiv1evaluatemetrics)
+23. [Document Search](#document-search)
     - [POST /search](#post-apiv1search)
     - [POST /search/reindex](#post-apiv1searchreindex)
-23. [Batch Processing](#batch-processing)
+24. [Batch Processing](#batch-processing)
     - [POST /batch](#post-apiv1batch)
     - [GET /batch/{job_id}](#get-apiv1batchjobid)
-24. [Model Registry](#model-registry)
+25. [Model Registry](#model-registry)
     - [GET /models](#get-apiv1models)
     - [GET /models/{model_name}](#get-apiv1modelsmodelname)
-25. [Infrastructure](#infrastructure)
+26. [Infrastructure](#infrastructure)
     - [GET /health](#get-apiv1health)
     - [GET /health/live](#get-apiv1healthlive)
     - [GET /health/ready](#get-apiv1healthready)
@@ -1343,6 +1351,207 @@ curl http://localhost:8000/api/v1/conversation/sessions
     }
   ],
   "total": 1
+}
+```
+
+---
+
+## Evaluation
+
+### POST /api/v1/evaluate/classification
+
+Evaluate binary classification predictions with MCC and optional calibration.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/evaluate/classification \
+  -H "Content-Type: application/json" \
+  -d '{
+    "y_true": [1, 0, 1, 1, 0, 0, 1, 0, 1, 1],
+    "y_pred": [1, 0, 1, 0, 0, 1, 1, 0, 1, 1],
+    "y_prob": [0.92, 0.15, 0.88, 0.45, 0.10, 0.72, 0.95, 0.08, 0.80, 0.91],
+    "n_calibration_bins": 10
+  }'
+```
+
+Response:
+
+```json
+{
+  "mcc": 0.583,
+  "tp": 5, "fp": 1, "fn": 1, "tn": 3,
+  "calibration": {
+    "expected_calibration_error": 0.073,
+    "brier_score": 0.124,
+    "n_bins": 10,
+    "bin_accuracies": [...],
+    "bin_confidences": [...],
+    "bin_counts": [...]
+  },
+  "processing_time_ms": 0.42
+}
+```
+
+### POST /api/v1/evaluate/agreement
+
+Compute Cohen's Kappa inter-annotator agreement.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/evaluate/agreement \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rater_a": ["positive", "negative", "positive", "neutral"],
+    "rater_b": ["positive", "negative", "neutral", "neutral"]
+  }'
+```
+
+Response:
+
+```json
+{
+  "kappa": 0.62,
+  "observed_agreement": 0.75,
+  "expected_agreement": 0.34,
+  "n_items": 4,
+  "processing_time_ms": 0.15
+}
+```
+
+### POST /api/v1/evaluate/ner
+
+Evaluate NER with exact and partial span matching.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/evaluate/ner \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gold_entities": [
+      {"entity_type": "DISEASE", "start": 0, "end": 12},
+      {"entity_type": "MEDICATION", "start": 25, "end": 35}
+    ],
+    "pred_entities": [
+      {"entity_type": "DISEASE", "start": 0, "end": 12},
+      {"entity_type": "MEDICATION", "start": 24, "end": 36}
+    ],
+    "overlap_threshold": 0.5
+  }'
+```
+
+Response:
+
+```json
+{
+  "exact_f1": 0.667,
+  "partial_f1": 0.889,
+  "type_weighted_f1": 0.778,
+  "mean_overlap": 0.92,
+  "n_gold": 2, "n_pred": 2,
+  "n_exact_matches": 1, "n_partial_matches": 1,
+  "n_unmatched_pred": 0, "n_unmatched_gold": 0,
+  "processing_time_ms": 0.28
+}
+```
+
+### POST /api/v1/evaluate/rouge
+
+Evaluate summarisation with full ROUGE-1/2/L (precision, recall, F1).
+
+```bash
+curl -X POST http://localhost:8000/api/v1/evaluate/rouge \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reference": "Patient presented with acute chest pain. ECG showed ST-elevation.",
+    "hypothesis": "Patient had chest pain. ECG revealed ST-elevation."
+  }'
+```
+
+Response:
+
+```json
+{
+  "rouge1": {"precision": 0.82, "recall": 0.75, "f1": 0.78},
+  "rouge2": {"precision": 0.65, "recall": 0.58, "f1": 0.61},
+  "rougeL": {"precision": 0.78, "recall": 0.72, "f1": 0.75},
+  "reference_length": 12,
+  "hypothesis_length": 9,
+  "length_ratio": 0.75,
+  "processing_time_ms": 0.31
+}
+```
+
+### POST /api/v1/evaluate/icd
+
+Evaluate ICD-10 predictions at chapter, block, and full-code levels.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/evaluate/icd \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gold_codes": ["E11.65", "I10", "J44.1"],
+    "pred_codes": ["E11.9", "I10", "J44.0"]
+  }'
+```
+
+Response:
+
+```json
+{
+  "full_code_accuracy": 0.333,
+  "block_accuracy": 0.667,
+  "chapter_accuracy": 1.0,
+  "n_samples": 3,
+  "full_code_matches": 1,
+  "block_matches": 2,
+  "chapter_matches": 3,
+  "processing_time_ms": 0.18
+}
+```
+
+### POST /api/v1/evaluate/auprc
+
+Compute Area Under Precision-Recall Curve for imbalanced binary predictions.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/evaluate/auprc \
+  -H "Content-Type: application/json" \
+  -d '{
+    "y_true": [0, 0, 0, 0, 1, 1, 0, 0, 1, 0],
+    "y_scores": [0.05, 0.12, 0.08, 0.15, 0.88, 0.75, 0.30, 0.18, 0.92, 0.22],
+    "label": "rare_diagnosis"
+  }'
+```
+
+Response:
+
+```json
+{
+  "label": "rare_diagnosis",
+  "auprc": 0.892,
+  "n_positive": 3,
+  "n_total": 10,
+  "processing_time_ms": 0.22
+}
+```
+
+### GET /api/v1/evaluate/metrics
+
+Catalogue of available evaluation metrics.
+
+```bash
+curl http://localhost:8000/api/v1/evaluate/metrics
+```
+
+Response:
+
+```json
+{
+  "metrics": [
+    {"name": "classification", "endpoint": "/evaluate/classification", "description": "MCC, confusion matrix, calibration (ECE, Brier score)", "use_case": "Binary classification model evaluation"},
+    {"name": "agreement", "endpoint": "/evaluate/agreement", "description": "Cohen's Kappa inter-annotator agreement", "use_case": "Annotation quality validation"},
+    {"name": "ner", "endpoint": "/evaluate/ner", "description": "Exact and partial span-matching NER metrics", "use_case": "Entity extraction evaluation with boundary credit"},
+    {"name": "rouge", "endpoint": "/evaluate/rouge", "description": "ROUGE-1/2/L with full precision/recall/F1", "use_case": "Clinical summarisation quality assessment"},
+    {"name": "icd", "endpoint": "/evaluate/icd", "description": "Hierarchical ICD-10 accuracy (chapter/block/full)", "use_case": "ICD-10-CM coding evaluation"},
+    {"name": "auprc", "endpoint": "/evaluate/auprc", "description": "Area Under Precision-Recall Curve", "use_case": "Imbalanced binary classification evaluation"}
+  ]
 }
 ```
 

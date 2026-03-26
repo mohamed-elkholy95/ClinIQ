@@ -4,7 +4,7 @@ Clinical NLP platform that extracts structured data from unstructured medical te
 
 [![CI/CD](https://github.com/mohamed-elkholy95/ClinIQ/actions/workflows/ci.yml/badge.svg)](https://github.com/mohamed-elkholy95/ClinIQ/actions/workflows/ci.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-2961%20backend%20%7C%20542%20frontend-brightgreen)](backend/tests/)
+[![Tests](https://img.shields.io/badge/tests-3062%20backend%20%7C%20596%20frontend-brightgreen)](backend/tests/)
 [![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](backend/tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -12,7 +12,7 @@ Clinical NLP platform that extracts structured data from unstructured medical te
 
 ClinIQ takes clinical notes and returns structured output: medical entities, ICD-10 codes, summaries, and risk scores. It supports rule-based, scispaCy, and transformer (BioBERT/ClinicalBERT) backends.
 
-**29 API endpoint groups** covering the full clinical NLP pipeline:
+**31 API endpoint groups** covering the full clinical NLP pipeline:
 
 - **Named Entity Recognition** — diseases, symptoms, medications, dosages, procedures, lab values, temporal expressions. Negation and uncertainty detection.
 - **ICD-10 Code Prediction** — scikit-learn baselines, transformer classifiers, and hierarchical chapter→code models.
@@ -35,6 +35,8 @@ ClinIQ takes clinical notes and returns structured output: medical entities, ICD
 - **Dental NLP** — tooth numbering (Universal/FDI/Palmer), surface ID, periodontal measurements, CDT codes.
 - **Hybrid Search** — BM25 + TF-IDF with medical query expansion, synonym matching, and clinical re-ranking.
 - **Streaming Analysis** — Server-Sent Events for real-time stage-by-stage pipeline progress.
+- **Evaluation Framework** — MCC, Cohen's Kappa, partial NER span matching, ROUGE-1/2/L, hierarchical ICD-10, AUPRC, and calibration metrics.
+- **Conversation Memory** — Session-scoped context tracking for sequential clinical analyses with entity/ICD aggregation.
 
 ## Architecture
 

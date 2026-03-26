@@ -26,6 +26,7 @@ import {
   Search,
   Radio,
   MessageSquare,
+  BarChart3,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -56,6 +57,7 @@ const navItems = [
   { to: '/drift', label: 'Drift Monitor', icon: Activity },
   { to: '/stream', label: 'Streaming', icon: Radio },
   { to: '/conversation', label: 'Conversation', icon: MessageSquare },
+  { to: '/evaluate', label: 'Evaluation', icon: BarChart3 },
   { to: '/timeline', label: 'Timeline', icon: Clock },
   { to: '/models', label: 'Models', icon: Cpu },
 ];

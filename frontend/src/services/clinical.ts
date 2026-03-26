@@ -1,7 +1,7 @@
 /**
  * API service layer for ClinIQ's specialized clinical NLP endpoints.
  *
- * This module provides typed functions for all 29 backend endpoint groups,
+ * This module provides typed functions for all 31 backend endpoint groups,
  * complementing the core analysis endpoints in ``api.ts``.  Every function
  * returns a strongly-typed promise matching the backend's response schema.
  *
@@ -41,6 +41,19 @@ import type {
   SearchResponse,
   DriftStatusResponse,
   ModuleInfo,
+  ClassificationEvalRequest,
+  ClassificationEvalResponse,
+  KappaRequest,
+  KappaResponse,
+  NEREvalRequest,
+  NEREvalResponse,
+  ROUGERequest,
+  ROUGEResponse,
+  ICDEvalRequest,
+  ICDEvalResponse,
+  AUPRCRequest,
+  AUPRCResponse,
+  EvaluationMetricsCatalogue,
 } from '../types/clinical';
 
 // ─── Medication Extraction ───────────────────────────────────
@@ -430,3 +443,60 @@ export const analyzeStream = (
 
   return controller;
 };
+
+// ─── Evaluation ──────────────────────────────────────────────
+
+/** Evaluate binary classification predictions (MCC + confusion matrix + calibration). */
+export const evaluateClassification = async (
+  request: ClassificationEvalRequest
+): Promise<ClassificationEvalResponse> => {
+  const resp = await client.post('/evaluate/classification', request);
+  return resp.data;
+};
+
+/** Compute inter-annotator agreement (Cohen's Kappa). */
+export const evaluateAgreement = async (
+  request: KappaRequest
+): Promise<KappaResponse> => {
+  const resp = await client.post('/evaluate/agreement', request);
+  return resp.data;
+};
+
+/** Evaluate NER with exact and partial span matching. */
+export const evaluateNER = async (
+  request: NEREvalRequest
+): Promise<NEREvalResponse> => {
+  const resp = await client.post('/evaluate/ner', request);
+  return resp.data;
+};
+
+/** Evaluate summarisation with full ROUGE-1/2/L. */
+export const evaluateROUGE = async (
+  request: ROUGERequest
+): Promise<ROUGEResponse> => {
+  const resp = await client.post('/evaluate/rouge', request);
+  return resp.data;
+};
+
+/** Evaluate ICD-10 predictions at chapter/block/full-code levels. */
+export const evaluateICD = async (
+  request: ICDEvalRequest
+): Promise<ICDEvalResponse> => {
+  const resp = await client.post('/evaluate/icd', request);
+  return resp.data;
+};
+
+/** Compute Area Under Precision-Recall Curve for binary predictions. */
+export const evaluateAUPRC = async (
+  request: AUPRCRequest
+): Promise<AUPRCResponse> => {
+  const resp = await client.post('/evaluate/auprc', request);
+  return resp.data;
+};
+
+/** List available evaluation metrics. */
+export const listEvaluationMetrics =
+  async (): Promise<EvaluationMetricsCatalogue> => {
+    const resp = await client.get('/evaluate/metrics');
+    return resp.data;
+  };
