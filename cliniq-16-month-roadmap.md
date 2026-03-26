@@ -8,6 +8,34 @@
 
 All phases are **COMPLETE**.
 
+#### Post-PRD Enhancements — Session 39 (2026-03-25)
+- [x] **Comprehensive integration test suite for all 29 endpoint groups** — 70 new integration tests exercising the full FastAPI application stack with real rule-based ML modules (no mocking) against in-memory SQLite, validating request/response schemas and business logic end-to-end:
+  - **Section Parser** (4 tests: parse sections, batch parsing, position query, categories catalogue)
+  - **Allergy Extraction** (4 tests: extract allergies, batch extraction, dictionary stats, categories)
+  - **Abbreviation Expansion** (5 tests: expand abbreviations, batch expansion, single lookup, dictionary stats, domains catalogue)
+  - **Medication Extraction** (4 tests: extract medications, batch extraction, drug lookup, dictionary stats)
+  - **Vital Signs Extraction** (4 tests: extract vitals, batch extraction, vital types catalogue, reference ranges)
+  - **Document Classification** (3 tests: classify document, batch classification, document types catalogue)
+  - **Quality Analysis** (3 tests: analyze quality, batch analysis, dimensions catalogue)
+  - **De-identification** (4 tests: redact strategy with PHI removal verification, mask strategy, surrogate strategy, batch de-identification)
+  - **Assertion Detection** (4 tests: negated assertion, present assertion, batch detection with entity spans, statuses catalogue)
+  - **Concept Normalization** (5 tests: exact match, alias/brand name match, batch normalization, reverse CUI lookup, dictionary stats)
+  - **Relation Extraction** (2 tests: extract relations with entity pairs, relation types catalogue)
+  - **Temporal Extraction** (3 tests: extract temporal expressions, reference date resolution, frequency map catalogue)
+  - **SDoH Extraction** (4 tests: extract social determinants, batch extraction, domains catalogue, Z-codes)
+  - **Comorbidity Scoring** (4 tests: CCI from text, CCI from ICD-10 codes, batch scoring, Charlson categories catalogue)
+  - **Drift Monitoring** (1 test: drift status)
+  - **Metrics** (2 tests: Prometheus metrics, model metrics)
+  - **Search** (1 test: document search)
+  - **Enhanced Analysis** (3 tests: full 14-module pipeline, selective module configuration, modules catalogue)
+  - **Streaming Analysis** (1 test: SSE endpoint)
+  - **Batch Processing** (1 test: batch job submission with graceful Celery/Redis skip)
+  - **Auth** (2 tests: invalid login, user registration)
+  - **Models** (2 tests: list models, model detail)
+  - **Validation** (4 tests: empty text rejection, missing body rejection, oversized text rejection, 404 on unknown route)
+  - Includes `_unwrap_collection` helper for flexible catalogue response parsing across dict-wrapped and list responses
+- [x] **Total test suite: 2892 passing** (backend: 2892 including 80 integration, frontend: 542), 0 failures
+
 #### Post-PRD Enhancements — Session 38 (2026-03-25)
 - [x] **Frontend expansion: 3 new pages + Sidebar/Layout tests** — Adding dedicated UIs for 3 backend capabilities that previously lacked frontend interfaces, plus comprehensive component tests:
   - **SearchExplorer page** (`/search`) — Hybrid clinical document search interface with advanced options panel (top-k, min-score slider, alpha lexical↔semantic balance slider, query expansion toggle with Sparkles icon, neural reranking toggle with ArrowUpDown icon); result cards with score-coloured badges (≥80% green, ≥50% blue, ≥30% yellow, <30% gray), document title/ID display, snippet text with line-clamp; query expansion panel showing original query and expanded medical terms as amber pills; result count, processing time, and "Reranked" badge; empty state and no-results state; Enter key search support
