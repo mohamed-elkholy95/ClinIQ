@@ -16,13 +16,23 @@ from cliniq_client.models import (
     AbbreviationResult,
     AllergyResult,
     AnalysisResult,
+    AUPRCResult,
     BatchJob,
+    ClassificationEvalResult,
     ClassificationResult,
     ComorbidityResult,
+    ConversationContext,
+    ConversationSessionInfo,
+    ConversationStats,
+    ConversationTurnResult,
     EnhancedAnalysisResult,
+    ICDEvalResult,
+    KappaResult,
     MedicationResult,
+    NEREvalResult,
     QualityReport,
     RelationResult,
+    ROUGEEvalResult,
     SDoHResult,
     SearchResult,
     SectionResult,
@@ -790,4 +800,407 @@ class TestInfrastructure:
         client._client = httpx.Client(transport=transport, headers=client._client.headers)
         result = client.get_drift_status()
         assert result["status"] == "stable"
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Evaluation endpoints
+# ---------------------------------------------------------------------------
+
+
+class TestEvaluateClassification:
+    """Tests for evaluate_classification()."""
+
+    def test_returns_result_without_calibration(self) -> None:
+        transport = _MockTransport({
+            "/evaluate/classification": {
+                "mcc": 0.85, "tp": 40, "fp": 5, "fn": 3, "tn": 52,
+                "calibration": None, "processing_time_ms": 1.2,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.evaluate_classification(
+            y_true=[1, 0, 1], y_pred=[1, 0, 1],
+        )
+        assert isinstance(result, ClassificationEvalResult)
+        assert result.mcc == 0.85
+        assert result.tp == 40
+        assert result.calibration is None
+        client.close()
+
+    def test_returns_result_with_calibration(self) -> None:
+        transport = _MockTransport({
+            "/evaluate/classification": {
+                "mcc": 0.72, "tp": 30, "fp": 8, "fn": 5, "tn": 57,
+                "calibration": {
+                    "expected_calibration_error": 0.03,
+                    "brier_score": 0.12,
+                    "n_bins": 10,
+                },
+                "processing_time_ms": 2.5,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.evaluate_classification(
+            y_true=[1, 0, 1], y_pred=[1, 0, 0],
+            y_prob=[0.9, 0.2, 0.6], n_calibration_bins=10,
+        )
+        assert result.calibration is not None
+        assert result.calibration["brier_score"] == 0.12
+        client.close()
+
+    def test_payload_includes_y_prob(self) -> None:
+        captured: dict = {}
+
+        class _Capture(httpx.BaseTransport):
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                captured["body"] = json.loads(request.content)
+                return httpx.Response(200, json={"mcc": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0}, request=request)
+
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=_Capture(), headers=client._client.headers)
+        client.evaluate_classification(
+            y_true=[1, 0], y_pred=[1, 1], y_prob=[0.8, 0.6],
+        )
+        assert "y_prob" in captured["body"]
+        assert captured["body"]["y_prob"] == [0.8, 0.6]
+        client.close()
+
+
+class TestEvaluateAgreement:
+    """Tests for evaluate_agreement()."""
+
+    def test_returns_kappa_result(self) -> None:
+        transport = _MockTransport({
+            "/evaluate/agreement": {
+                "kappa": 0.82, "observed_agreement": 0.91,
+                "expected_agreement": 0.50, "n_items": 100,
+                "processing_time_ms": 0.5,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.evaluate_agreement(
+            rater_a=["A", "B", "A"], rater_b=["A", "B", "B"],
+        )
+        assert isinstance(result, KappaResult)
+        assert result.kappa == 0.82
+        assert result.n_items == 100
+        client.close()
+
+
+class TestEvaluateNER:
+    """Tests for evaluate_ner()."""
+
+    def test_returns_ner_eval_result(self) -> None:
+        transport = _MockTransport({
+            "/evaluate/ner": {
+                "exact_f1": 0.75, "partial_f1": 0.88,
+                "type_weighted_f1": 0.82, "mean_overlap": 0.91,
+                "n_gold": 10, "n_pred": 12,
+                "n_exact_matches": 7, "n_partial_matches": 2,
+                "n_unmatched_pred": 3, "n_unmatched_gold": 1,
+                "processing_time_ms": 0.8,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.evaluate_ner(
+            gold_entities=[{"entity_type": "DISEASE", "start": 0, "end": 8}],
+            pred_entities=[{"entity_type": "DISEASE", "start": 0, "end": 10}],
+            overlap_threshold=0.5,
+        )
+        assert isinstance(result, NEREvalResult)
+        assert result.exact_f1 == 0.75
+        assert result.partial_f1 == 0.88
+        assert result.n_gold == 10
+        client.close()
+
+    def test_overlap_threshold_in_payload(self) -> None:
+        captured: dict = {}
+
+        class _Capture(httpx.BaseTransport):
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                captured["body"] = json.loads(request.content)
+                return httpx.Response(200, json={
+                    "exact_f1": 0, "partial_f1": 0, "type_weighted_f1": 0,
+                    "mean_overlap": 0, "n_gold": 0, "n_pred": 0,
+                    "n_exact_matches": 0, "n_partial_matches": 0,
+                    "n_unmatched_pred": 0, "n_unmatched_gold": 0,
+                }, request=request)
+
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=_Capture(), headers=client._client.headers)
+        client.evaluate_ner([], [], overlap_threshold=0.7)
+        assert captured["body"]["overlap_threshold"] == 0.7
+        client.close()
+
+
+class TestEvaluateROUGE:
+    """Tests for evaluate_rouge()."""
+
+    def test_returns_rouge_result(self) -> None:
+        transport = _MockTransport({
+            "/evaluate/rouge": {
+                "rouge1": {"precision": 0.8, "recall": 0.75, "f1": 0.77},
+                "rouge2": {"precision": 0.6, "recall": 0.55, "f1": 0.57},
+                "rougeL": {"precision": 0.7, "recall": 0.65, "f1": 0.67},
+                "reference_length": 50, "hypothesis_length": 45,
+                "length_ratio": 0.9, "processing_time_ms": 1.0,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.evaluate_rouge(
+            reference="The patient has diabetes.",
+            hypothesis="Patient has diabetes.",
+        )
+        assert isinstance(result, ROUGEEvalResult)
+        assert result.rouge1.f1 == 0.77
+        assert result.rouge2.precision == 0.6
+        assert result.rougeL.recall == 0.65
+        assert result.length_ratio == 0.9
+        client.close()
+
+
+class TestEvaluateICD:
+    """Tests for evaluate_icd()."""
+
+    def test_returns_icd_eval_result(self) -> None:
+        transport = _MockTransport({
+            "/evaluate/icd": {
+                "full_code_accuracy": 0.65, "block_accuracy": 0.80,
+                "chapter_accuracy": 0.95, "n_samples": 100,
+                "full_code_matches": 65, "block_matches": 80,
+                "chapter_matches": 95, "processing_time_ms": 0.3,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.evaluate_icd(
+            gold_codes=["E11.65", "I10"], pred_codes=["E11.9", "I10"],
+        )
+        assert isinstance(result, ICDEvalResult)
+        assert result.full_code_accuracy == 0.65
+        assert result.chapter_accuracy == 0.95
+        assert result.n_samples == 100
+        client.close()
+
+
+class TestEvaluateAUPRC:
+    """Tests for evaluate_auprc()."""
+
+    def test_returns_auprc_result(self) -> None:
+        transport = _MockTransport({
+            "/evaluate/auprc": {
+                "label": "disease", "auprc": 0.92,
+                "n_positive": 30, "n_total": 100,
+                "processing_time_ms": 0.4,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.evaluate_auprc(
+            y_true=[1, 0, 1], y_scores=[0.9, 0.1, 0.8], label="disease",
+        )
+        assert isinstance(result, AUPRCResult)
+        assert result.auprc == 0.92
+        assert result.label == "disease"
+        assert result.n_positive == 30
+        client.close()
+
+    def test_default_label(self) -> None:
+        captured: dict = {}
+
+        class _Capture(httpx.BaseTransport):
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                captured["body"] = json.loads(request.content)
+                return httpx.Response(200, json={
+                    "label": "positive", "auprc": 0.5, "n_positive": 0, "n_total": 0,
+                }, request=request)
+
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=_Capture(), headers=client._client.headers)
+        client.evaluate_auprc(y_true=[0, 1], y_scores=[0.3, 0.7])
+        assert captured["body"]["label"] == "positive"
+        client.close()
+
+
+class TestListEvaluationMetrics:
+    """Tests for list_evaluation_metrics()."""
+
+    def test_returns_metric_list(self) -> None:
+        transport = _MockTransport({
+            "/evaluate/metrics": {
+                "metrics": [
+                    {"name": "classification", "endpoint": "/evaluate/classification"},
+                    {"name": "agreement", "endpoint": "/evaluate/agreement"},
+                ],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        metrics = client.list_evaluation_metrics()
+        assert len(metrics) == 2
+        assert metrics[0]["name"] == "classification"
+        client.close()
+
+
+# ---------------------------------------------------------------------------
+# Conversation memory endpoints
+# ---------------------------------------------------------------------------
+
+
+class TestAddConversationTurn:
+    """Tests for add_conversation_turn()."""
+
+    def test_returns_turn_result(self) -> None:
+        transport = _MockTransport({
+            "/conversation/turns": {
+                "session_id": "sess-001", "turn_id": 1, "turn_count": 1,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.add_conversation_turn(
+            session_id="sess-001",
+            text="Patient presents with chest pain.",
+        )
+        assert isinstance(result, ConversationTurnResult)
+        assert result.session_id == "sess-001"
+        assert result.turn_id == 1
+        client.close()
+
+    def test_optional_fields_forwarded(self) -> None:
+        captured: dict = {}
+
+        class _Capture(httpx.BaseTransport):
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                captured["body"] = json.loads(request.content)
+                return httpx.Response(200, json={
+                    "session_id": "s1", "turn_id": 1, "turn_count": 1,
+                }, request=request)
+
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=_Capture(), headers=client._client.headers)
+        client.add_conversation_turn(
+            session_id="s1", text="test",
+            entities=[{"text": "HTN", "entity_type": "DISEASE", "confidence": 0.9}],
+            icd_codes=[{"code": "I10", "description": "HTN"}],
+            risk_score=0.65,
+            summary="Hypertension noted.",
+            document_id="doc-42",
+            metadata={"source": "ER"},
+        )
+        body = captured["body"]
+        assert body["entities"][0]["text"] == "HTN"
+        assert body["risk_score"] == 0.65
+        assert body["document_id"] == "doc-42"
+        assert body["metadata"]["source"] == "ER"
+        client.close()
+
+
+class TestGetConversationContext:
+    """Tests for get_conversation_context()."""
+
+    def test_returns_context(self) -> None:
+        transport = _MockTransport({
+            "/conversation/context": {
+                "session_id": "sess-001", "turn_count": 3,
+                "unique_entities": ["diabetes", "metformin"],
+                "unique_icd_codes": ["E11.9"],
+                "overall_risk_trend": [0.3, 0.5, 0.7],
+                "context": [{"turn_id": 1}],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.get_conversation_context("sess-001", last_n=3)
+        assert isinstance(result, ConversationContext)
+        assert result.turn_count == 3
+        assert "diabetes" in result.unique_entities
+        assert len(result.overall_risk_trend) == 3
+        client.close()
+
+
+class TestClearConversation:
+    """Tests for clear_conversation()."""
+
+    def test_returns_confirmation(self) -> None:
+        class _DeleteTransport(httpx.BaseTransport):
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                assert request.method == "DELETE"
+                return httpx.Response(200, json={
+                    "session_id": "sess-001", "turns_cleared": 5,
+                }, request=request)
+
+        client = ClinIQClient()
+        client._client = httpx.Client(
+            transport=_DeleteTransport(), headers=client._client.headers
+        )
+        result = client.clear_conversation("sess-001")
+        assert result["turns_cleared"] == 5
+        client.close()
+
+
+class TestConversationStats:
+    """Tests for get_conversation_stats()."""
+
+    def test_returns_stats(self) -> None:
+        transport = _MockTransport({
+            "/conversation/stats": {
+                "active_sessions": 12, "total_turns": 87,
+                "max_turns_per_session": 50, "session_ttl_seconds": 7200.0,
+                "max_sessions": 5000,
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        result = client.get_conversation_stats()
+        assert isinstance(result, ConversationStats)
+        assert result.active_sessions == 12
+        assert result.total_turns == 87
+        client.close()
+
+
+class TestListConversationSessions:
+    """Tests for list_conversation_sessions()."""
+
+    def test_returns_sessions(self) -> None:
+        transport = _MockTransport({
+            "/conversation/sessions": {
+                "sessions": [
+                    {
+                        "session_id": "sess-001", "turn_count": 5,
+                        "oldest_turn_id": 1, "newest_turn_id": 5,
+                        "last_access": "2026-03-26T10:00:00Z",
+                    },
+                    {
+                        "session_id": "sess-002", "turn_count": 2,
+                        "oldest_turn_id": 1, "newest_turn_id": 2,
+                        "last_access": "2026-03-26T09:30:00Z",
+                    },
+                ],
+            },
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        sessions = client.list_conversation_sessions()
+        assert len(sessions) == 2
+        assert isinstance(sessions[0], ConversationSessionInfo)
+        assert sessions[0].session_id == "sess-001"
+        assert sessions[0].turn_count == 5
+        assert sessions[1].session_id == "sess-002"
+        client.close()
+
+    def test_empty_sessions(self) -> None:
+        transport = _MockTransport({
+            "/conversation/sessions": {"sessions": []},
+        })
+        client = ClinIQClient()
+        client._client = httpx.Client(transport=transport, headers=client._client.headers)
+        sessions = client.list_conversation_sessions()
+        assert sessions == []
         client.close()

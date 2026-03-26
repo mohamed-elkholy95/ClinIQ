@@ -596,6 +596,255 @@ class EnhancedAnalysisResult:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Evaluation models
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ClassificationEvalResult:
+    """Binary classification evaluation result."""
+
+    mcc: float
+    tp: int
+    fp: int
+    fn: int
+    tn: int
+    calibration: dict[str, Any] | None = None
+    processing_time_ms: float = 0.0
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ClassificationEvalResult:
+        """Create from API response dict."""
+        return cls(
+            mcc=data.get("mcc", 0.0),
+            tp=data.get("tp", 0),
+            fp=data.get("fp", 0),
+            fn=data.get("fn", 0),
+            tn=data.get("tn", 0),
+            calibration=data.get("calibration"),
+            processing_time_ms=data.get("processing_time_ms", 0),
+        )
+
+
+@dataclass
+class KappaResult:
+    """Cohen's Kappa inter-annotator agreement result."""
+
+    kappa: float
+    observed_agreement: float
+    expected_agreement: float
+    n_items: int
+    processing_time_ms: float = 0.0
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> KappaResult:
+        """Create from API response dict."""
+        return cls(
+            kappa=data.get("kappa", 0.0),
+            observed_agreement=data.get("observed_agreement", 0.0),
+            expected_agreement=data.get("expected_agreement", 0.0),
+            n_items=data.get("n_items", 0),
+            processing_time_ms=data.get("processing_time_ms", 0),
+        )
+
+
+@dataclass
+class NEREvalResult:
+    """NER partial span matching evaluation result."""
+
+    exact_f1: float
+    partial_f1: float
+    type_weighted_f1: float
+    mean_overlap: float
+    n_gold: int
+    n_pred: int
+    n_exact_matches: int
+    n_partial_matches: int
+    n_unmatched_pred: int
+    n_unmatched_gold: int
+    processing_time_ms: float = 0.0
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> NEREvalResult:
+        """Create from API response dict."""
+        return cls(
+            exact_f1=data.get("exact_f1", 0.0),
+            partial_f1=data.get("partial_f1", 0.0),
+            type_weighted_f1=data.get("type_weighted_f1", 0.0),
+            mean_overlap=data.get("mean_overlap", 0.0),
+            n_gold=data.get("n_gold", 0),
+            n_pred=data.get("n_pred", 0),
+            n_exact_matches=data.get("n_exact_matches", 0),
+            n_partial_matches=data.get("n_partial_matches", 0),
+            n_unmatched_pred=data.get("n_unmatched_pred", 0),
+            n_unmatched_gold=data.get("n_unmatched_gold", 0),
+            processing_time_ms=data.get("processing_time_ms", 0),
+        )
+
+
+@dataclass
+class ROUGEScores:
+    """ROUGE score for a single variant (1, 2, or L)."""
+
+    precision: float
+    recall: float
+    f1: float
+
+
+@dataclass
+class ROUGEEvalResult:
+    """ROUGE summarisation evaluation result."""
+
+    rouge1: ROUGEScores
+    rouge2: ROUGEScores
+    rougeL: ROUGEScores
+    reference_length: int
+    hypothesis_length: int
+    length_ratio: float
+    processing_time_ms: float = 0.0
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ROUGEEvalResult:
+        """Create from API response dict."""
+        def _scores(d: dict) -> ROUGEScores:
+            return ROUGEScores(
+                precision=d.get("precision", 0.0),
+                recall=d.get("recall", 0.0),
+                f1=d.get("f1", 0.0),
+            )
+        return cls(
+            rouge1=_scores(data.get("rouge1", {})),
+            rouge2=_scores(data.get("rouge2", {})),
+            rougeL=_scores(data.get("rougeL", {})),
+            reference_length=data.get("reference_length", 0),
+            hypothesis_length=data.get("hypothesis_length", 0),
+            length_ratio=data.get("length_ratio", 0.0),
+            processing_time_ms=data.get("processing_time_ms", 0),
+        )
+
+
+@dataclass
+class ICDEvalResult:
+    """Hierarchical ICD-10 evaluation result."""
+
+    full_code_accuracy: float
+    block_accuracy: float
+    chapter_accuracy: float
+    n_samples: int
+    full_code_matches: int
+    block_matches: int
+    chapter_matches: int
+    processing_time_ms: float = 0.0
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ICDEvalResult:
+        """Create from API response dict."""
+        return cls(
+            full_code_accuracy=data.get("full_code_accuracy", 0.0),
+            block_accuracy=data.get("block_accuracy", 0.0),
+            chapter_accuracy=data.get("chapter_accuracy", 0.0),
+            n_samples=data.get("n_samples", 0),
+            full_code_matches=data.get("full_code_matches", 0),
+            block_matches=data.get("block_matches", 0),
+            chapter_matches=data.get("chapter_matches", 0),
+            processing_time_ms=data.get("processing_time_ms", 0),
+        )
+
+
+@dataclass
+class AUPRCResult:
+    """Area Under Precision-Recall Curve result."""
+
+    label: str
+    auprc: float
+    n_positive: int
+    n_total: int
+    processing_time_ms: float = 0.0
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AUPRCResult:
+        """Create from API response dict."""
+        return cls(
+            label=data.get("label", "positive"),
+            auprc=data.get("auprc", 0.0),
+            n_positive=data.get("n_positive", 0),
+            n_total=data.get("n_total", 0),
+            processing_time_ms=data.get("processing_time_ms", 0),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Conversation memory models
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ConversationTurnResult:
+    """Result of adding a conversation turn."""
+
+    session_id: str
+    turn_id: int
+    turn_count: int
+
+
+@dataclass
+class ConversationContext:
+    """Aggregated conversation context."""
+
+    session_id: str
+    turn_count: int
+    unique_entities: list[str] = field(default_factory=list)
+    unique_icd_codes: list[str] = field(default_factory=list)
+    overall_risk_trend: list[float] = field(default_factory=list)
+    context: list[dict[str, Any]] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ConversationContext:
+        """Create from API response dict."""
+        return cls(
+            session_id=data.get("session_id", ""),
+            turn_count=data.get("turn_count", 0),
+            unique_entities=data.get("unique_entities", []),
+            unique_icd_codes=data.get("unique_icd_codes", []),
+            overall_risk_trend=data.get("overall_risk_trend", []),
+            context=data.get("context", []),
+        )
+
+
+@dataclass
+class ConversationStats:
+    """Memory usage statistics."""
+
+    active_sessions: int
+    total_turns: int
+    max_turns_per_session: int
+    session_ttl_seconds: float
+    max_sessions: int
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ConversationStats:
+        """Create from API response dict."""
+        return cls(
+            active_sessions=data.get("active_sessions", 0),
+            total_turns=data.get("total_turns", 0),
+            max_turns_per_session=data.get("max_turns_per_session", 50),
+            session_ttl_seconds=data.get("session_ttl_seconds", 7200.0),
+            max_sessions=data.get("max_sessions", 5000),
+        )
+
+
+@dataclass
+class ConversationSessionInfo:
+    """Summary of an active conversation session."""
+
+    session_id: str
+    turn_count: int
+    oldest_turn_id: int
+    newest_turn_id: int
+    last_access: str
+
+
 @dataclass
 class SearchHit:
     """Single search result."""

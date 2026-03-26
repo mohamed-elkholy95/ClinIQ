@@ -1,8 +1,9 @@
 """ClinIQ API client.
 
-Provides typed Python methods for all 29 ClinIQ API endpoint groups,
+Provides typed Python methods for all 31 ClinIQ API endpoint groups,
 including core analysis, specialized clinical extraction modules,
-document search, and infrastructure endpoints.
+document search, evaluation framework, conversation memory, and
+infrastructure endpoints.
 """
 
 from __future__ import annotations
@@ -16,13 +17,23 @@ from cliniq_client.models import (
     AbbreviationResult,
     AllergyResult,
     AnalysisResult,
+    AUPRCResult,
     BatchJob,
+    ClassificationEvalResult,
     ClassificationResult,
     ComorbidityResult,
+    ConversationContext,
+    ConversationSessionInfo,
+    ConversationStats,
+    ConversationTurnResult,
     EnhancedAnalysisResult,
+    ICDEvalResult,
+    KappaResult,
     MedicationResult,
+    NEREvalResult,
     QualityReport,
     RelationResult,
+    ROUGEEvalResult,
     SDoHResult,
     SearchResult,
     SectionResult,
@@ -790,6 +801,308 @@ class ClinIQClient:
         return token
 
     # ===================================================================
+    # Evaluation endpoints
+    # ===================================================================
+
+    def evaluate_classification(
+        self,
+        y_true: list[int],
+        y_pred: list[int],
+        *,
+        y_prob: list[float] | None = None,
+        n_calibration_bins: int = 10,
+    ) -> ClassificationEvalResult:
+        """Evaluate binary classification with MCC and optional calibration.
+
+        Parameters
+        ----------
+        y_true:
+            Ground truth binary labels (0 or 1).
+        y_pred:
+            Predicted binary labels (0 or 1).
+        y_prob:
+            Predicted probabilities for calibration (optional).
+        n_calibration_bins:
+            Number of bins for calibration ECE.
+
+        Returns
+        -------
+        ClassificationEvalResult
+        """
+        payload: dict[str, Any] = {
+            "y_true": y_true,
+            "y_pred": y_pred,
+            "n_calibration_bins": n_calibration_bins,
+        }
+        if y_prob is not None:
+            payload["y_prob"] = y_prob
+        resp = self._post("/evaluate/classification", payload)
+        return ClassificationEvalResult.from_dict(resp)
+
+    def evaluate_agreement(
+        self,
+        rater_a: list[str | int],
+        rater_b: list[str | int],
+    ) -> KappaResult:
+        """Compute inter-annotator agreement (Cohen's Kappa).
+
+        Parameters
+        ----------
+        rater_a:
+            Labels from annotator A.
+        rater_b:
+            Labels from annotator B.
+
+        Returns
+        -------
+        KappaResult
+        """
+        payload = {"rater_a": rater_a, "rater_b": rater_b}
+        resp = self._post("/evaluate/agreement", payload)
+        return KappaResult.from_dict(resp)
+
+    def evaluate_ner(
+        self,
+        gold_entities: list[dict[str, Any]],
+        pred_entities: list[dict[str, Any]],
+        *,
+        overlap_threshold: float = 0.5,
+    ) -> NEREvalResult:
+        """Evaluate NER with partial span matching.
+
+        Parameters
+        ----------
+        gold_entities:
+            Ground truth entity spans (entity_type, start, end).
+        pred_entities:
+            Predicted entity spans (entity_type, start, end).
+        overlap_threshold:
+            Minimum Jaccard overlap for partial credit.
+
+        Returns
+        -------
+        NEREvalResult
+        """
+        payload = {
+            "gold_entities": gold_entities,
+            "pred_entities": pred_entities,
+            "overlap_threshold": overlap_threshold,
+        }
+        resp = self._post("/evaluate/ner", payload)
+        return NEREvalResult.from_dict(resp)
+
+    def evaluate_rouge(
+        self,
+        reference: str,
+        hypothesis: str,
+    ) -> ROUGEEvalResult:
+        """Evaluate summarisation quality with ROUGE-1/2/L.
+
+        Parameters
+        ----------
+        reference:
+            Reference (gold) summary text.
+        hypothesis:
+            Generated (predicted) summary text.
+
+        Returns
+        -------
+        ROUGEEvalResult
+        """
+        payload = {"reference": reference, "hypothesis": hypothesis}
+        resp = self._post("/evaluate/rouge", payload)
+        return ROUGEEvalResult.from_dict(resp)
+
+    def evaluate_icd(
+        self,
+        gold_codes: list[str],
+        pred_codes: list[str],
+    ) -> ICDEvalResult:
+        """Evaluate ICD-10 predictions hierarchically.
+
+        Parameters
+        ----------
+        gold_codes:
+            Ground truth ICD-10-CM codes.
+        pred_codes:
+            Predicted ICD-10-CM codes.
+
+        Returns
+        -------
+        ICDEvalResult
+        """
+        payload = {"gold_codes": gold_codes, "pred_codes": pred_codes}
+        resp = self._post("/evaluate/icd", payload)
+        return ICDEvalResult.from_dict(resp)
+
+    def evaluate_auprc(
+        self,
+        y_true: list[int],
+        y_scores: list[float],
+        *,
+        label: str = "positive",
+    ) -> AUPRCResult:
+        """Compute Area Under Precision-Recall Curve.
+
+        Parameters
+        ----------
+        y_true:
+            Ground truth binary labels.
+        y_scores:
+            Predicted scores or probabilities.
+        label:
+            Class label name for display.
+
+        Returns
+        -------
+        AUPRCResult
+        """
+        payload = {"y_true": y_true, "y_scores": y_scores, "label": label}
+        resp = self._post("/evaluate/auprc", payload)
+        return AUPRCResult.from_dict(resp)
+
+    def list_evaluation_metrics(self) -> list[dict]:
+        """List available evaluation metrics.
+
+        Returns
+        -------
+        list[dict]
+            Catalogue of evaluation metric endpoints.
+        """
+        resp = self._get("/evaluate/metrics")
+        return resp.get("metrics", [])
+
+    # ===================================================================
+    # Conversation memory endpoints
+    # ===================================================================
+
+    def add_conversation_turn(
+        self,
+        session_id: str,
+        text: str,
+        *,
+        entities: list[dict[str, Any]] | None = None,
+        icd_codes: list[dict[str, Any]] | None = None,
+        risk_score: float | None = None,
+        summary: str | None = None,
+        document_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> ConversationTurnResult:
+        """Record an analysis turn in conversation memory.
+
+        Parameters
+        ----------
+        session_id:
+            Session identifier (1–256 chars).
+        text:
+            Clinical text analyzed in this turn.
+        entities:
+            Extracted entities (optional).
+        icd_codes:
+            Predicted ICD codes (optional).
+        risk_score:
+            Risk score 0–1 (optional).
+        summary:
+            Clinical summary (optional).
+        document_id:
+            Source document identifier (optional).
+        metadata:
+            Arbitrary metadata (optional).
+
+        Returns
+        -------
+        ConversationTurnResult
+        """
+        payload: dict[str, Any] = {"session_id": session_id, "text": text}
+        if entities is not None:
+            payload["entities"] = entities
+        if icd_codes is not None:
+            payload["icd_codes"] = icd_codes
+        if risk_score is not None:
+            payload["risk_score"] = risk_score
+        if summary is not None:
+            payload["summary"] = summary
+        if document_id is not None:
+            payload["document_id"] = document_id
+        if metadata is not None:
+            payload["metadata"] = metadata
+        resp = self._post("/conversation/turns", payload)
+        return ConversationTurnResult(
+            session_id=resp.get("session_id", session_id),
+            turn_id=resp.get("turn_id", 0),
+            turn_count=resp.get("turn_count", 0),
+        )
+
+    def get_conversation_context(
+        self,
+        session_id: str,
+        *,
+        last_n: int = 5,
+    ) -> ConversationContext:
+        """Retrieve aggregated conversation context.
+
+        Parameters
+        ----------
+        session_id:
+            Session identifier.
+        last_n:
+            Number of recent turns to include (1–50).
+
+        Returns
+        -------
+        ConversationContext
+        """
+        payload = {"session_id": session_id, "last_n": last_n}
+        resp = self._post("/conversation/context", payload)
+        return ConversationContext.from_dict(resp)
+
+    def clear_conversation(self, session_id: str) -> dict[str, Any]:
+        """Clear a session's conversation history.
+
+        Parameters
+        ----------
+        session_id:
+            Session identifier.
+
+        Returns
+        -------
+        dict
+            Confirmation with cleared turn count.
+        """
+        return self._delete(f"/conversation/{session_id}")
+
+    def get_conversation_stats(self) -> ConversationStats:
+        """Get conversation memory usage statistics.
+
+        Returns
+        -------
+        ConversationStats
+        """
+        resp = self._get("/conversation/stats")
+        return ConversationStats.from_dict(resp)
+
+    def list_conversation_sessions(self) -> list[ConversationSessionInfo]:
+        """List active conversation sessions.
+
+        Returns
+        -------
+        list[ConversationSessionInfo]
+            Active sessions sorted by recency.
+        """
+        resp = self._get("/conversation/sessions")
+        sessions = resp.get("sessions", [])
+        return [
+            ConversationSessionInfo(
+                session_id=s.get("session_id", ""),
+                turn_count=s.get("turn_count", 0),
+                oldest_turn_id=s.get("oldest_turn_id", 0),
+                newest_turn_id=s.get("newest_turn_id", 0),
+                last_access=s.get("last_access", ""),
+            )
+            for s in sessions
+        ]
+
+    # ===================================================================
     # Internal HTTP helpers
     # ===================================================================
 
@@ -811,6 +1124,27 @@ class ClinIQClient:
             On non-2xx response.
         """
         resp = self._client.get(f"{self.api_prefix}{path}")
+        resp.raise_for_status()
+        return resp.json()
+
+    def _delete(self, path: str) -> dict:
+        """Send DELETE request and return parsed JSON.
+
+        Parameters
+        ----------
+        path:
+            API path relative to ``/api/v1``.
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        httpx.HTTPStatusError
+            On non-2xx response.
+        """
+        resp = self._client.delete(f"{self.api_prefix}{path}")
         resp.raise_for_status()
         return resp.json()
 

@@ -14,16 +14,25 @@ from cliniq_client.models import (
     AllergyResult,
     AnalysisResult,
     AssertionResult,
+    AUPRCResult,
     BatchJob,
+    ClassificationEvalResult,
     ClassificationResult,
     ClassificationScore,
     ComorbidityResult,
+    ConversationContext,
+    ConversationSessionInfo,
+    ConversationStats,
+    ConversationTurnResult,
     EnhancedAnalysisResult,
     Entity,
+    ICDEvalResult,
     ICDPrediction,
+    KappaResult,
     MatchedCategory,
     Medication,
     MedicationResult,
+    NEREvalResult,
     NormalizationResult,
     QualityDimension,
     QualityReport,
@@ -31,6 +40,8 @@ from cliniq_client.models import (
     RelationResult,
     RiskAssessment,
     RiskFactor,
+    ROUGEEvalResult,
+    ROUGEScores,
     SDoHExtraction,
     SDoHResult,
     SearchHit,
@@ -545,3 +556,199 @@ class TestSearchResult:
         h = SearchHit(document_id="x", score=0.5)
         assert h.snippet == ""
         assert h.title == ""
+
+
+# ===================================================================
+# Evaluation models
+# ===================================================================
+
+
+class TestClassificationEvalResult:
+    """Tests for ClassificationEvalResult dataclass."""
+
+    def test_from_dict(self) -> None:
+        r = ClassificationEvalResult.from_dict({
+            "mcc": 0.85, "tp": 40, "fp": 5, "fn": 3, "tn": 52,
+            "calibration": None, "processing_time_ms": 1.2,
+        })
+        assert r.mcc == 0.85
+        assert r.tp == 40
+        assert r.calibration is None
+
+    def test_from_dict_with_calibration(self) -> None:
+        r = ClassificationEvalResult.from_dict({
+            "mcc": 0.72, "tp": 30, "fp": 8, "fn": 5, "tn": 57,
+            "calibration": {"expected_calibration_error": 0.03, "brier_score": 0.12},
+        })
+        assert r.calibration is not None
+        assert r.calibration["brier_score"] == 0.12
+
+    def test_from_dict_empty(self) -> None:
+        r = ClassificationEvalResult.from_dict({})
+        assert r.mcc == 0.0
+        assert r.tp == 0
+
+
+class TestKappaResult:
+    """Tests for KappaResult dataclass."""
+
+    def test_from_dict(self) -> None:
+        r = KappaResult.from_dict({
+            "kappa": 0.82, "observed_agreement": 0.91,
+            "expected_agreement": 0.50, "n_items": 100,
+        })
+        assert r.kappa == 0.82
+        assert r.n_items == 100
+
+    def test_from_dict_empty(self) -> None:
+        r = KappaResult.from_dict({})
+        assert r.kappa == 0.0
+        assert r.n_items == 0
+
+
+class TestNEREvalResult:
+    """Tests for NEREvalResult dataclass."""
+
+    def test_from_dict(self) -> None:
+        r = NEREvalResult.from_dict({
+            "exact_f1": 0.75, "partial_f1": 0.88, "type_weighted_f1": 0.82,
+            "mean_overlap": 0.91, "n_gold": 10, "n_pred": 12,
+            "n_exact_matches": 7, "n_partial_matches": 2,
+            "n_unmatched_pred": 3, "n_unmatched_gold": 1,
+        })
+        assert r.exact_f1 == 0.75
+        assert r.n_gold == 10
+        assert r.n_unmatched_pred == 3
+
+    def test_from_dict_empty(self) -> None:
+        r = NEREvalResult.from_dict({})
+        assert r.exact_f1 == 0.0
+        assert r.n_gold == 0
+
+
+class TestROUGEEvalResult:
+    """Tests for ROUGEEvalResult dataclass."""
+
+    def test_from_dict(self) -> None:
+        r = ROUGEEvalResult.from_dict({
+            "rouge1": {"precision": 0.8, "recall": 0.75, "f1": 0.77},
+            "rouge2": {"precision": 0.6, "recall": 0.55, "f1": 0.57},
+            "rougeL": {"precision": 0.7, "recall": 0.65, "f1": 0.67},
+            "reference_length": 50, "hypothesis_length": 45, "length_ratio": 0.9,
+        })
+        assert r.rouge1.f1 == 0.77
+        assert r.rouge2.precision == 0.6
+        assert r.rougeL.recall == 0.65
+        assert r.length_ratio == 0.9
+
+    def test_from_dict_empty(self) -> None:
+        r = ROUGEEvalResult.from_dict({})
+        assert r.rouge1.f1 == 0.0
+        assert r.reference_length == 0
+
+    def test_rouge_scores_dataclass(self) -> None:
+        s = ROUGEScores(precision=0.9, recall=0.85, f1=0.87)
+        assert s.precision == 0.9
+
+
+class TestICDEvalResult:
+    """Tests for ICDEvalResult dataclass."""
+
+    def test_from_dict(self) -> None:
+        r = ICDEvalResult.from_dict({
+            "full_code_accuracy": 0.65, "block_accuracy": 0.80,
+            "chapter_accuracy": 0.95, "n_samples": 100,
+            "full_code_matches": 65, "block_matches": 80, "chapter_matches": 95,
+        })
+        assert r.full_code_accuracy == 0.65
+        assert r.chapter_matches == 95
+
+    def test_from_dict_empty(self) -> None:
+        r = ICDEvalResult.from_dict({})
+        assert r.n_samples == 0
+
+
+class TestAUPRCResult:
+    """Tests for AUPRCResult dataclass."""
+
+    def test_from_dict(self) -> None:
+        r = AUPRCResult.from_dict({
+            "label": "disease", "auprc": 0.92,
+            "n_positive": 30, "n_total": 100,
+        })
+        assert r.label == "disease"
+        assert r.auprc == 0.92
+
+    def test_from_dict_empty(self) -> None:
+        r = AUPRCResult.from_dict({})
+        assert r.label == "positive"
+        assert r.auprc == 0.0
+
+
+# ===================================================================
+# Conversation memory models
+# ===================================================================
+
+
+class TestConversationTurnResult:
+    """Tests for ConversationTurnResult dataclass."""
+
+    def test_construction(self) -> None:
+        t = ConversationTurnResult(
+            session_id="sess-001", turn_id=3, turn_count=3,
+        )
+        assert t.session_id == "sess-001"
+        assert t.turn_id == 3
+
+
+class TestConversationContext:
+    """Tests for ConversationContext dataclass."""
+
+    def test_from_dict(self) -> None:
+        r = ConversationContext.from_dict({
+            "session_id": "sess-001", "turn_count": 3,
+            "unique_entities": ["diabetes", "metformin"],
+            "unique_icd_codes": ["E11.9"],
+            "overall_risk_trend": [0.3, 0.5, 0.7],
+            "context": [{"turn_id": 1, "text": "note 1"}],
+        })
+        assert r.turn_count == 3
+        assert "diabetes" in r.unique_entities
+        assert len(r.overall_risk_trend) == 3
+
+    def test_from_dict_empty(self) -> None:
+        r = ConversationContext.from_dict({})
+        assert r.session_id == ""
+        assert r.unique_entities == []
+
+
+class TestConversationStats:
+    """Tests for ConversationStats dataclass."""
+
+    def test_from_dict(self) -> None:
+        r = ConversationStats.from_dict({
+            "active_sessions": 12, "total_turns": 87,
+            "max_turns_per_session": 50, "session_ttl_seconds": 7200.0,
+            "max_sessions": 5000,
+        })
+        assert r.active_sessions == 12
+        assert r.total_turns == 87
+
+    def test_from_dict_defaults(self) -> None:
+        r = ConversationStats.from_dict({})
+        assert r.max_turns_per_session == 50
+        assert r.max_sessions == 5000
+
+
+class TestConversationSessionInfo:
+    """Tests for ConversationSessionInfo dataclass."""
+
+    def test_construction(self) -> None:
+        s = ConversationSessionInfo(
+            session_id="sess-001", turn_count=5,
+            oldest_turn_id=1, newest_turn_id=5,
+            last_access="2026-03-26T10:00:00Z",
+        )
+        assert s.session_id == "sess-001"
+        assert s.turn_count == 5
+        assert s.last_access == "2026-03-26T10:00:00Z"
