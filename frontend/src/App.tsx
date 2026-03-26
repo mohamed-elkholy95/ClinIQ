@@ -30,6 +30,7 @@ import { EvaluationDashboard } from './pages/EvaluationDashboard';
 import { AbbreviationExpander } from './pages/AbbreviationExpander';
 import { SectionParser } from './pages/SectionParser';
 import { ConceptNormalizer } from './pages/ConceptNormalizer';
+import { NotFound } from './pages/NotFound';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,6 +84,7 @@ export default function App() {
               <Route path="/normalize" element={<ConceptNormalizer />} />
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/models" element={<ModelManagement />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </BrowserRouter>

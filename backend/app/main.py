@@ -15,6 +15,7 @@ from app.core.exceptions import ClinIQError
 from app.db.session import close_db, init_db
 from app.middleware.logging import configure_logging
 from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.sanitize import InputSanitizationMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -155,6 +156,10 @@ def _error_code_to_http_status(error_code: str) -> int:
 
 # Add rate limiting middleware
 app.add_middleware(RateLimitMiddleware, redis_url=settings.redis_url)
+
+# Add input sanitization middleware — strips null bytes, control characters,
+# and BOMs from JSON request bodies before they reach route handlers.
+app.add_middleware(InputSanitizationMiddleware)
 
 # Include routers
 app.include_router(api_router, prefix=settings.api_v1_prefix)
