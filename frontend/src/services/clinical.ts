@@ -15,6 +15,12 @@
 
 import client from './api';
 import type {
+  AddTurnRequest,
+  AddTurnResponse,
+  ContextRequest,
+  ContextResponse,
+  ConversationStats,
+  SessionsListResponse,
   MedicationExtractionResponse,
   AllergyExtractionResponse,
   VitalExtractionResponse,
@@ -321,6 +327,47 @@ export const getDriftStatus = async (): Promise<DriftStatusResponse> => {
  *
  * @param text - Clinical document text
  * @param onEvent - Callback fired for each SSE event
+// ─── Conversation Memory ─────────────────────────────────────
+
+/** Record a completed analysis turn in a session's conversation history. */
+export const addConversationTurn = async (
+  data: AddTurnRequest,
+): Promise<AddTurnResponse> => {
+  const resp = await client.post('/conversation/turns', data);
+  return resp.data;
+};
+
+/** Retrieve aggregated context from a session's recent history. */
+export const getConversationContext = async (
+  data: ContextRequest,
+): Promise<ContextResponse> => {
+  const resp = await client.post('/conversation/context', data);
+  return resp.data;
+};
+
+/** Clear a session's conversation history. */
+export const clearConversationSession = async (
+  sessionId: string,
+): Promise<{ session_id: string; status: string }> => {
+  const resp = await client.delete(`/conversation/${sessionId}`);
+  return resp.data;
+};
+
+/** Get conversation memory usage statistics. */
+export const getConversationStats = async (): Promise<ConversationStats> => {
+  const resp = await client.get('/conversation/stats');
+  return resp.data;
+};
+
+/** List all active conversation sessions. */
+export const listConversationSessions =
+  async (): Promise<SessionsListResponse> => {
+    const resp = await client.get('/conversation/sessions');
+    return resp.data;
+  };
+
+// ─── Streaming Analysis ──────────────────────────────────────
+
  * @param onError - Callback for connection errors
  * @returns AbortController to cancel the stream
  */

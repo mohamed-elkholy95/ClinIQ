@@ -477,3 +477,70 @@ export interface ModuleInfo {
   description: string;
   enabled_by_default: boolean;
 }
+
+// ─── Conversation Memory ─────────────────────────────────────
+
+export interface ConversationEntity {
+  text: string;
+  entity_type: string;
+  confidence: number;
+}
+
+export interface ConversationICDCode {
+  code: string;
+  description: string;
+  confidence: number;
+}
+
+export interface AddTurnRequest {
+  session_id: string;
+  text: string;
+  entities?: ConversationEntity[];
+  icd_codes?: ConversationICDCode[];
+  risk_score?: number | null;
+  risk_level?: string | null;
+  summary?: string | null;
+  document_id?: string | null;
+  metadata?: Record<string, string>;
+}
+
+export interface AddTurnResponse {
+  session_id: string;
+  turn_id: number;
+  turn_count: number;
+}
+
+export interface ContextRequest {
+  session_id: string;
+  last_n?: number;
+}
+
+export interface ContextResponse {
+  session_id: string;
+  turn_count: number;
+  turns: Record<string, unknown>[];
+  unique_entities: string[];
+  unique_icd_codes: string[];
+  overall_risk_trend: number[];
+}
+
+export interface ConversationStats {
+  active_sessions: number;
+  total_turns: number;
+  max_sessions: number;
+  max_turns_per_session: number;
+  session_ttl_seconds: number;
+}
+
+export interface SessionInfo {
+  session_id: string;
+  turn_count: number;
+  last_access: number;
+  oldest_turn_id: number | null;
+  newest_turn_id: number | null;
+}
+
+export interface SessionsListResponse {
+  sessions: SessionInfo[];
+  total: number;
+}

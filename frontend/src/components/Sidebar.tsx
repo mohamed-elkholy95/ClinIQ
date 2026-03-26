@@ -25,6 +25,7 @@ import {
   FileSearch,
   Search,
   Radio,
+  MessageSquare,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -54,6 +55,7 @@ const navItems = [
   { to: '/search', label: 'Search', icon: Search },
   { to: '/drift', label: 'Drift Monitor', icon: Activity },
   { to: '/stream', label: 'Streaming', icon: Radio },
+  { to: '/conversation', label: 'Conversation', icon: MessageSquare },
   { to: '/timeline', label: 'Timeline', icon: Clock },
   { to: '/models', label: 'Models', icon: Cpu },
 ];
