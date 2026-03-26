@@ -88,16 +88,22 @@ Interactive documentation: `http://localhost:8000/docs` (Swagger UI) or `http://
     - [POST /comorbidity/batch](#post-apiv1comorbiditybatch)
     - [GET /comorbidity/categories](#get-apiv1comorbiditycategories)
     - [GET /comorbidity/categories/{name}](#get-apiv1comorbiditycategoriesname)
-21. [Document Search](#document-search)
+21. [Conversation Memory](#conversation-memory)
+    - [POST /conversation/turns](#post-apiv1conversationturns)
+    - [POST /conversation/context](#post-apiv1conversationcontext)
+    - [DELETE /conversation/{session_id}](#delete-apiv1conversationsessionid)
+    - [GET /conversation/stats](#get-apiv1conversationstats)
+    - [GET /conversation/sessions](#get-apiv1conversationsessions)
+22. [Document Search](#document-search)
     - [POST /search](#post-apiv1search)
     - [POST /search/reindex](#post-apiv1searchreindex)
-22. [Batch Processing](#batch-processing)
+23. [Batch Processing](#batch-processing)
     - [POST /batch](#post-apiv1batch)
     - [GET /batch/{job_id}](#get-apiv1batchjobid)
-23. [Model Registry](#model-registry)
+24. [Model Registry](#model-registry)
     - [GET /models](#get-apiv1models)
     - [GET /models/{model_name}](#get-apiv1modelsmodelname)
-24. [Infrastructure](#infrastructure)
+25. [Infrastructure](#infrastructure)
     - [GET /health](#get-apiv1health)
     - [GET /health/live](#get-apiv1healthlive)
     - [GET /health/ready](#get-apiv1healthready)
@@ -105,7 +111,7 @@ Interactive documentation: `http://localhost:8000/docs` (Swagger UI) or `http://
     - [GET /metrics/models](#get-apiv1metricsmodels)
     - [GET /drift/status](#get-apiv1driftstatus)
     - [POST /drift/record](#post-apiv1driftrecord)
-25. [Error Codes](#error-codes)
+26. [Error Codes](#error-codes)
 26. [Rate Limiting](#rate-limiting)
 
 ---
@@ -1198,6 +1204,147 @@ Catalogue of 17 CCI categories with weights and descriptions.
 ### GET /api/v1/comorbidity/categories/{name}
 
 Category detail with ICD-10-CM code prefix list.
+
+---
+
+## Conversation Memory
+
+Session-scoped conversation memory for context-aware clinical analysis. Records analysis turns and provides aggregated context from previous analyses within a session.
+
+### POST /api/v1/conversation/turns
+
+Record a completed analysis result in a session's conversation history.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/conversation/turns \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "user-123-session",
+    "text": "Patient presents with chest pain and shortness of breath. History of hypertension.",
+    "entities": [
+      {"text": "chest pain", "entity_type": "SYMPTOM", "confidence": 0.95},
+      {"text": "shortness of breath", "entity_type": "SYMPTOM", "confidence": 0.88},
+      {"text": "hypertension", "entity_type": "DISEASE", "confidence": 0.92}
+    ],
+    "icd_codes": [
+      {"code": "R07.9", "description": "Chest pain, unspecified", "confidence": 0.82}
+    ],
+    "risk_score": 0.65,
+    "risk_level": "moderate",
+    "summary": "Patient with acute chest pain and dyspnea, history of HTN.",
+    "document_id": "doc-001",
+    "metadata": {"source": "ER", "provider": "Dr. Smith"}
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "session_id": "user-123-session",
+  "turn_id": 1,
+  "turn_count": 1
+}
+```
+
+### POST /api/v1/conversation/context
+
+Retrieve aggregated context from a session's recent conversation history. Returns deduplicated entities, ICD codes, and risk trends across all recorded turns.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/conversation/context \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "user-123-session",
+    "last_n": 5
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "session_id": "user-123-session",
+  "turn_count": 2,
+  "turns": [
+    {
+      "turn": 1,
+      "timestamp": 1711425600.0,
+      "text_length": 81,
+      "entities_by_type": {"SYMPTOM": ["chest pain", "shortness of breath"], "DISEASE": ["hypertension"]},
+      "entity_count": 3,
+      "icd_codes": [{"code": "R07.9", "description": "Chest pain, unspecified"}],
+      "risk": {"score": 0.65, "level": "moderate"},
+      "summary": "Patient with acute chest pain and dyspnea, history of HTN."
+    }
+  ],
+  "unique_entities": ["chest pain", "hypertension", "shortness of breath"],
+  "unique_icd_codes": ["R07.9"],
+  "overall_risk_trend": [0.65]
+}
+```
+
+### DELETE /api/v1/conversation/{session_id}
+
+Clear all conversation history for a session. Returns 404 if the session does not exist.
+
+```bash
+curl -X DELETE http://localhost:8000/api/v1/conversation/user-123-session
+```
+
+**Response:**
+
+```json
+{
+  "session_id": "user-123-session",
+  "status": "cleared"
+}
+```
+
+### GET /api/v1/conversation/stats
+
+Return conversation memory usage statistics.
+
+```bash
+curl http://localhost:8000/api/v1/conversation/stats
+```
+
+**Response:**
+
+```json
+{
+  "active_sessions": 42,
+  "total_turns": 187,
+  "max_sessions": 5000,
+  "max_turns_per_session": 50,
+  "session_ttl_seconds": 7200.0
+}
+```
+
+### GET /api/v1/conversation/sessions
+
+List all active conversation sessions with turn counts and last-access timestamps.
+
+```bash
+curl http://localhost:8000/api/v1/conversation/sessions
+```
+
+**Response:**
+
+```json
+{
+  "sessions": [
+    {
+      "session_id": "user-123-session",
+      "turn_count": 3,
+      "last_access": 1711425900.0,
+      "oldest_turn_id": 1,
+      "newest_turn_id": 3
+    }
+  ],
+  "total": 1
+}
+```
 
 ---
 
