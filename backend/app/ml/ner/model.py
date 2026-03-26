@@ -1,4 +1,42 @@
-"""Medical Named Entity Recognition model wrapper."""
+"""Medical Named Entity Recognition model wrapper.
+
+Provides a hierarchy of NER models for extracting clinical entities
+(diseases, medications, procedures, lab values, etc.) from free-text
+clinical notes.
+
+Architecture
+~~~~~~~~~~~~
+Three concrete strategies sit behind :class:`BaseNERModel`:
+
+1. **RuleBasedNERModel** — Compiled regex patterns with a medical
+   dictionary.  Fast (<5 ms per document), deterministic, no GPU.
+   Used as the always-available baseline and fallback.
+
+2. **SpacyNERModel** — Wraps scispaCy's biomedical NER pipelines
+   (``en_ner_bc5cdr_md``, etc.).  Better generalisation than rules
+   at the cost of ~30–50 ms per document.
+
+3. **TransformerNERModel** — Fine-tuned BioBERT / ClinicalBERT for
+   token-classification.  Best F1 but requires GPU for acceptable
+   latency.
+
+4. **CompositeNERModel** — Ensemble that merges outputs from multiple
+   models using union, intersection, or majority voting.
+
+Design decisions
+----------------
+* **Negation / uncertainty are first-class** — Every entity carries
+  ``is_negated`` and ``is_uncertain`` flags set by window-based
+  modifier detection (a lightweight NegEx approximation).  Downstream
+  consumers (ICD-10, risk scoring) use these to avoid false positives.
+* **Overlap resolution favours confidence** — When two models produce
+  overlapping spans, the span with higher confidence wins.  This keeps
+  the composite model's output clean without requiring span alignment.
+* **BIO tagging for transformers** — Standard ``B-``/``I-``/``O``
+  scheme used across HuggingFace token-classifiers, decoded with
+  offset mapping so character spans stay accurate after sub-word
+  tokenisation.
+"""
 
 import logging
 from abc import ABC, abstractmethod
@@ -96,7 +134,20 @@ class BaseNERModel(ABC):
 
 
 class RuleBasedNERModel(BaseNERModel):
-    """Rule-based NER model using patterns and dictionaries."""
+    """Rule-based NER model using patterns and dictionaries.
+
+    Uses compiled regular expressions to detect medical entities.
+    Patterns are evaluated per entity-type, and overlapping matches
+    are resolved by confidence (higher wins).
+
+    Why rule-based?
+    ~~~~~~~~~~~~~~~
+    Clinical NLP literature consistently shows that simple pattern +
+    dictionary systems achieve surprisingly high precision for
+    well-known entity types (medications, dosages, lab values).
+    This model is the zero-dependency baseline that never requires
+    a GPU and runs in <5 ms — essential for real-time API responses.
+    """
 
     def __init__(
         self,
@@ -110,13 +161,22 @@ class RuleBasedNERModel(BaseNERModel):
         self._compiled_patterns: dict[str, list] = {}
 
     def _default_patterns(self) -> dict[str, list[str]]:
-        """Default entity patterns."""
+        """Default entity patterns.
+
+        Patterns are ordered from specific (known drug names) to generic
+        (suffix-based heuristics like ``-statin``, ``-pril``).  The
+        suffix patterns catch novel drugs that follow standard INN
+        (International Nonproprietary Name) stems — e.g., any statin
+        ends in ``-statin``, any ACE inhibitor ends in ``-pril``.
+        """
         return {
             "MEDICATION": [
+                # Known high-frequency medications (exact match → high precision)
                 r"\b(?:aspirin|ibuprofen|acetaminophen|metformin|lisinopril|atorvastatin|omeprazole|amlodipine|metoprolol|losartan)\b",
                 r"\b(?:penicillin|amoxicillin|azithromycin|ciprofloxacin|doxycycline)\b",
                 r"\b(?:prednisone|methylprednisolone|dexamethasone)\b",
                 r"\b(?:insulin|glipizide|glyburide)\b",
+                # INN stem patterns — trades recall for some precision loss
                 r"\b\w+(?:cillin|mycin|statin|pril|sartan|olol|pine|zole|prazole)\b",
             ],
             "DOSAGE": [
@@ -154,7 +214,18 @@ class RuleBasedNERModel(BaseNERModel):
         logger.info(f"Loaded rule-based NER model v{self.version}")
 
     def extract_entities(self, text: str) -> list[Entity]:
-        """Extract entities using pattern matching."""
+        """Extract entities using pattern matching.
+
+        The pipeline runs in three stages:
+        1. Pattern matching → raw candidate spans
+        2. Overlap resolution → non-overlapping highest-confidence spans
+        3. Modifier detection → negation and uncertainty flags
+
+        Stage 3 uses a 50-character left-context window (a lightweight
+        NegEx approximation).  This is deliberately simple — the full
+        ConText algorithm runs separately in the assertion detection
+        module for richer clinical assertion analysis.
+        """
         self.ensure_loaded()
         entities = []
 
@@ -421,7 +492,17 @@ class TransformerNERModel(BaseNERModel):
         offsets: np.ndarray,
         text: str,
     ) -> list[Entity]:
-        """Extract entities from BIO-tagged predictions."""
+        """Extract entities from BIO-tagged predictions.
+
+        BIO (Begin-Inside-Outside) is the standard scheme for NER
+        token classification.  ``B-DISEASE`` marks the first token
+        of a disease mention, ``I-DISEASE`` continues it, and ``O``
+        means no entity.  We use ``offset_mapping`` from the tokenizer
+        to map sub-word token indices back to exact character spans —
+        this is critical because BERT-family tokenizers split words
+        into sub-word pieces (e.g., "acetaminophen" → "ace", "##tam",
+        "##ino", "##phen"), and we need the original character offsets.
+        """
         entities = []
         current_entity: dict[str, Any] | None = None
 
@@ -470,7 +551,21 @@ class TransformerNERModel(BaseNERModel):
 
 
 class CompositeNERModel(BaseNERModel):
-    """Combine multiple NER models for better coverage."""
+    """Combine multiple NER models for better coverage.
+
+    Ensemble strategies and when to use each:
+
+    * **union** — Maximises recall.  Use when missing an entity is worse
+      than a false positive (e.g., allergy detection where safety matters).
+    * **intersection** — Maximises precision.  Use when false positives
+      are costly (e.g., auto-generated clinical coding).
+    * **majority** — Balanced.  Use for general-purpose extraction where
+      both precision and recall matter equally.
+
+    In clinical NLP, union is the most common default because downstream
+    modules (assertion detection, concept normalization) can filter out
+    noise, but a missed entity can never be recovered.
+    """
 
     def __init__(
         self,

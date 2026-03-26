@@ -1,4 +1,39 @@
-"""ICD-10 Code Prediction model."""
+"""ICD-10 Code Prediction model.
+
+Predicts ICD-10-CM diagnosis codes from clinical free text.  This is
+one of the highest-value NLP tasks in healthcare: accurate auto-coding
+reduces manual coding effort (typically 5–15 min per encounter) and
+improves revenue integrity for providers.
+
+Architecture
+~~~~~~~~~~~~
+Two model families:
+
+1. **Classical ML (TF-IDF + Logistic Regression / SVM)** — Fast,
+   interpretable, good for common codes.  The feature extractor
+   produces TF-IDF vectors enriched with clinical features; a
+   multi-label classifier maps these to ICD-10 codes.
+
+2. **Transformer-based (ClinicalBERT)** — Fine-tuned sequence
+   classification for better performance on long notes and rare codes.
+   Uses ``[CLS]`` token pooling with a multi-label sigmoid head.
+
+Design decisions
+----------------
+* **Multi-label, not multi-class** — A single clinical encounter
+  typically has 3–15 ICD-10 codes.  We use sigmoid activation per
+  code (not softmax) so multiple codes can be predicted independently.
+* **Top-k with confidence** — Rather than hard-thresholding, we
+  return the top-k predictions with calibrated confidence scores.
+  This lets the UI show "likely" vs "possible" codes and supports
+  human-in-the-loop review workflows.
+* **Contributing text** — Each prediction includes the text segments
+  that most influenced the prediction, supporting clinical auditors
+  who need to verify coding accuracy.
+* **ICD-10-CM code dictionary** — ~400 high-frequency codes covering
+  the most common diagnoses across specialties.  The dictionary maps
+  codes to descriptions, chapters, and categories for display.
+"""
 
 import logging
 from abc import ABC, abstractmethod

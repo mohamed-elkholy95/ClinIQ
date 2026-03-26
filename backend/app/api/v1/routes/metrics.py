@@ -126,6 +126,7 @@ def _json_encode(data: Any) -> str:
 
     class _Encoder(json.JSONEncoder):
         def default(self, o: Any) -> Any:
+            """Serialise datetime and set objects to JSON-safe types."""
             if isinstance(o, datetime):
                 return o.isoformat()
             if isinstance(o, set):

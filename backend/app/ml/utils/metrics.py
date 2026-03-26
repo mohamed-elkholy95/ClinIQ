@@ -1,4 +1,37 @@
-"""Evaluation metrics for clinical NLP tasks."""
+"""Evaluation metrics for clinical NLP tasks.
+
+Clinical NLP evaluation requires domain-aware metrics beyond vanilla
+accuracy.  This module provides:
+
+* **Multi-averaging classification metrics** — Macro, micro, and
+  weighted variants.  In clinical coding (ICD-10), class imbalance
+  is extreme: a few codes (e.g., I10 hypertension, E11 type-2
+  diabetes) dominate, while thousands of rare codes have ≤5 examples.
+  Macro-F1 treats every code equally (good for rare-disease detection);
+  micro-F1 reflects overall volume (good for operational throughput);
+  weighted-F1 balances by support (good for real-world performance
+  reporting).
+
+* **Entity-level NER metrics** — Strict span-matching: an extracted
+  entity is a true positive only if *both* the span boundaries and
+  the entity type match exactly.  This is stricter than token-level
+  evaluation but reflects real clinical utility — a partially
+  extracted medication name is useless for downstream coding.
+
+* **Summarization metrics** — ROUGE-1/2/L plus length ratio.
+  ROUGE captures n-gram overlap with reference summaries; length
+  ratio ensures the model isn't cheating by copying the entire input.
+
+Design decisions
+----------------
+* **Exact span matching for NER** — The alternative (token-level F1)
+  inflates scores because long entity spans get partial credit even
+  when clinically wrong.  Exact matching is the community standard
+  for i2b2/n2c2 shared tasks.
+* **Lazy sklearn imports** — Metrics functions import ``sklearn``
+  inside the function body to keep the module importable even in
+  lightweight environments (e.g., frontend-only dev containers).
+"""
 
 from collections import Counter
 from dataclasses import dataclass

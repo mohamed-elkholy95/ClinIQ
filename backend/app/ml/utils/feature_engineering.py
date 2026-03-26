@@ -1,4 +1,41 @@
-"""Feature engineering for clinical text classification."""
+"""Feature engineering for clinical text classification.
+
+Transforms raw clinical text into numerical feature vectors suitable
+for classical ML models (logistic regression, SVM, random forest).
+
+Architecture
+~~~~~~~~~~~~
+Two feature families are combined:
+
+1. **TF-IDF vectors** — Sparse bag-of-words with medical stopword
+   removal.  TF-IDF down-weights ubiquitous clinical filler words
+   ("patient", "noted", "history") that appear in nearly every note
+   and would otherwise dominate the feature space.
+
+2. **Hand-crafted clinical features** — Domain-specific signals that
+   TF-IDF alone cannot capture:
+
+   * Medication mention counts (correlated with polypharmacy risk)
+   * Lab value density (differentiates lab reports from narrative)
+   * Section structure (H&P notes vs. radiology reports vs. dental)
+   * Document length statistics (discharge summaries are long;
+     phone encounter notes are short)
+
+Design decisions
+----------------
+* **Medical stopwords are separate from sklearn's English stopwords**
+  — Words like "denies" and "without" are stopwords for topic
+  classification but carry critical negation meaning for NER.
+  This list is classification-specific.
+* **Bigrams (ngram_range=(1,2))** — Clinical text has many meaningful
+  bigrams: "chest pain", "blood pressure", "diabetes mellitus".
+  Unigrams alone lose these associations.
+* **max_df=0.95** — Aggressively filters words appearing in >95%
+  of documents (likely boilerplate) without losing rare clinical terms.
+* **Feature concatenation** — TF-IDF and hand-crafted features are
+  horizontally stacked with ``scipy.sparse.hstack``, preserving
+  sparsity for the TF-IDF portion while allowing dense custom features.
+"""
 
 import re
 from collections import Counter

@@ -1,4 +1,33 @@
-"""Text preprocessing utilities for clinical text."""
+"""Text preprocessing utilities for clinical text.
+
+Clinical text is fundamentally different from general-domain text:
+
+* **Non-standard abbreviations** — "pt" (patient), "htn" (hypertension),
+  "bid" (twice daily) are everywhere and rarely appear in dictionaries.
+* **Section-structured layout** — Notes follow templates (H&P, SOAP,
+  discharge summary) with recognisable headers.
+* **Mixed formatting** — OCR artifacts, copy-paste from EHRs, bullet
+  lists, ALL-CAPS headers, and Unicode variants from different systems.
+* **Meaningful whitespace** — Line breaks often separate list items
+  (e.g., medication lists), so aggressive whitespace normalisation
+  can destroy structure.
+
+This module handles the messy reality of real-world clinical documents
+while preserving the structural cues that downstream NLP modules rely
+on (section boundaries, sentence boundaries, list formatting).
+
+Design decisions
+----------------
+* **Preserve structure** — We collapse runs of 3+ newlines to 2, but
+  never strip all newlines.  Section detection depends on line breaks.
+* **Abbreviation expansion is opt-in** — Many downstream modules
+  (allergy extractor, medication extractor) have their own abbreviation
+  handling tuned to their domain.  Global expansion can introduce
+  ambiguity (e.g., "PE" = pulmonary embolism or physical exam).
+* **Sentence segmentation protects decimals and titles** — Clinical
+  text is full of "Dr. Smith" and "HbA1c 7.2" which naive splitters
+  break on the period.
+"""
 
 import hashlib
 import re

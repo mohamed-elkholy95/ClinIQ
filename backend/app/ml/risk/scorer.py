@@ -1,4 +1,28 @@
-"""Risk Scoring system for clinical documents."""
+"""Risk Scoring system for clinical documents.
+
+Quantifies clinical risk from free-text notes by combining multiple
+evidence signals: medication complexity, diagnostic burden, lab value
+abnormalities, and social determinants.
+
+Why rule-based risk scoring?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ML-based risk models (e.g., LACE, NEWS2) require structured data
+fields that aren't always available in free text.  This module
+provides a heuristic baseline that works on raw narrative and
+produces a 0–1 risk score consumable by the API.  It's intended
+as a complement to (not replacement for) validated clinical risk
+calculators like the Charlson Comorbidity Index (see
+``app.ml.comorbidity.charlson``).
+
+Design decisions
+----------------
+* **Additive factor model** — Each risk factor contributes
+  independently to the total score.  This is transparent and
+  explainable: the API returns the factor breakdown so clinicians
+  can see *why* a patient scored high.
+* **Capped at 1.0** — The score is normalised to [0, 1] for
+  consistent interpretation across the platform.
+"""
 
 import logging
 from dataclasses import dataclass
