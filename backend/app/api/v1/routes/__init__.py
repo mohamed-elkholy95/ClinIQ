@@ -38,6 +38,7 @@ from app.api.v1.routes.summarize import router as summarize_router
 from app.api.v1.routes.temporal import router as temporal_router
 from app.api.v1.routes.abbreviations import router as abbreviations_router
 from app.api.v1.routes.allergies import router as allergies_router
+from app.api.v1.routes.conversation import router as conversation_router
 from app.api.v1.routes.enhanced_analyze import router as enhanced_analyze_router
 from app.api.v1.routes.sections import router as sections_router
 from app.api.v1.routes.vitals import router as vitals_router
@@ -110,6 +111,9 @@ api_router.include_router(search_router)   # POST /search, POST /search/reindex
 
 # Model registry
 api_router.include_router(models_router)   # GET  /models, GET /models/{model_name}
+
+# Conversation memory
+api_router.include_router(conversation_router)  # POST /conversation/turns, POST /conversation/context, DELETE /conversation/{session_id}, GET /conversation/stats, GET /conversation/sessions
 
 # Authentication & user management
 api_router.include_router(auth_router)     # POST /auth/token, /auth/register, /auth/api-keys
