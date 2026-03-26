@@ -27,6 +27,9 @@ import {
   Radio,
   MessageSquare,
   BarChart3,
+  BookOpen,
+  FileStack,
+  Microscope,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -58,6 +61,9 @@ const navItems = [
   { to: '/stream', label: 'Streaming', icon: Radio },
   { to: '/conversation', label: 'Conversation', icon: MessageSquare },
   { to: '/evaluate', label: 'Evaluation', icon: BarChart3 },
+  { to: '/abbreviations', label: 'Abbreviations', icon: BookOpen },
+  { to: '/sections', label: 'Sections', icon: FileStack },
+  { to: '/normalize', label: 'Normalize', icon: Microscope },
   { to: '/timeline', label: 'Timeline', icon: Clock },
   { to: '/models', label: 'Models', icon: Cpu },
 ];

@@ -381,6 +381,11 @@ export const listConversationSessions =
 
 // ─── Streaming Analysis ──────────────────────────────────────
 
+/**
+ * Stream clinical analysis results via SSE (Server-Sent Events).
+ *
+ * @param text - Clinical text to analyze
+ * @param onEvent - Callback receiving each SSE event (stage + data)
  * @param onError - Callback for connection errors
  * @returns AbortController to cancel the stream
  */

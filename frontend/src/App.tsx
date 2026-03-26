@@ -27,6 +27,9 @@ import { DriftMonitor } from './pages/DriftMonitor';
 import { StreamingAnalysis } from './pages/StreamingAnalysis';
 import { ConversationMemory } from './pages/ConversationMemory';
 import { EvaluationDashboard } from './pages/EvaluationDashboard';
+import { AbbreviationExpander } from './pages/AbbreviationExpander';
+import { SectionParser } from './pages/SectionParser';
+import { ConceptNormalizer } from './pages/ConceptNormalizer';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +78,9 @@ export default function App() {
               <Route path="/stream" element={<StreamingAnalysis />} />
               <Route path="/conversation" element={<ConversationMemory />} />
               <Route path="/evaluate" element={<EvaluationDashboard />} />
+              <Route path="/abbreviations" element={<AbbreviationExpander />} />
+              <Route path="/sections" element={<SectionParser />} />
+              <Route path="/normalize" element={<ConceptNormalizer />} />
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/models" element={<ModelManagement />} />
             </Route>
