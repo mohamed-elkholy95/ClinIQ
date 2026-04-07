@@ -1,0 +1,2239 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Clinical NLP platform — structured intelligence from unstructured medical text">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Clinical Error Analysis - ClinIQ Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#clinical-error-analysis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ClinIQ Documentation" class="md-header__button md-logo" aria-label="ClinIQ Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ClinIQ Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Clinical Error Analysis
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mohamed-elkholy95/ClinIQ" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mohamed-elkholy95/ClinIQ
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ClinIQ Documentation" class="md-nav__button md-logo" aria-label="ClinIQ Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ClinIQ Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mohamed-elkholy95/ClinIQ" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mohamed-elkholy95/ClinIQ
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Model Cards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ML Model Cards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-ner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Named Entity Recognition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-icd10/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ICD-10 Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-summarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clinical Summarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-risk-scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-dental/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dental NLP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-assertions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assertion Detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-relations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clinical Relations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-temporal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporal Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-medications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Medication Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-document-classifier/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Document Classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-concept-normalization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concept Normalization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-quality-analyzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Note Quality Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-comorbidity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Comorbidity Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-sdoh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SDoH Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-vitals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vital Signs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-deidentification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    De-identification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-abbreviations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Abbreviation Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/local-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/production-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/hipaa-compliance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HIPAA Compliance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methodology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methodology
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ner-entity-recognition-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NER — Entity Recognition Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="NER — Entity Recognition Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-1-anatomical-ambiguity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 1: Anatomical Ambiguity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-2-negated-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 2: Negated Entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-3-abbreviation-collisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 3: Abbreviation Collisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-4-span-boundary-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 4: Span Boundary Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#icd-10-code-prediction-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ICD-10 — Code Prediction Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ICD-10 — Code Prediction Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-1-specificity-mismatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 1: Specificity Mismatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-2-comorbidity-splitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 2: Comorbidity Splitting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-3-present-on-admission-confusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 3: Present-on-Admission Confusion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risk-scoring-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Scoring Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Risk Scoring Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-1-missing-upstream-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 1: Missing Upstream Entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-2-additive-model-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 2: Additive Model Limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clinical-summarisation-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clinical Summarisation Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical Summarisation Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-1-hallucinated-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 1: Hallucinated Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-2-section-weighting-bias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 2: Section Weighting Bias
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dental-nlp-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dental NLP Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dental NLP Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-1-tooth-numbering-system-confusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 1: Tooth Numbering System Confusion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-2-periodontal-measurement-parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 2: Periodontal Measurement Parsing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#medication-extraction-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Medication Extraction Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Medication Extraction Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-1-discontinued-vs-active-medications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 1: Discontinued vs Active Medications
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-2-dosage-unit-ambiguity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 2: Dosage Unit Ambiguity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#de-identification-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        De-identification Errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="De-identification Errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-1-contextual-phi-in-clinical-content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 1: Contextual PHI in Clinical Content
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-pattern-2-structured-data-leakage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Pattern 2: Structured Data Leakage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-module-error-propagation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Module Error Propagation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cross-Module Error Propagation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#propagation-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Propagation Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitigation-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mitigation Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clinical-safety-taxonomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clinical Safety Taxonomy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical Safety Taxonomy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#critical-errors-require-immediate-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Critical Errors (Require Immediate Attention)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moderate-errors-should-be-addressed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moderate Errors (Should Be Addressed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#low-errors-monitor-over-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Low Errors (Monitor Over Time)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommendations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recommendations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#short-term-next-sprint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short-term (Next Sprint)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#medium-term-13-months" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Medium-term (1–3 Months)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#long-term-36-months" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Long-term (3–6 Months)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="clinical-error-analysis">Clinical Error Analysis<a class="headerlink" href="#clinical-error-analysis" title="Permanent link">&para;</a></h1>
+<p>Systematic analysis of error patterns across ClinIQ's ML modules, informed by
+clinical domain expertise. This document examines failure modes, their clinical
+significance, root causes, and mitigation strategies.</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ol>
+<li><a href="#methodology">Methodology</a></li>
+<li><a href="#ner--entity-recognition-errors">NER — Entity Recognition Errors</a></li>
+<li><a href="#icd-10--code-prediction-errors">ICD-10 — Code Prediction Errors</a></li>
+<li><a href="#risk-scoring-errors">Risk Scoring Errors</a></li>
+<li><a href="#clinical-summarisation-errors">Clinical Summarisation Errors</a></li>
+<li><a href="#dental-nlp-errors">Dental NLP Errors</a></li>
+<li><a href="#medication-extraction-errors">Medication Extraction Errors</a></li>
+<li><a href="#de-identification-errors">De-identification Errors</a></li>
+<li><a href="#cross-module-error-propagation">Cross-Module Error Propagation</a></li>
+<li><a href="#clinical-safety-taxonomy">Clinical Safety Taxonomy</a></li>
+<li><a href="#recommendations">Recommendations</a></li>
+</ol>
+<hr />
+<h2 id="methodology">Methodology<a class="headerlink" href="#methodology" title="Permanent link">&para;</a></h2>
+<p>Errors are categorised by:</p>
+<ul>
+<li><strong>Clinical severity</strong>: Critical (could affect patient care), Moderate
+  (incorrect but unlikely to harm), Low (cosmetic or informational).</li>
+<li><strong>Error type</strong>: False positive (hallucinated), false negative (missed),
+  misclassification (wrong label), boundary error (partial span).</li>
+<li><strong>Frequency</strong>: Common (&gt;5% of cases), Occasional (1–5%), Rare (&lt;1%).</li>
+</ul>
+<p>Where possible, examples use synthetic clinical text representative of real
+documentation patterns observed in practice.</p>
+<hr />
+<h2 id="ner-entity-recognition-errors">NER — Entity Recognition Errors<a class="headerlink" href="#ner-entity-recognition-errors" title="Permanent link">&para;</a></h2>
+<h3 id="error-pattern-1-anatomical-ambiguity">Error Pattern 1: Anatomical Ambiguity<a class="headerlink" href="#error-pattern-1-anatomical-ambiguity" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Moderate | <strong>Frequency</strong>: Common</p>
+<p>Clinical text frequently uses terms that are valid in multiple contexts:</p>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Predicted</th>
+<th>Correct</th>
+<th>Issue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"Patient has a broken <strong>crown</strong>"</td>
+<td>ANATOMY</td>
+<td>PROCEDURE</td>
+<td>In dental context, "crown" is a prosthetic</td>
+</tr>
+<tr>
+<td>"<strong>Discharge</strong> from wound"</td>
+<td>—</td>
+<td>SYMPTOM</td>
+<td>Confused with document type "discharge"</td>
+</tr>
+<tr>
+<td>"Left <strong>bank</strong> of lesion"</td>
+<td>—</td>
+<td>ANATOMY</td>
+<td>Rare anatomical reference missed</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Root cause</strong>: Context-free token matching. The rule-based layer matches
+surface forms without sentence-level disambiguation.</p>
+<p><strong>Mitigation</strong>: The composite NER pipeline uses majority voting across
+rule-based, scispaCy, and transformer models. Transformer models capture
+context better, but rule-based patterns dominate for known entities. Adding
+a dental domain context flag improves crown/bridge disambiguation.</p>
+<h3 id="error-pattern-2-negated-entities">Error Pattern 2: Negated Entities<a class="headerlink" href="#error-pattern-2-negated-entities" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Critical | <strong>Frequency</strong>: Occasional</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&quot;Patient denies chest pain, shortness of breath, or nausea.&quot;
+</code></pre></div>
+<p>Without negation detection, NER extracts "chest pain", "shortness of breath",
+and "nausea" as present conditions — the opposite of clinical reality.</p>
+<p><strong>Root cause</strong>: NER operates at the entity level; negation scope requires
+syntactic understanding.</p>
+<p><strong>Mitigation</strong>: ClinIQ's assertion detection module (NegEx-inspired) runs as a
+post-processing stage. The enhanced pipeline chains NER → assertion to mark
+entities as <code>NEGATED</code>, <code>POSSIBLE</code>, <code>HYPOTHETICAL</code>, etc. However, complex
+negation scope (double negatives, long-distance negation) remains challenging:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&quot;There is no evidence that the patient does not have diabetes.&quot;
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>→ Assertion module may mark &quot;diabetes&quot; as NEGATED (incorrect — double negative)
+</code></pre></div>
+<h3 id="error-pattern-3-abbreviation-collisions">Error Pattern 3: Abbreviation Collisions<a class="headerlink" href="#error-pattern-3-abbreviation-collisions" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Moderate | <strong>Frequency</strong>: Common</p>
+<p>Clinical abbreviations are notoriously ambiguous:</p>
+<table>
+<thead>
+<tr>
+<th>Abbreviation</th>
+<th>Context A</th>
+<th>Context B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MS</code></td>
+<td>Multiple Sclerosis</td>
+<td>Morphine Sulfate</td>
+</tr>
+<tr>
+<td><code>BS</code></td>
+<td>Blood Sugar</td>
+<td>Bowel Sounds</td>
+</tr>
+<tr>
+<td><code>PT</code></td>
+<td>Physical Therapy</td>
+<td>Prothrombin Time</td>
+</tr>
+<tr>
+<td><code>CA</code></td>
+<td>Cancer</td>
+<td>Calcium</td>
+</tr>
+<tr>
+<td><code>RA</code></td>
+<td>Rheumatoid Arthritis</td>
+<td>Right Atrium</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Root cause</strong>: The abbreviation expansion module maintains a dictionary of
+120+ entries across 12 clinical domains, but many abbreviations have
+legitimate multiple expansions.</p>
+<p><strong>Mitigation</strong>: Context-aware expansion uses surrounding terms and detected
+document section. Emergency department notes mentioning "MS" near "pain
+management" favour "Morphine Sulfate"; neurology notes favour "Multiple
+Sclerosis". Ambiguous cases are flagged rather than silently expanded.</p>
+<h3 id="error-pattern-4-span-boundary-errors">Error Pattern 4: Span Boundary Errors<a class="headerlink" href="#error-pattern-4-span-boundary-errors" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Low | <strong>Frequency</strong>: Common</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Input:  &quot;acute exacerbation of chronic obstructive pulmonary disease&quot;
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Pred:   [chronic obstructive pulmonary disease]  (missed &quot;acute exacerbation of&quot;)
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Gold:   [acute exacerbation of chronic obstructive pulmonary disease]
+</code></pre></div>
+<p>Partial spans capture the disease but lose clinical acuity. The partial NER
+evaluation module (Jaccard overlap) quantifies this: typical overlap is 70–85%
+for multi-word entities.</p>
+<p><strong>Mitigation</strong>: The evaluation framework reports both exact and partial F1,
+making boundary quality visible. Transformer models with BIO tagging handle
+multi-word entities better than rule-based patterns.</p>
+<hr />
+<h2 id="icd-10-code-prediction-errors">ICD-10 — Code Prediction Errors<a class="headerlink" href="#icd-10-code-prediction-errors" title="Permanent link">&para;</a></h2>
+<h3 id="error-pattern-1-specificity-mismatch">Error Pattern 1: Specificity Mismatch<a class="headerlink" href="#error-pattern-1-specificity-mismatch" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Moderate | <strong>Frequency</strong>: Common</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Text:  &quot;Type 2 diabetes with diabetic retinopathy&quot;
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>Pred:  E11.9  (Type 2 DM without complications)
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>Gold:  E11.319 (Type 2 DM with unspecified diabetic retinopathy)
+</code></pre></div>
+<p>The model predicts the correct disease family but wrong specificity level.
+ClinIQ's hierarchical ICD-10 evaluation reveals this pattern: chapter accuracy
+is typically 15–20% higher than full-code accuracy.</p>
+<p><strong>Clinical impact</strong>: Revenue cycle implications (less specific codes = lower
+reimbursement) but limited direct patient safety risk.</p>
+<p><strong>Root cause</strong>: The ~400 high-frequency code dictionary captures common codes
+well, but long-tail specific codes (e.g., laterality, episode of care) require
+deeper clinical reasoning.</p>
+<p><strong>Mitigation</strong>: The hierarchical prediction approach — first predict chapter,
+then narrow within chapter — reduces catastrophic errors (wrong organ system).
+The confidence threshold mechanism flags low-confidence predictions for human
+review rather than committing to a specific code.</p>
+<h3 id="error-pattern-2-comorbidity-splitting">Error Pattern 2: Comorbidity Splitting<a class="headerlink" href="#error-pattern-2-comorbidity-splitting" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Moderate | <strong>Frequency</strong>: Occasional</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Text: &quot;Hypertensive chronic kidney disease, stage 3&quot;
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Pred: [I10 (HTN), N18.3 (CKD stage 3)]  — two separate codes
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Gold: [I12.9 (Hypertensive CKD)]          — one combination code
+</code></pre></div>
+<p>ICD-10 has specific combination codes for conditions that frequently co-occur.
+The multi-label classifier may predict component codes independently rather
+than recognising the combination.</p>
+<p><strong>Root cause</strong>: Multi-label sigmoid outputs treat each code independently;
+there is no explicit modelling of ICD-10 combination code rules.</p>
+<p><strong>Mitigation</strong>: A post-processing rule layer checks predicted code sets against
+known combination code patterns and suggests the combination code when
+component codes co-occur. This is documented as a planned enhancement.</p>
+<h3 id="error-pattern-3-present-on-admission-confusion">Error Pattern 3: Present-on-Admission Confusion<a class="headerlink" href="#error-pattern-3-present-on-admission-confusion" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Critical | <strong>Frequency</strong>: Occasional</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Text: &quot;Patient developed hospital-acquired pneumonia on day 5.&quot;
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>Pred: J18.9 (Pneumonia, unspecified)  — no POA distinction
+</code></pre></div>
+<p>The model predicts the diagnosis but cannot distinguish conditions present at
+admission from those acquired during the encounter. This distinction is
+required for billing and quality reporting.</p>
+<p><strong>Root cause</strong>: POA status requires temporal reasoning about when conditions
+developed relative to the admission date. The ICD module operates on text
+content, not document timeline.</p>
+<p><strong>Mitigation</strong>: The temporal extraction module identifies time expressions
+("on day 5", "post-admission") that can contextualise ICD predictions. Full
+POA classification is flagged as a future enhancement requiring encounter-level
+context beyond single-document analysis.</p>
+<hr />
+<h2 id="risk-scoring-errors">Risk Scoring Errors<a class="headerlink" href="#risk-scoring-errors" title="Permanent link">&para;</a></h2>
+<h3 id="error-pattern-1-missing-upstream-entities">Error Pattern 1: Missing Upstream Entities<a class="headerlink" href="#error-pattern-1-missing-upstream-entities" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Critical | <strong>Frequency</strong>: Occasional</p>
+<p>The risk scorer depends on NER-extracted entities. If NER misses a critical
+condition (e.g., "metastatic cancer" in an abbreviated note), the risk score
+is artificially low.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Text: &quot;Pt w/ mets to liver, ESRD on HD, recent MI&quot;
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>NER:  Extracts &quot;liver&quot;, &quot;ESRD&quot;, &quot;HD&quot; but misses &quot;mets&quot; (abbreviation)
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>Risk: Moderate (missing cancer → missing the highest-weight factor)
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>Gold: Critical
+</code></pre></div>
+<p><strong>Root cause</strong>: Error propagation from upstream NER. The risk scorer is a
+downstream consumer of NER output; it has no independent text analysis.</p>
+<p><strong>Mitigation</strong>: The enhanced pipeline runs abbreviation expansion before NER,
+improving entity extraction from abbreviated text. The risk module also has
+keyword-based fallback rules that scan raw text for high-severity terms
+("metastatic", "terminal", "code blue") independently of NER.</p>
+<h3 id="error-pattern-2-additive-model-limitations">Error Pattern 2: Additive Model Limitations<a class="headerlink" href="#error-pattern-2-additive-model-limitations" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Moderate | <strong>Frequency</strong>: Occasional</p>
+<p>The rule-based risk scorer uses additive factor weights. This means two
+moderate-risk factors sum to a higher score than one high-risk factor, which
+may not reflect clinical reality.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Factor A: Hypertension       → weight 0.15
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>Factor B: Mild obesity       → weight 0.10
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>Sum: 0.25
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>Factor C: Active malignancy  → weight 0.30
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>→ Two mild factors outscore one serious factor
+</code></pre></div>
+<p><strong>Root cause</strong>: Additive models cannot capture non-linear risk interactions
+(e.g., diabetes + CKD is more dangerous than the sum of parts).</p>
+<p><strong>Mitigation</strong>: This trade-off is by design — the additive model is
+transparent and explainable, which is essential for clinical decision support
+where clinicians must understand <em>why</em> a score was assigned. The model
+complements (not replaces) validated clinical calculators like the Charlson
+Comorbidity Index, which the comorbidity module implements separately.</p>
+<hr />
+<h2 id="clinical-summarisation-errors">Clinical Summarisation Errors<a class="headerlink" href="#clinical-summarisation-errors" title="Permanent link">&para;</a></h2>
+<h3 id="error-pattern-1-hallucinated-details">Error Pattern 1: Hallucinated Details<a class="headerlink" href="#error-pattern-1-hallucinated-details" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Critical | <strong>Frequency</strong>: Rare (rule-based) / Occasional (generative)</p>
+<p>Rule-based extractive summarisation cannot hallucinate because it selects
+existing sentences. However, if future versions use generative models:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Input:  &quot;Patient prescribed lisinopril 10mg daily.&quot;
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>Output: &quot;Patient prescribed lisinopril 20mg twice daily.&quot;  (hallucinated dose)
+</code></pre></div>
+<p><strong>Mitigation</strong>: ClinIQ uses extractive summarisation (sentence selection and
+ranking) specifically to avoid hallucination. The architecture documentation
+explicitly records this design decision: extractive over generative for clinical
+safety. ROUGE evaluation with length ratio monitoring detects compression
+anomalies.</p>
+<h3 id="error-pattern-2-section-weighting-bias">Error Pattern 2: Section Weighting Bias<a class="headerlink" href="#error-pattern-2-section-weighting-bias" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Moderate | <strong>Frequency</strong>: Occasional</p>
+<p>The summariser weights "Assessment and Plan" sections higher than "Social
+History" or "Review of Systems". This is clinically appropriate for most use
+cases but may suppress important social determinants:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>A patient with housing instability affecting medication adherence may have
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>this detail buried in social history and excluded from the summary.
+</code></pre></div>
+<p><strong>Mitigation</strong>: The SDoH extraction module runs independently and surfaces
+social determinants regardless of summarisation. The enhanced pipeline
+includes SDoH as a dedicated output alongside the summary.</p>
+<hr />
+<h2 id="dental-nlp-errors">Dental NLP Errors<a class="headerlink" href="#dental-nlp-errors" title="Permanent link">&para;</a></h2>
+<h3 id="error-pattern-1-tooth-numbering-system-confusion">Error Pattern 1: Tooth Numbering System Confusion<a class="headerlink" href="#error-pattern-1-tooth-numbering-system-confusion" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Moderate | <strong>Frequency</strong>: Occasional</p>
+<p>Three numbering systems coexist in dental documentation:</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Example</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Universal</td>
+<td>#30</td>
+<td>Lower right first molar</td>
+</tr>
+<tr>
+<td>Palmer</td>
+<td>LR6</td>
+<td>Lower right first molar</td>
+</tr>
+<tr>
+<td>FDI</td>
+<td>46</td>
+<td>Lower right first molar</td>
+</tr>
+</tbody>
+</table>
+<p>Misidentifying the system converts one tooth to a completely different tooth.
+"#14" in Universal is the upper left first premolar; in FDI it's the upper
+right canine.</p>
+<p><strong>Root cause</strong>: Many dental notes don't explicitly state which numbering
+system they use. The module infers it from context (US practices typically
+use Universal; international practices use FDI).</p>
+<p><strong>Mitigation</strong>: The dental NER module uses heuristics: numbers 1–32 suggest
+Universal, two-digit numbers starting with 1–4 suggest FDI, alphanumeric
+patterns suggest Palmer. When ambiguous, both interpretations are returned
+with confidence scores.</p>
+<h3 id="error-pattern-2-periodontal-measurement-parsing">Error Pattern 2: Periodontal Measurement Parsing<a class="headerlink" href="#error-pattern-2-periodontal-measurement-parsing" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Low | <strong>Frequency</strong>: Occasional</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Input:  &quot;Probing depths: 3,4,3,5,4,3 on #3 buccal&quot;
+</code></pre></div>
+<p>Six measurements per tooth (mesiobuccal, buccal, distobuccal, mesiolingual,
+lingual, distolingual) must be correctly associated with tooth and surface.
+OCR artifacts, inconsistent formatting, and missing delimiters cause parsing
+errors.</p>
+<p><strong>Mitigation</strong>: Regex patterns handle common formats. Validation rules reject
+biologically impossible values (probing depths &gt;15mm, negative values).</p>
+<hr />
+<h2 id="medication-extraction-errors">Medication Extraction Errors<a class="headerlink" href="#medication-extraction-errors" title="Permanent link">&para;</a></h2>
+<h3 id="error-pattern-1-discontinued-vs-active-medications">Error Pattern 1: Discontinued vs Active Medications<a class="headerlink" href="#error-pattern-1-discontinued-vs-active-medications" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Critical | <strong>Frequency</strong>: Occasional</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>&quot;Metformin 500mg BID — DISCONTINUED due to GI intolerance.
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Started glipizide 5mg daily.&quot;
+</code></pre></div>
+<p>Both medications are extracted, but status classification must correctly
+identify metformin as discontinued and glipizide as active. Errors in status
+classification could lead to a "current medications" list containing stopped
+drugs.</p>
+<p><strong>Root cause</strong>: Status keywords ("discontinued", "held", "stopped") may appear
+far from the medication name, outside the extraction window.</p>
+<p><strong>Mitigation</strong>: The medication extractor uses a multi-pass approach: first
+extract medication names, then scan the surrounding context (±3 sentences)
+for status modifiers. The assertion detection module provides additional
+signal about whether a medication mention is in a "negated" context.</p>
+<h3 id="error-pattern-2-dosage-unit-ambiguity">Error Pattern 2: Dosage Unit Ambiguity<a class="headerlink" href="#error-pattern-2-dosage-unit-ambiguity" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Moderate | <strong>Frequency</strong>: Rare</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>&quot;Amoxicillin 500 TID&quot; — Is that 500mg or 500mcg?
+</code></pre></div>
+<p>When units are omitted, the module must infer based on the drug and typical
+dosing. Amoxicillin 500mcg is not a real dose, but for less common drugs the
+inference is harder.</p>
+<p><strong>Mitigation</strong>: A dosage validation layer checks extracted doses against
+known therapeutic ranges per drug. Out-of-range doses are flagged rather than
+silently accepted.</p>
+<hr />
+<h2 id="de-identification-errors">De-identification Errors<a class="headerlink" href="#de-identification-errors" title="Permanent link">&para;</a></h2>
+<h3 id="error-pattern-1-contextual-phi-in-clinical-content">Error Pattern 1: Contextual PHI in Clinical Content<a class="headerlink" href="#error-pattern-1-contextual-phi-in-clinical-content" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Critical | <strong>Frequency</strong>: Occasional</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>&quot;Patient is the daughter of John Smith, who has a history of Huntington&#39;s.&quot;
+</code></pre></div>
+<p>"John Smith" is PHI (family member name), but the family history of
+Huntington's disease is clinically relevant. Over-redaction removes clinical
+information; under-redaction leaks PHI.</p>
+<p><strong>Root cause</strong>: Named entity boundaries overlap between PHI (person names) and
+clinical content (family history context). The de-identification module must
+redact names while preserving the clinical relationship.</p>
+<p><strong>Mitigation</strong>: The surrogate replacement strategy generates realistic fake
+names (preserving gender and ethnicity patterns) so the clinical narrative
+remains readable. The de-identification module detects 12 PHI types and uses
+confidence thresholds — low-confidence detections are flagged for human review
+rather than auto-redacted.</p>
+<h3 id="error-pattern-2-structured-data-leakage">Error Pattern 2: Structured Data Leakage<a class="headerlink" href="#error-pattern-2-structured-data-leakage" title="Permanent link">&para;</a></h3>
+<p><strong>Severity</strong>: Critical | <strong>Frequency</strong>: Rare</p>
+<p>Medical record numbers, dates of service, and provider names embedded in
+structured formats (tables, headers, fax lines) may be missed by pattern
+matchers designed for narrative text.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>&quot;FAX FROM: Dr. Jane Doe, 555-123-4567, MRN: 12345678&quot;
+</code></pre></div>
+<p><strong>Mitigation</strong>: The input sanitisation middleware and de-identification module
+handle both narrative and structured patterns. Phone number, MRN, and fax
+number patterns are matched with dedicated regex rules. Header/footer
+detection targets common structured PHI locations.</p>
+<hr />
+<h2 id="cross-module-error-propagation">Cross-Module Error Propagation<a class="headerlink" href="#cross-module-error-propagation" title="Permanent link">&para;</a></h2>
+<p>ClinIQ's enhanced pipeline chains 14 modules sequentially. Errors propagate
+downstream:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Text Input
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  → NER (extracts entities with errors)
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    → ICD-10 (receives wrong entities → predicts wrong codes)
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>      → Risk Scoring (receives wrong codes → wrong risk level)
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>        → Summary (includes wrong risk in narrative)
+</code></pre></div>
+<h3 id="propagation-analysis">Propagation Analysis<a class="headerlink" href="#propagation-analysis" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Upstream Error</th>
+<th>Downstream Impact</th>
+<th>Severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NER misses medication</td>
+<td>Medication list incomplete, drug interaction check fails</td>
+<td>Critical</td>
+</tr>
+<tr>
+<td>NER false positive entity</td>
+<td>ICD predicts spurious code, risk inflated</td>
+<td>Moderate</td>
+</tr>
+<tr>
+<td>Abbreviation unexpanded</td>
+<td>NER misses entity, cascading to ICD/risk</td>
+<td>Moderate</td>
+</tr>
+<tr>
+<td>Section parser mislabels</td>
+<td>Summariser weights wrong section</td>
+<td>Low</td>
+</tr>
+<tr>
+<td>De-id over-redacts</td>
+<td>Downstream modules receive <code>[REDACTED]</code> tokens</td>
+<td>Moderate</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mitigation-strategy">Mitigation Strategy<a class="headerlink" href="#mitigation-strategy" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Fail-safe defaults</strong>: When a module fails, downstream modules receive
+   empty inputs rather than corrupted data. The enhanced pipeline catches
+   per-module exceptions independently.</li>
+<li><strong>Confidence propagation</strong>: Low-confidence NER entities are flagged so
+   downstream consumers can apply different thresholds.</li>
+<li><strong>Independent modules</strong>: Some modules (risk keyword scanner, comorbidity
+   from ICD codes) have parallel paths that don't depend on NER.</li>
+<li><strong>Circuit breaker</strong>: If a model's error rate exceeds thresholds, the
+   circuit breaker disables it and falls back to rule-based alternatives.</li>
+</ol>
+<hr />
+<h2 id="clinical-safety-taxonomy">Clinical Safety Taxonomy<a class="headerlink" href="#clinical-safety-taxonomy" title="Permanent link">&para;</a></h2>
+<h3 id="critical-errors-require-immediate-attention">Critical Errors (Require Immediate Attention)<a class="headerlink" href="#critical-errors-require-immediate-attention" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Error</th>
+<th>Module</th>
+<th>Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1</td>
+<td>Negated entity treated as present</td>
+<td>NER + Assertion</td>
+<td>Wrong diagnosis</td>
+</tr>
+<tr>
+<td>C2</td>
+<td>Discontinued medication listed as active</td>
+<td>Medications</td>
+<td>Drug safety</td>
+</tr>
+<tr>
+<td>C3</td>
+<td>Missing high-risk condition in risk score</td>
+<td>Risk</td>
+<td>Undertriage</td>
+</tr>
+<tr>
+<td>C4</td>
+<td>PHI leakage in de-identified output</td>
+<td>De-id</td>
+<td>Privacy violation</td>
+</tr>
+<tr>
+<td>C5</td>
+<td>Hallucinated medication dose</td>
+<td>Summarisation</td>
+<td>Drug safety</td>
+</tr>
+</tbody>
+</table>
+<h3 id="moderate-errors-should-be-addressed">Moderate Errors (Should Be Addressed)<a class="headerlink" href="#moderate-errors-should-be-addressed" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Error</th>
+<th>Module</th>
+<th>Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td>Wrong ICD-10 specificity</td>
+<td>ICD</td>
+<td>Billing accuracy</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>Anatomical term ambiguity</td>
+<td>NER</td>
+<td>Documentation</td>
+</tr>
+<tr>
+<td>M3</td>
+<td>Tooth numbering confusion</td>
+<td>Dental</td>
+<td>Wrong tooth</td>
+</tr>
+<tr>
+<td>M4</td>
+<td>Abbreviation misexpansion</td>
+<td>Abbreviations</td>
+<td>Documentation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="low-errors-monitor-over-time">Low Errors (Monitor Over Time)<a class="headerlink" href="#low-errors-monitor-over-time" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Error</th>
+<th>Module</th>
+<th>Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1</td>
+<td>Entity span boundary off by word</td>
+<td>NER</td>
+<td>Evaluation metrics</td>
+</tr>
+<tr>
+<td>L2</td>
+<td>Section label mismatch</td>
+<td>Sections</td>
+<td>Summary weighting</td>
+</tr>
+<tr>
+<td>L3</td>
+<td>Periodontal measurement parsing</td>
+<td>Dental</td>
+<td>Data entry</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="recommendations">Recommendations<a class="headerlink" href="#recommendations" title="Permanent link">&para;</a></h2>
+<h3 id="short-term-next-sprint">Short-term (Next Sprint)<a class="headerlink" href="#short-term-next-sprint" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Increase negation test coverage</strong>: Add adversarial test cases with
+   double negatives, long-distance negation, and scope ambiguity.</li>
+<li><strong>ICD combination code rules</strong>: Implement post-processing layer for
+   hypertensive CKD, diabetic complications, and other common combinations.</li>
+<li><strong>Medication status validation</strong>: Cross-reference medication status with
+   assertion detection output for independent verification.</li>
+</ol>
+<h3 id="medium-term-13-months">Medium-term (1–3 Months)<a class="headerlink" href="#medium-term-13-months" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Confidence calibration</strong>: Run ECE analysis on NER and ICD modules to
+   verify that stated confidence scores match actual accuracy. The evaluation
+   framework already supports calibration metrics.</li>
+<li><strong>Error logging pipeline</strong>: Structured logging of prediction errors with
+   clinical severity tags for ongoing monitoring.</li>
+<li><strong>Adversarial test suite</strong>: Curated set of clinically tricky inputs
+   (abbreviation collisions, negation scope, cross-system tooth numbers).</li>
+</ol>
+<h3 id="long-term-36-months">Long-term (3–6 Months)<a class="headerlink" href="#long-term-36-months" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Active learning</strong>: Use clinician feedback to identify and retrain on
+   error-prone input patterns.</li>
+<li><strong>Ensemble arbitration</strong>: Replace majority voting with learned weights
+   per entity type based on historical precision/recall per module.</li>
+<li><strong>Clinical validation study</strong>: Structured comparison against manual
+   clinician annotation on a held-out dataset with inter-annotator agreement
+   measurement via Cohen's Kappa.</li>
+</ol>
+<hr />
+<p><em>Analysis authored: March 2026</em>
+<em>Based on: ClinIQ v0.1.0, 14 ML modules, 3094 tests</em>
+<em>Review cadence: Monthly, aligned with model retraining cycles</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.expand", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

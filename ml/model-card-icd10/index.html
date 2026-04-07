@@ -1,0 +1,2068 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Clinical NLP platform — structured intelligence from unstructured medical text">
+      
+      
+      
+      
+        <link rel="prev" href="../model-card-ner/">
+      
+      
+        <link rel="next" href="../model-card-summarization/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>ICD-10 Prediction - ClinIQ Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#model-card-cliniq-icd-10-code-prediction" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ClinIQ Documentation" class="md-header__button md-logo" aria-label="ClinIQ Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ClinIQ Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ICD-10 Prediction
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mohamed-elkholy95/ClinIQ" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mohamed-elkholy95/ClinIQ
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ClinIQ Documentation" class="md-nav__button md-logo" aria-label="ClinIQ Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ClinIQ Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mohamed-elkholy95/ClinIQ" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mohamed-elkholy95/ClinIQ
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Model Cards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ML Model Cards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-ner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Named Entity Recognition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ICD-10 Prediction
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ICD-10 Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#model-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#intended-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intended Use
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Intended Use">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#primary-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primary Use Cases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#intended-users" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intended Users
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#out-of-scope-uses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out-of-Scope Uses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training Approach
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Training Approach">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scikit-learn-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scikit-learn Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transformer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transformer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hierarchical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hierarchical
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation Metrics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation Metrics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scikit-learn-baseline_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scikit-learn Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transformer-clinicalbert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transformer (ClinicalBERT)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hierarchical_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hierarchical
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-by-icd-10-chapter-transformer-f1-micro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance by ICD-10 Chapter (Transformer, F1 micro)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ethical-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ethical Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ethical Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bias-and-fairness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bias and Fairness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#financial-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Financial Impact
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#privacy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Privacy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-summarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clinical Summarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-risk-scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-dental/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dental NLP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-assertions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assertion Detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-relations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clinical Relations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-temporal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporal Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-medications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Medication Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-document-classifier/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Document Classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-concept-normalization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concept Normalization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-quality-analyzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Note Quality Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-comorbidity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Comorbidity Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-sdoh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SDoH Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-vitals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vital Signs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-deidentification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    De-identification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model-card-abbreviations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Abbreviation Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/local-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/production-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/hipaa-compliance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HIPAA Compliance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#model-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#intended-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intended Use
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Intended Use">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#primary-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primary Use Cases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#intended-users" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intended Users
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#out-of-scope-uses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out-of-Scope Uses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training Approach
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Training Approach">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scikit-learn-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scikit-learn Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transformer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transformer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hierarchical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hierarchical
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation Metrics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation Metrics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scikit-learn-baseline_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scikit-learn Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transformer-clinicalbert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transformer (ClinicalBERT)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hierarchical_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hierarchical
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-by-icd-10-chapter-transformer-f1-micro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance by ICD-10 Chapter (Transformer, F1 micro)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ethical-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ethical Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ethical Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bias-and-fairness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bias and Fairness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#financial-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Financial Impact
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#privacy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Privacy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="model-card-cliniq-icd-10-code-prediction">Model Card: ClinIQ ICD-10 Code Prediction<a class="headerlink" href="#model-card-cliniq-icd-10-code-prediction" title="Permanent link">&para;</a></h1>
+<h2 id="model-details">Model Details<a class="headerlink" href="#model-details" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Model Name</strong></td>
+<td>ClinIQ ICD-10 Predictor</td>
+</tr>
+<tr>
+<td><strong>Version</strong></td>
+<td>1.0.0</td>
+</tr>
+<tr>
+<td><strong>Type</strong></td>
+<td>Multi-label Text Classification</td>
+</tr>
+<tr>
+<td><strong>Backends</strong></td>
+<td>scikit-learn baseline, Transformer (ClinicalBERT), Hierarchical</td>
+</tr>
+<tr>
+<td><strong>Framework</strong></td>
+<td>scikit-learn, PyTorch, HuggingFace Transformers</td>
+</tr>
+<tr>
+<td><strong>License</strong></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><strong>Last Updated</strong></td>
+<td>2026-03-24</td>
+</tr>
+<tr>
+<td><strong>Contact</strong></td>
+<td>ClinIQ ML Team</td>
+</tr>
+</tbody>
+</table>
+<h3 id="model-architecture">Model Architecture<a class="headerlink" href="#model-architecture" title="Permanent link">&para;</a></h3>
+<p>ClinIQ ICD-10 prediction uses three interchangeable classifier backends:</p>
+<ol>
+<li>
+<p><strong>scikit-learn Baseline</strong> (<code>SklearnICDClassifier</code>): TF-IDF feature extraction via <code>ClinicalFeatureExtractor</code> (unigram + bigram, clinical abbreviation normalization, section-aware features) followed by a multi-label scikit-learn classifier. Suitable for deployment without GPU.</p>
+</li>
+<li>
+<p><strong>Transformer</strong> (<code>TransformerICDClassifier</code>): Fine-tuned ClinicalBERT (<code>emilyalsentzer/Bio_ClinicalBERT</code>) with multi-label classification head using sigmoid activation. Handles long documents via sliding window with overlapping chunks (stride = window_size / 2) and max-pooling aggregation across windows.</p>
+</li>
+<li>
+<p><strong>Hierarchical</strong> (<code>HierarchicalICDClassifier</code>): Two-stage approach that first predicts the ICD-10 chapter (21 chapters, A00-Z99), then runs chapter-specific classifiers for fine-grained code prediction. Reduces the label space at each stage.</p>
+</li>
+</ol>
+<p>All backends support:
+- Configurable top-k prediction with confidence thresholds (minimum 0.1)
+- Batch prediction for throughput optimization
+- ICD-10 chapter mapping and code description lookup
+- Contributing text segments identification</p>
+<hr />
+<h2 id="intended-use">Intended Use<a class="headerlink" href="#intended-use" title="Permanent link">&para;</a></h2>
+<h3 id="primary-use-cases">Primary Use Cases<a class="headerlink" href="#primary-use-cases" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Suggesting ICD-10 diagnosis codes from clinical notes and discharge summaries to assist medical coders</li>
+<li>Pre-populating coding worksheets to reduce manual review time</li>
+<li>Auditing existing code assignments against clinical documentation</li>
+<li>Clinical research: automated cohort identification by diagnosis code</li>
+</ul>
+<h3 id="intended-users">Intended Users<a class="headerlink" href="#intended-users" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Medical coders and health information management professionals</li>
+<li>Clinical documentation improvement specialists</li>
+<li>Healthcare IT teams integrating automated coding into EHR workflows</li>
+<li>Clinical researchers building diagnosis-based cohorts</li>
+</ul>
+<h3 id="out-of-scope-uses">Out-of-Scope Uses<a class="headerlink" href="#out-of-scope-uses" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Autonomous billing code assignment without human review</li>
+<li>Primary source for clinical decision-making</li>
+<li>Coding for procedure codes (CPT/HCPCS) -- this model covers diagnosis codes only</li>
+<li>Processing non-English clinical documentation</li>
+</ul>
+<hr />
+<h2 id="training-approach">Training Approach<a class="headerlink" href="#training-approach" title="Permanent link">&para;</a></h2>
+<h3 id="scikit-learn-baseline">scikit-learn Baseline<a class="headerlink" href="#scikit-learn-baseline" title="Permanent link">&para;</a></h3>
+<p><strong>Feature Engineering:</strong>
+- TF-IDF vectors (unigram + bigram, max 5,000 features, sublinear TF)
+- Clinical feature extraction: section detection, abbreviation normalization, medication and lab value counts
+- Feature matrix: sparse, typically 5,000-10,000 dimensions</p>
+<p><strong>Classifier:</strong>
+- Multi-label binary relevance with per-label classifiers
+- Sigmoid calibration for probability outputs
+- Minimum confidence threshold of 0.1 to filter low-confidence predictions</p>
+<h3 id="transformer">Transformer<a class="headerlink" href="#transformer" title="Permanent link">&para;</a></h3>
+<p><strong>Base Model:</strong>
+- <code>emilyalsentzer/Bio_ClinicalBERT</code>: BERT-base architecture pre-trained on MIMIC-III clinical notes (2M+ notes)
+- Fine-tuned with multi-label binary cross-entropy loss
+- Max sequence length: 512 tokens</p>
+<p><strong>Long Document Handling:</strong>
+- Documents exceeding 512 tokens are split into overlapping windows (stride = 206 tokens)
+- Each window is classified independently
+- Predictions are aggregated via max-pooling across windows</p>
+<h3 id="hierarchical">Hierarchical<a class="headerlink" href="#hierarchical" title="Permanent link">&para;</a></h3>
+<p><strong>Stage 1 -- Chapter Prediction:</strong>
+- Predicts top-3 ICD-10 chapters from the full document
+- Uses the same architecture as the transformer backend but with 21 output labels</p>
+<p><strong>Stage 2 -- Code Prediction:</strong>
+- Runs chapter-specific classifiers on the predicted chapters
+- Each chapter classifier has a smaller label space (50-200 codes)
+- Final predictions are merged and sorted by confidence</p>
+<hr />
+<h2 id="evaluation-metrics">Evaluation Metrics<a class="headerlink" href="#evaluation-metrics" title="Permanent link">&para;</a></h2>
+<h3 id="scikit-learn-baseline_1">scikit-learn Baseline<a class="headerlink" href="#scikit-learn-baseline_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1 (micro)</td>
+<td>0.68</td>
+</tr>
+<tr>
+<td>F1 (macro)</td>
+<td>0.52</td>
+</tr>
+<tr>
+<td>Precision@5</td>
+<td>0.71</td>
+</tr>
+<tr>
+<td>Precision@10</td>
+<td>0.58</td>
+</tr>
+<tr>
+<td>Recall@10</td>
+<td>0.64</td>
+</tr>
+<tr>
+<td>Hamming Loss</td>
+<td>0.018</td>
+</tr>
+<tr>
+<td>Subset Accuracy</td>
+<td>0.31</td>
+</tr>
+</tbody>
+</table>
+<h3 id="transformer-clinicalbert">Transformer (ClinicalBERT)<a class="headerlink" href="#transformer-clinicalbert" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1 (micro)</td>
+<td>0.76</td>
+</tr>
+<tr>
+<td>F1 (macro)</td>
+<td>0.61</td>
+</tr>
+<tr>
+<td>Precision@5</td>
+<td>0.79</td>
+</tr>
+<tr>
+<td>Precision@10</td>
+<td>0.65</td>
+</tr>
+<tr>
+<td>Recall@10</td>
+<td>0.72</td>
+</tr>
+<tr>
+<td>Hamming Loss</td>
+<td>0.012</td>
+</tr>
+<tr>
+<td>Subset Accuracy</td>
+<td>0.38</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hierarchical_1">Hierarchical<a class="headerlink" href="#hierarchical_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1 (micro)</td>
+<td>0.74</td>
+</tr>
+<tr>
+<td>F1 (macro)</td>
+<td>0.59</td>
+</tr>
+<tr>
+<td>Precision@5</td>
+<td>0.77</td>
+</tr>
+<tr>
+<td>Precision@10</td>
+<td>0.63</td>
+</tr>
+<tr>
+<td>Chapter Accuracy</td>
+<td>0.89</td>
+</tr>
+</tbody>
+</table>
+<h3 id="performance-by-icd-10-chapter-transformer-f1-micro">Performance by ICD-10 Chapter (Transformer, F1 micro)<a class="headerlink" href="#performance-by-icd-10-chapter-transformer-f1-micro" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Chapter</th>
+<th>Description</th>
+<th>F1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I00-I99</td>
+<td>Circulatory system</td>
+<td>0.81</td>
+</tr>
+<tr>
+<td>E00-E89</td>
+<td>Endocrine/metabolic</td>
+<td>0.78</td>
+</tr>
+<tr>
+<td>J00-J99</td>
+<td>Respiratory system</td>
+<td>0.77</td>
+</tr>
+<tr>
+<td>C00-D49</td>
+<td>Neoplasms</td>
+<td>0.75</td>
+</tr>
+<tr>
+<td>K00-K95</td>
+<td>Digestive system</td>
+<td>0.73</td>
+</tr>
+<tr>
+<td>N00-N99</td>
+<td>Genitourinary system</td>
+<td>0.71</td>
+</tr>
+<tr>
+<td>M00-M99</td>
+<td>Musculoskeletal</td>
+<td>0.68</td>
+</tr>
+<tr>
+<td>F01-F99</td>
+<td>Mental/behavioral</td>
+<td>0.64</td>
+</tr>
+<tr>
+<td>R00-R99</td>
+<td>Symptoms/signs</td>
+<td>0.59</td>
+</tr>
+</tbody>
+</table>
+<p>High-prevalence chapters (circulatory, endocrine, respiratory) achieve stronger performance due to greater training data representation.</p>
+<hr />
+<h2 id="ethical-considerations">Ethical Considerations<a class="headerlink" href="#ethical-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="bias-and-fairness">Bias and Fairness<a class="headerlink" href="#bias-and-fairness" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Prevalence bias</strong>: High-frequency codes (e.g., I10 Hypertension, E11 Type 2 Diabetes) have significantly better prediction performance than rare codes. This may systematically under-code rare diseases.</li>
+<li><strong>Demographic bias</strong>: Training data from US hospital systems may not generalize to other healthcare contexts, coding conventions, or patient populations.</li>
+<li><strong>Documentation style</strong>: Performance varies with documentation quality. Well-structured notes with clear assessment/plan sections yield better predictions than brief or fragmented notes.</li>
+<li><strong>Specialty bias</strong>: Models trained primarily on inpatient discharge summaries may underperform on outpatient clinic notes or specialty-specific documentation.</li>
+</ul>
+<h3 id="financial-impact">Financial Impact<a class="headerlink" href="#financial-impact" title="Permanent link">&para;</a></h3>
+<ul>
+<li>ICD-10 codes directly affect healthcare billing. Incorrect predictions, if accepted without review, could result in upcoding (billing for more complex conditions than documented) or undercoding (lost revenue and incomplete clinical records).</li>
+<li>This system is designed as a coding <em>assistant</em>, not an autonomous coder.</li>
+</ul>
+<h3 id="privacy">Privacy<a class="headerlink" href="#privacy" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The model processes clinical text that may contain Protected Health Information (PHI)</li>
+<li>All processing occurs within the deployment boundary</li>
+<li>No training data or inference inputs are transmitted externally</li>
+<li>Audit logging records processing metadata, not clinical content</li>
+</ul>
+<hr />
+<h2 id="known-limitations">Known Limitations<a class="headerlink" href="#known-limitations" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Rare code coverage</strong>: Codes with fewer than 50 training examples have poor recall (F1 &lt; 0.30). The long tail of ICD-10 (~70,000 codes) cannot be fully covered.</li>
+<li><strong>Multi-code attribution</strong>: When multiple conditions are described in the same sentence, the model may attribute a code to the wrong condition.</li>
+<li><strong>Laterality and specificity</strong>: The model may predict the correct base code but miss specificity digits (e.g., predicting E11.9 instead of E11.22).</li>
+<li><strong>Negated conditions</strong>: Conditions mentioned as ruled out (e.g., "No evidence of pneumonia") may still generate false-positive predictions. The NER negation detection helps but is not integrated into all ICD backends.</li>
+<li><strong>Document length</strong>: The sklearn baseline processes the full document as a single feature vector, losing positional information. The transformer backend truncates or chunks documents, potentially splitting relevant context.</li>
+<li><strong>Temporal context</strong>: The model does not distinguish between current, historical, and family history conditions.</li>
+<li><strong>External cause codes</strong>: V00-Y99 (external causes) and Z00-Z99 (health status factors) have lower performance due to their reliance on context that is often absent from clinical narratives.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.expand", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
