@@ -303,7 +303,7 @@ describe('PipelineExplorer', () => {
   // ── API Results ──────────────────────────────────────────
 
   it('renders analysis results after API call', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -321,7 +321,7 @@ describe('PipelineExplorer', () => {
   });
 
   it('renders classification result section', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -340,7 +340,7 @@ describe('PipelineExplorer', () => {
   });
 
   it('renders quality grade and score', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -358,7 +358,7 @@ describe('PipelineExplorer', () => {
   });
 
   it('renders medication results', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -377,7 +377,7 @@ describe('PipelineExplorer', () => {
   });
 
   it('renders comorbidity score and risk group', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -395,7 +395,7 @@ describe('PipelineExplorer', () => {
   });
 
   it('renders relation extraction results', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -412,7 +412,7 @@ describe('PipelineExplorer', () => {
   });
 
   it('shows error on API failure', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 422,
     });
@@ -428,3 +428,4 @@ describe('PipelineExplorer', () => {
     });
   });
 });
+

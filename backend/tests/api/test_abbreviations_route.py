@@ -6,7 +6,6 @@ GET /abbreviations/dictionary/stats, and GET /abbreviations/domains.
 """
 
 import pytest
-from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 

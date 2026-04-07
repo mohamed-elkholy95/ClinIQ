@@ -61,7 +61,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  'life-threatening': 'bg-red-600 text-white',
+  life_threatening: 'bg-red-600 text-white',
   severe: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
   moderate: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   mild: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
@@ -95,7 +95,7 @@ function SeverityBadge({ severity }: { severity: string }) {
       className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.unknown}`}
     >
       {severity === 'life-threatening' ? '⚠️ ' : ''}
-      {severity}
+      {severity.replace('_', '-')}
     </span>
   );
 }
@@ -175,7 +175,7 @@ export function AllergyExtractor() {
   );
 
   const lifeThreatening = (results?.allergies ?? []).filter(
-    (a: AllergyResult) => a.severity === 'life-threatening'
+    (a: AllergyResult) => a.severity === 'life_threatening'
   ).length;
 
   return (
@@ -376,3 +376,4 @@ export function AllergyExtractor() {
     </div>
   );
 }
+

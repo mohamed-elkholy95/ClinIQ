@@ -321,7 +321,7 @@ class RuleBasedRiskScorer(BaseRiskScorer):
         RiskAssessment
         """
         self.ensure_loaded()
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         try:
             factors: list[RiskFactor] = []
@@ -353,7 +353,7 @@ class RuleBasedRiskScorer(BaseRiskScorer):
                 overall_score, category_scores, factors
             )
 
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
             logger.debug(
                 "RuleBasedRiskScorer: score=%.1f level=%s in %.1f ms",
                 overall_score,
@@ -715,7 +715,7 @@ class MLRiskScorer(BaseRiskScorer):
         Falls back to a zero-score result when no classifier is available.
         """
         self.ensure_loaded()
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         try:
             if self._classifier is None:
@@ -725,7 +725,7 @@ class MLRiskScorer(BaseRiskScorer):
                     risk_level="low",
                     factors=[],
                     recommendations=["ML risk model not yet trained; manual review advised"],
-                    processing_time_ms=(time.time() - start_time) * 1000,
+                    processing_time_ms=max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001),
                     category_scores=dict.fromkeys(RISK_CATEGORIES, 0.0),
                     model_name=self.model_name,
                     model_version=self.version,
@@ -736,7 +736,7 @@ class MLRiskScorer(BaseRiskScorer):
             overall_score = raw_score * 100.0
             risk_level = self._risk_level_from_score(overall_score)
 
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
             return RiskAssessment(
                 overall_score=round(overall_score, 2),
                 risk_level=risk_level,
@@ -804,3 +804,4 @@ class MLRiskScorer(BaseRiskScorer):
             features.append(1.0 if keyword in text_lower else 0.0)
 
         return features
+

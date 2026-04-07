@@ -101,7 +101,7 @@ describe('useDebounce', () => {
   });
 
   it('cleans up timer on unmount', () => {
-    const clearSpy = vi.spyOn(global, 'clearTimeout');
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
     const { unmount } = renderHook(() => useDebounce('test', 300));
 
     unmount();
@@ -111,3 +111,4 @@ describe('useDebounce', () => {
     clearSpy.mockRestore();
   });
 });
+

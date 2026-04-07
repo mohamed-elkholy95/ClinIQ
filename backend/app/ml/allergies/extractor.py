@@ -38,7 +38,6 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
@@ -462,7 +461,7 @@ class ExtractionResult:
             "no_known_allergies": self.no_known_allergies,
             "nkda_evidence": self.nkda_evidence,
             "allergy_count": len(self.allergies),
-            "categories": sorted(set(str(a.category) for a in self.allergies)),
+            "categories": sorted({str(a.category) for a in self.allergies}),
             "text_length": self.text_length,
         }
 
@@ -845,3 +844,4 @@ class ClinicalAllergyExtractor:
             Number of reaction entries.
         """
         return len(_REACTIONS)
+

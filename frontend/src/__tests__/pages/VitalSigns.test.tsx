@@ -10,7 +10,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { VitalSigns } from '../../pages/VitalSigns';
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -292,3 +292,4 @@ describe('VitalSigns — interpretation legend', () => {
     });
   });
 });
+

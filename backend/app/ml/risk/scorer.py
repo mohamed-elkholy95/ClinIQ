@@ -209,7 +209,7 @@ class RiskScorer:
         """Calculate comprehensive risk score."""
         import time
 
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         # Extract risk factors
         risk_factors = []
@@ -243,7 +243,7 @@ class RiskScorer:
             overall_score, category_scores, risk_factors
         )
 
-        processing_time = (time.time() - start_time) * 1000
+        processing_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
 
         return RiskScore(
             overall_score=overall_score,
@@ -505,3 +505,4 @@ class RiskScorer:
             )
 
         return recommendations[:5]  # Max 5 recommendations
+

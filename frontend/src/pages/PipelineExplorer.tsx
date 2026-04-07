@@ -713,7 +713,7 @@ export function PipelineExplorer() {
                 <div>
                   <p className="text-xs text-gray-500">10-Year Mortality</p>
                   <p className="text-lg font-semibold text-gray-700">
-                    {(results.comorbidity.ten_year_mortality * 100).toFixed(1)}%
+                    {(((results.comorbidity.ten_year_mortality ?? results.comorbidity.estimated_mortality) ?? 0) * 100).toFixed(1)}%
                   </p>
                 </div>
               </div>
@@ -795,3 +795,4 @@ export function PipelineExplorer() {
     </div>
   );
 }
+

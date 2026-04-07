@@ -10,7 +10,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QualityAnalyzer } from '../../pages/QualityAnalyzer';
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -231,3 +231,4 @@ describe('QualityAnalyzer — API integration', () => {
     });
   });
 });
+

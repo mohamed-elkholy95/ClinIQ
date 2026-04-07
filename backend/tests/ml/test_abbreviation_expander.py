@@ -8,16 +8,15 @@ edge cases, and realistic clinical scenarios.
 import pytest
 
 from app.ml.abbreviations.expander import (
+    _ABBREVIATION_DB,
+    _AMBIGUOUS_DB,
     AbbreviationConfig,
     AbbreviationExpander,
     AbbreviationMatch,
     AmbiguityResolution,
     ClinicalDomain,
     ExpansionResult,
-    _ABBREVIATION_DB,
-    _AMBIGUOUS_DB,
 )
-
 
 # ─────────────────────────────────────────────────────────────────────
 # Enum & Dataclass Completeness

@@ -9,10 +9,9 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.main import app
-
 # Reset the singleton between tests
 import app.api.v1.routes.conversation as conv_module
+from app.main import app
 
 
 @pytest.fixture(autouse=True)

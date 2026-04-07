@@ -6,9 +6,9 @@ abbreviations.
 """
 
 import logging
-from typing import Annotated
+from contextlib import suppress
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.ml.abbreviations import (
@@ -185,10 +185,8 @@ async def expand_abbreviations(request: AbbreviationRequest) -> dict:
     # Parse domain filter
     domains = None
     if request.domains:
-        try:
+        with suppress(ValueError):
             domains = [ClinicalDomain(d) for d in request.domains]
-        except ValueError:
-            pass  # Invalid domains silently ignored — use all
 
     config = AbbreviationConfig(
         min_confidence=request.min_confidence,
@@ -327,3 +325,4 @@ async def list_domains() -> dict:
         ],
         "total": len(ClinicalDomain),
     }
+

@@ -428,7 +428,6 @@ _ABBREVIATION_DB: dict[str, tuple[str, ClinicalDomain, float]] = {
     "maoi": ("monoamine oxidase inhibitor", ClinicalDomain.PHARMACY, 0.95),
     "hctz": ("hydrochlorothiazide", ClinicalDomain.PHARMACY, 0.95),
     "asa": ("aspirin", ClinicalDomain.PHARMACY, 0.90),
-    "abx": ("antibiotics", ClinicalDomain.PHARMACY, 0.90),
     "pcn": ("penicillin", ClinicalDomain.PHARMACY, 0.90),
     # ── Dental ──────────────────────────────────────────────────────
     "srp": ("scaling and root planing", ClinicalDomain.DENTAL, 0.95),
@@ -1075,7 +1074,7 @@ class AbbreviationExpander:
             domain_counts[str(domain)] = domain_counts.get(str(domain), 0) + 1
 
         ambiguous_domain_counts: dict[str, int] = {}
-        for abbrev, senses in _AMBIGUOUS_DB.items():
+        for _abbrev, senses in _AMBIGUOUS_DB.items():
             for _, domain, _ in senses:
                 key = str(domain)
                 ambiguous_domain_counts[key] = ambiguous_domain_counts.get(key, 0) + 1
@@ -1137,3 +1136,4 @@ class AbbreviationExpander:
             }
 
         return None
+

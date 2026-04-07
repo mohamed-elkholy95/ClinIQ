@@ -281,14 +281,14 @@ class ModelMetrics:
             self._metrics = metrics
             self._model_name = model_name
             self._prediction_type = prediction_type
-            self._start: float = 0.0
+            self._start_ns: int = 0
 
         def __enter__(self) -> ModelMetrics._InferenceTimer:
-            self._start = time.monotonic()
+            self._start_ns = time.perf_counter_ns()
             return self
 
         def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-            elapsed_ms = (time.monotonic() - self._start) * 1000
+            elapsed_ms = max((time.perf_counter_ns() - self._start_ns) / 1_000_000.0, 0.001)
             if exc_type is not None:
                 self._metrics.record_error(self._model_name, exc_type.__name__)
             else:
@@ -429,3 +429,4 @@ class ModelMetrics:
         except Exception as exc:
             logger.warning("Failed to collect Prometheus metrics: %s", exc)
             return {}
+

@@ -18,9 +18,8 @@ Design decisions
 from __future__ import annotations
 
 import logging
-import time
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.ml.enhanced_pipeline import (

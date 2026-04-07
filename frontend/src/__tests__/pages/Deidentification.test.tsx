@@ -155,7 +155,7 @@ describe('Deidentification', () => {
   // ── API Integration ──────────────────────────────────────
 
   it('calls API and renders results', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -176,7 +176,7 @@ describe('Deidentification', () => {
   });
 
   it('shows de-identified text in split pane', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -197,7 +197,7 @@ describe('Deidentification', () => {
   });
 
   it('shows detection badges with type labels', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -214,7 +214,7 @@ describe('Deidentification', () => {
   });
 
   it('shows error on API failure', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
     });
@@ -231,7 +231,7 @@ describe('Deidentification', () => {
   });
 
   it('renders type distribution after analysis', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -247,3 +247,4 @@ describe('Deidentification', () => {
     });
   });
 });
+

@@ -248,7 +248,7 @@ class SklearnICDClassifier(BaseICDClassifier):
         if self.classifier is None:
             raise InferenceError(self.model_name, "Model not trained")
 
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         try:
             # Extract features
@@ -269,7 +269,7 @@ class SklearnICDClassifier(BaseICDClassifier):
             # Get top k predictions
             predictions = self._get_top_predictions(probas[0], top_k)
 
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
 
             return ICDPredictionResult(
                 predictions=predictions,
@@ -290,7 +290,7 @@ class SklearnICDClassifier(BaseICDClassifier):
         if self.classifier is None:
             raise InferenceError(self.model_name, "Model not trained")
 
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         try:
             features = self.feature_extractor.transform(texts)
@@ -315,7 +315,7 @@ class SklearnICDClassifier(BaseICDClassifier):
                     )
                 )
 
-            total_time = (time.time() - start_time) * 1000
+            total_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
             avg_time = total_time / len(texts)
 
             for result in results:
@@ -396,7 +396,7 @@ class TransformerICDClassifier(BaseICDClassifier):
         self.ensure_loaded()
         import torch
 
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         try:
             # Handle long documents with sliding window
@@ -422,7 +422,7 @@ class TransformerICDClassifier(BaseICDClassifier):
             # Get top predictions
             predictions = self._get_top_predictions(probas, top_k)
 
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
 
             return ICDPredictionResult(
                 predictions=predictions,
@@ -440,7 +440,7 @@ class TransformerICDClassifier(BaseICDClassifier):
 
         import torch
 
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         # Split text into overlapping windows
         words = text.split()
@@ -476,7 +476,7 @@ class TransformerICDClassifier(BaseICDClassifier):
         aggregated = np.max(all_probas, axis=0)
         predictions = self._get_top_predictions(aggregated, top_k)
 
-        processing_time = (time.time() - start_time) * 1000
+        processing_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
 
         return ICDPredictionResult(
             predictions=predictions,
@@ -492,7 +492,7 @@ class TransformerICDClassifier(BaseICDClassifier):
         import torch
 
         self.ensure_loaded()
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         try:
             # Tokenize batch
@@ -524,7 +524,7 @@ class TransformerICDClassifier(BaseICDClassifier):
                     )
                 )
 
-            total_time = (time.time() - start_time) * 1000
+            total_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
             avg_time = total_time / len(texts)
 
             for result in results:
@@ -582,7 +582,7 @@ class HierarchicalICDClassifier(BaseICDClassifier):
         """Predict using hierarchical approach."""
         import time
 
-        start_time = time.time()
+        start_time_ns = time.perf_counter_ns()
 
         # First predict chapter
         chapter_result = self.chapter_classifier.predict(text, top_k=3)
@@ -599,7 +599,7 @@ class HierarchicalICDClassifier(BaseICDClassifier):
         all_predictions.sort(key=lambda p: p.confidence, reverse=True)
         top_predictions = all_predictions[:top_k]
 
-        processing_time = (time.time() - start_time) * 1000
+        processing_time = max((time.perf_counter_ns() - start_time_ns) / 1_000_000.0, 0.001)
 
         return ICDPredictionResult(
             predictions=top_predictions,
@@ -735,7 +735,7 @@ class RuleBasedICDClassifier(BaseICDClassifier):
         import time as _time
 
         self.ensure_loaded()
-        start = _time.time()
+        start_ns = _time.perf_counter_ns()
 
         text_lower = text.lower()
         predictions: list[ICDCodePrediction] = []
@@ -770,7 +770,7 @@ class RuleBasedICDClassifier(BaseICDClassifier):
         predictions.sort(key=lambda p: p.confidence, reverse=True)
         predictions = predictions[:top_k]
 
-        elapsed_ms = (_time.time() - start) * 1000
+        elapsed_ms = max((_time.perf_counter_ns() - start_ns) / 1_000_000.0, 0.001)
 
         return ICDPredictionResult(
             predictions=predictions,
@@ -794,3 +794,5 @@ class RuleBasedICDClassifier(BaseICDClassifier):
         list[ICDPredictionResult]
         """
         return [self.predict(text, top_k) for text in texts]
+
+

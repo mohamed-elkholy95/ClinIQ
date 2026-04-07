@@ -1,28 +1,52 @@
-# ClinIQ API Documentation
+# ClinIQ Documentation
 
-![API Architecture](./docs/architecture.png)
+This directory contains the project documentation for ClinIQ.
 
-![Python Package](https://img.shields.io/pypi/v/ciniq-client/badge)](https://img.shields.io/pypi/v/ciniq-client)](https://img.shields.io/pypi/v/ciniq-client)](https://img.shields.io/pypi/v/ciniq-client)](https://img.shields.io/pypi/l/ciniq-client)
+Use this folder as the primary entry point for architecture, deployment, security, API, and model-level reference material.
 
-![Python](https://img.shields.io/pypi/pyversions/badge)](https://img.shields.io/pypi/pyversions/badge)](https://img.shields.io/pypi/coverage%20>84%25)
+## Start Here
 
-(https://img.shields.io/pypi/coverage%20>84%)
+- [Architecture](architecture.md): system design, core components, data flow, and major decisions
+- [API Reference](api/api-reference.md): endpoint-level reference for the backend API
+- [Local Setup](deployment/local-setup.md): local development environment and service startup
+- [Production Guide](deployment/production-guide.md): deployment patterns for Docker Compose and Kubernetes
+- [HIPAA Compliance Architecture](security/hipaa-compliance.md): security controls, PHI handling, audit expectations, and compliance posture
 
-![Test Coverage](https://img.shields.io/pypi/test-coverage%80%25d)](https://img.shields.io/pypi/test-coverage/badge)
-![Lint](https://img.shields.io/pypi/lint/badge)](https://img.shields.io/pypi/lint/badge)
-![Format](https://img.shields.io/pypi/format-badge?style=for-the-content in parentheses): ):| 24px,12:14:21: 49:01 -04:00",
-```
+## ML Documentation
 
-# Documentation
+The `ml/` directory contains model cards and evaluation notes for the clinical NLP modules, including:
 
-Full documentation is available at:
-- [API Documentation](./docs/api.md): Auto-generated OpenAPI docs
-- [Architecture Guide](./docs/architecture.md): System design and decisions
-- [ML Models](./docs/ml/): Model cards, training guides, evaluation reports
-- [Security & Compliance](./docs/security/): HIPAA-aware architecture, audit logging
+- NER
+- ICD-10 prediction
+- summarization
+- risk scoring
+- de-identification
+- relations
+- temporal extraction
+- medications
+- vitals
+- document classification
+- conversation memory
+- other task-specific components
 
- data handling
-- [Deployment](./docs/deployment/): Local dev setup, Docker instructions
+Browse the folder here: [ML documentation](ml/)
 
-- [Python SDK](./docs/sdk.md): Client library documentation
+## Recommended Reading Order
 
+If you are new to the repository, read in this order:
+
+1. [README.md](../README.md)
+2. [Architecture](architecture.md)
+3. [Local Setup](deployment/local-setup.md)
+4. [API Reference](api/api-reference.md)
+5. [HIPAA Compliance Architecture](security/hipaa-compliance.md)
+
+## Public Repo Reminder
+
+This repository is public.
+
+- Do not add secrets or real deployment credentials to docs.
+- Do not include PHI, real patient examples, or internal-only operational detail.
+- Use placeholders and synthetic examples only.
+
+Contributor and agent rules are documented in [AGENTS.md](../AGENTS.md).

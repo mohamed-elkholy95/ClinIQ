@@ -9,6 +9,9 @@ from __future__ import annotations
 import pytest
 
 from app.ml.allergies.extractor import (
+    _ALL_ALLERGENS,
+    _REACTIONS,
+    _SURFACE_TO_ENTRY,
     AllergyCategory,
     AllergyResult,
     AllergySeverity,
@@ -16,11 +19,7 @@ from app.ml.allergies.extractor import (
     ClinicalAllergyExtractor,
     DetectedAllergy,
     ExtractionResult,
-    _ALL_ALLERGENS,
-    _REACTIONS,
-    _SURFACE_TO_ENTRY,
 )
-
 
 # ---------------------------------------------------------------------------
 # Enum completeness

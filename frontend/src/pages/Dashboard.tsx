@@ -51,10 +51,10 @@ const demoStats: DashboardStats = {
     { type: 'lab_value' as EntityType, count: 932 },
   ],
   recent_activity: [
-    { id: '1', action: 'Document analyzed', document_title: 'Discharge Summary - Patient 4821', timestamp: '2026-03-23T14:32:00Z' },
-    { id: '2', action: 'Batch completed', document_title: 'Radiology Reports Batch #42', timestamp: '2026-03-23T13:15:00Z' },
-    { id: '3', action: 'Risk alert', document_title: 'Admission Note - Patient 1293', timestamp: '2026-03-23T12:48:00Z' },
-    { id: '4', action: 'Document analyzed', document_title: 'Lab Results - Patient 7102', timestamp: '2026-03-23T11:22:00Z' },
+    { id: '1', action: 'Document analyzed', document_title: 'Synthetic discharge summary sample A', timestamp: '2026-03-23T14:32:00Z' },
+    { id: '2', action: 'Batch completed', document_title: 'Synthetic radiology batch 42', timestamp: '2026-03-23T13:15:00Z' },
+    { id: '3', action: 'Risk alert', document_title: 'Synthetic admission note sample B', timestamp: '2026-03-23T12:48:00Z' },
+    { id: '4', action: 'Document analyzed', document_title: 'Synthetic lab review sample C', timestamp: '2026-03-23T11:22:00Z' },
     { id: '5', action: 'Model updated', document_title: 'NER Model v2.3.1', timestamp: '2026-03-23T10:05:00Z' },
   ],
 };
@@ -291,3 +291,4 @@ export function Dashboard() {
     </div>
   );
 }
+

@@ -9,14 +9,13 @@ from __future__ import annotations
 import pytest
 
 from app.ml.sections.parser import (
+    _HEADER_TO_CATEGORY,
     ClinicalSectionParser,
     SectionCategory,
     SectionParseResult,
     SectionSpan,
-    _HEADER_TO_CATEGORY,
     _normalise_header,
 )
-
 
 # ---------------------------------------------------------------------------
 # Enum completeness

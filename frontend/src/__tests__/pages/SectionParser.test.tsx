@@ -13,7 +13,7 @@ import { SectionParser } from '../../pages/SectionParser';
 // ─── Mocks ───────────────────────────────────────────────────
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -280,3 +280,4 @@ describe('SectionParser — Error Handling', () => {
     });
   });
 });
+

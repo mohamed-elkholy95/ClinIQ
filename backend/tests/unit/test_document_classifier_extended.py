@@ -13,19 +13,17 @@ Covers:
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from app.core.exceptions import InferenceError
 from app.ml.classifier.document_classifier import (
-    BaseDocumentClassifier,
     ClassificationResult,
-    ClassificationScore,
     DocumentType,
     RuleBasedDocumentClassifier,
     TransformerDocumentClassifier,
 )
-from app.core.exceptions import InferenceError
 
 
 class TestSectionScoreNoPatternsPath:
@@ -160,7 +158,6 @@ class TestTransformerDocumentClassifierClassify:
 
     def test_classify_with_loaded_model(self) -> None:
         """Should return ClassificationResult from transformer predictions."""
-        import numpy as np
 
         classifier = TransformerDocumentClassifier()
         classifier._is_loaded = True

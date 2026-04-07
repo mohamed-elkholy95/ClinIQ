@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 // A component that throws on render to trigger the boundary
-function ThrowingChild({ message = 'Test error' }: { message?: string }) {
+function ThrowingChild({ message = 'Test error' }: { message?: string }): JSX.Element {
   throw new Error(message);
 }
 
@@ -129,3 +129,4 @@ describe('ErrorBoundary', () => {
     expect(summary?.textContent).toContain('Technical details');
   });
 });
+

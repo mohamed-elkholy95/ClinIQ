@@ -13,14 +13,19 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.api.v1.routes.abbreviations import router as abbreviations_router
+from app.api.v1.routes.allergies import router as allergies_router
 from app.api.v1.routes.analyze import router as analyze_router
 from app.api.v1.routes.assertions import router as assertions_router
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.batch import router as batch_router
 from app.api.v1.routes.classify import router as classify_router
 from app.api.v1.routes.comorbidity import router as comorbidity_router
+from app.api.v1.routes.conversation import router as conversation_router
 from app.api.v1.routes.deidentify import router as deidentify_router
 from app.api.v1.routes.drift import router as drift_router
+from app.api.v1.routes.enhanced_analyze import router as enhanced_analyze_router
+from app.api.v1.routes.evaluation import router as evaluation_router
 from app.api.v1.routes.health import router as health_router
 from app.api.v1.routes.icd import router as icd_router
 from app.api.v1.routes.medications import router as medications_router
@@ -33,15 +38,10 @@ from app.api.v1.routes.relations import router as relations_router
 from app.api.v1.routes.risk import router as risk_router
 from app.api.v1.routes.sdoh import router as sdoh_router
 from app.api.v1.routes.search import router as search_router
+from app.api.v1.routes.sections import router as sections_router
 from app.api.v1.routes.stream import router as stream_router
 from app.api.v1.routes.summarize import router as summarize_router
 from app.api.v1.routes.temporal import router as temporal_router
-from app.api.v1.routes.abbreviations import router as abbreviations_router
-from app.api.v1.routes.allergies import router as allergies_router
-from app.api.v1.routes.conversation import router as conversation_router
-from app.api.v1.routes.enhanced_analyze import router as enhanced_analyze_router
-from app.api.v1.routes.sections import router as sections_router
-from app.api.v1.routes.evaluation import router as evaluation_router
 from app.api.v1.routes.vitals import router as vitals_router
 
 # ---------------------------------------------------------------------------

@@ -12,18 +12,13 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from app.ml.ner.model import Entity
 from app.ml.relations.extractor import (
-    RELATION_TYPE_CONSTRAINTS,
-    Relation,
     RelationExtractionResult,
     RelationType,
     RuleBasedRelationExtractor,
     TransformerRelationExtractor,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

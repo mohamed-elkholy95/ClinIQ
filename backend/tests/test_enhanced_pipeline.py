@@ -17,7 +17,6 @@ from app.ml.enhanced_pipeline import (
 )
 from app.ml.pipeline import ClinicalPipeline, PipelineConfig
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

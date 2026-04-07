@@ -13,7 +13,7 @@ import { ConceptNormalizer } from '../../pages/ConceptNormalizer';
 // ─── Mocks ───────────────────────────────────────────────────
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -355,3 +355,4 @@ describe('ConceptNormalizer — Error Handling', () => {
     });
   });
 });
+

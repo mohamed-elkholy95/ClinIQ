@@ -5,16 +5,14 @@ characters, null bytes, and byte-order marks is correctly cleaned
 before reaching ML inference modules or database storage.
 """
 
-import pytest
 
 from app.middleware.sanitize import (
-    InputSanitizationMiddleware,
-    sanitize_text,
-    sanitize_dict,
-    _sanitize_list,
     _DEFAULT_MAX_TEXT_CHARS,
+    InputSanitizationMiddleware,
+    _sanitize_list,
+    sanitize_dict,
+    sanitize_text,
 )
-
 
 # ─── sanitize_text ────────────────────────────────────────────
 

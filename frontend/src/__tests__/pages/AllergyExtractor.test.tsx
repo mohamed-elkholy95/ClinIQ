@@ -12,7 +12,7 @@ import { AllergyExtractor } from '../../pages/AllergyExtractor';
 // ─── Mocks ───────────────────────────────────────────────────
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -113,7 +113,7 @@ describe('AllergyExtractor — API integration', () => {
         canonical_name: 'penicillin',
         category: 'drug',
         reactions: ['anaphylaxis'],
-        severity: 'life-threatening',
+        severity: 'life_threatening',
         assertion_status: 'present',
         confidence: 0.95,
         start_char: 0,
@@ -278,7 +278,7 @@ describe('AllergyExtractor — category filter', () => {
         canonical_name: 'peanuts',
         category: 'food',
         reactions: ['anaphylaxis'],
-        severity: 'life-threatening',
+        severity: 'life_threatening',
         assertion_status: 'present',
         confidence: 0.85,
         start_char: 50,
@@ -365,3 +365,5 @@ describe('AllergyExtractor — table structure', () => {
     });
   });
 });
+
+

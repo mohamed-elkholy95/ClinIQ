@@ -13,17 +13,14 @@ Covers:
 
 from __future__ import annotations
 
-import importlib
-import sys
 from pathlib import Path
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
 from app.core.exceptions import InferenceError, ModelLoadError
 from app.ml.serving.onnx_runtime import OnnxModelServer, OnnxPrediction
-
 
 # ---------------------------------------------------------------------------
 # Helpers

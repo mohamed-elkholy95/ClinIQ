@@ -155,7 +155,7 @@ describe('MedicationExtractor', () => {
   // ── API Integration ──────────────────────────────────────
 
   it('calls API and renders results on analyze', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -180,7 +180,7 @@ describe('MedicationExtractor', () => {
   });
 
   it('shows error message on API failure', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
     });
@@ -196,7 +196,7 @@ describe('MedicationExtractor', () => {
   });
 
   it('displays PRN badge for PRN medications', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -213,7 +213,7 @@ describe('MedicationExtractor', () => {
   });
 
   it('shows medication indication', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -230,7 +230,7 @@ describe('MedicationExtractor', () => {
   });
 
   it('displays status badges with correct text', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -251,7 +251,7 @@ describe('MedicationExtractor', () => {
   // ── Status Filter ────────────────────────────────────────
 
   it('renders status filter dropdown after analysis', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -270,7 +270,7 @@ describe('MedicationExtractor', () => {
   // ── Table Headers ────────────────────────────────────────
 
   it('renders sortable table column headers', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockResponse,
     });
@@ -291,3 +291,4 @@ describe('MedicationExtractor', () => {
     });
   });
 });
+

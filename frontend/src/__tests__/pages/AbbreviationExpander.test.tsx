@@ -13,7 +13,7 @@ import { AbbreviationExpander } from '../../pages/AbbreviationExpander';
 // ─── Mocks ───────────────────────────────────────────────────
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -285,3 +285,4 @@ describe('AbbreviationExpander — Error Handling', () => {
     });
   });
 });
+

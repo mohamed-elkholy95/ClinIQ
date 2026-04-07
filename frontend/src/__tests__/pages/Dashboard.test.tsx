@@ -104,8 +104,8 @@ describe('Dashboard', () => {
   // Recent activity items
   it('renders recent activity items', () => {
     renderDashboard();
-    expect(screen.getByText('Discharge Summary - Patient 4821')).toBeInTheDocument();
-    expect(screen.getByText('Radiology Reports Batch #42')).toBeInTheDocument();
+    expect(screen.getByText('Synthetic discharge summary sample A')).toBeInTheDocument();
+    expect(screen.getByText('Synthetic radiology batch 42')).toBeInTheDocument();
   });
 
   it('renders activity actions', () => {
@@ -116,3 +116,4 @@ describe('Dashboard', () => {
     expect(screen.getByText('Risk alert')).toBeInTheDocument();
   });
 });
+

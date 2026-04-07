@@ -163,13 +163,13 @@ class TokenSHAPExplainer(BaseExplainer):
         -------
         SHAPExplanation
         """
-        start = time.time()
+        start_ns = time.perf_counter_ns()
 
         try:
             import shap  # noqa: F401
         except ImportError:
             logger.warning("shap not installed — falling back to TF-IDF weight heuristic")
-            return self._fallback_explain(text, start)
+            return self._fallback_explain(text, start_ns)
 
         vectorizer = self._get_vectorizer(text)
         explainer = self._get_shap_explainer(vectorizer)
@@ -213,7 +213,7 @@ class TokenSHAPExplainer(BaseExplainer):
             predicted_value=predicted_value,
             top_positive_features=top_pos,
             top_negative_features=top_neg,
-            processing_time_ms=(time.time() - start) * 1000,
+            processing_time_ms=max((time.perf_counter_ns() - start_ns) / 1_000_000.0, 0.001),
         )
 
     # ------------------------------------------------------------------
@@ -282,7 +282,7 @@ class TokenSHAPExplainer(BaseExplainer):
         top_neg = [(k, v) for k, v in reversed(sorted_items) if v < 0][: self.top_k]
         return top_pos, top_neg
 
-    def _fallback_explain(self, text: str, start: float) -> SHAPExplanation:
+    def _fallback_explain(self, text: str, start_ns: int) -> SHAPExplanation:
         """Heuristic TF-IDF-weight-based attribution when SHAP is unavailable."""
         from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -302,7 +302,7 @@ class TokenSHAPExplainer(BaseExplainer):
             predicted_value=float(x.sum()),
             top_positive_features=top_pos,
             top_negative_features=top_neg,
-            processing_time_ms=(time.time() - start) * 1000,
+            processing_time_ms=max((time.perf_counter_ns() - start_ns) / 1_000_000.0, 0.001),
         )
 
 
@@ -365,7 +365,7 @@ class AttentionExplainer(BaseExplainer):
             attention weight.  ``base_value`` is always 0.0 for attention
             heatmaps (no meaningful baseline).
         """
-        start = time.time()
+        start_ns = time.perf_counter_ns()
 
         try:
             import torch
@@ -395,7 +395,7 @@ class AttentionExplainer(BaseExplainer):
                 feature_attributions={},
                 base_value=0.0,
                 predicted_value=0.0,
-                processing_time_ms=(time.time() - start) * 1000,
+                processing_time_ms=max((time.perf_counter_ns() - start_ns) / 1_000_000.0, 0.001),
             )
 
         # Stack: [n_layers, batch=1, heads, seq, seq]
@@ -453,7 +453,7 @@ class AttentionExplainer(BaseExplainer):
             predicted_value=predicted_value,
             top_positive_features=top_pos,
             top_negative_features=top_neg,
-            processing_time_ms=(time.time() - start) * 1000,
+            processing_time_ms=max((time.perf_counter_ns() - start_ns) / 1_000_000.0, 0.001),
         )
 
 
@@ -552,3 +552,5 @@ def format_explanation(explanation: SHAPExplanation, text: str) -> dict[str, Any
         "attribution_sum": round(attribution_sum, 6),
         "processing_time_ms": explanation.processing_time_ms,
     }
+
+

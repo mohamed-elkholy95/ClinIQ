@@ -250,7 +250,7 @@ async def _stream_analysis(request: AnalysisRequest) -> AsyncGenerator[str, None
     str
         SSE-formatted text frames.
     """
-    wall_start = time.monotonic()
+    wall_start_ns = time.perf_counter_ns()
     doc_hash = hashlib.sha256(request.text.encode()).hexdigest()
 
     # --- started event ---
@@ -273,9 +273,9 @@ async def _stream_analysis(request: AnalysisRequest) -> AsyncGenerator[str, None
     # --- NER ---
     if cfg.ner.enabled:
         try:
-            t0 = time.monotonic()
+            t0_ns = time.perf_counter_ns()
             entities = _run_ner_stage(request.text, cfg.ner.min_confidence)
-            elapsed = (time.monotonic() - t0) * 1000
+            elapsed = max((time.perf_counter_ns() - t0_ns) / 1_000_000.0, 0.001)
             timings["ner_ms"] = round(elapsed, 2)
             stages_completed += 1
             yield _sse_event("ner", {
@@ -293,11 +293,11 @@ async def _stream_analysis(request: AnalysisRequest) -> AsyncGenerator[str, None
     # --- ICD-10 ---
     if cfg.icd.enabled:
         try:
-            t0 = time.monotonic()
+            t0_ns = time.perf_counter_ns()
             predictions = _run_icd_stage(
                 request.text, cfg.icd.top_k, cfg.icd.min_confidence,
             )
-            elapsed = (time.monotonic() - t0) * 1000
+            elapsed = max((time.perf_counter_ns() - t0_ns) / 1_000_000.0, 0.001)
             timings["icd_ms"] = round(elapsed, 2)
             stages_completed += 1
             yield _sse_event("icd", {
@@ -315,9 +315,9 @@ async def _stream_analysis(request: AnalysisRequest) -> AsyncGenerator[str, None
     # --- Summarisation ---
     if cfg.summary.enabled:
         try:
-            t0 = time.monotonic()
+            t0_ns = time.perf_counter_ns()
             summary = _run_summary_stage(request.text, cfg.summary.detail_level)
-            elapsed = (time.monotonic() - t0) * 1000
+            elapsed = max((time.perf_counter_ns() - t0_ns) / 1_000_000.0, 0.001)
             summary["processing_time_ms"] = elapsed
             timings["summary_ms"] = round(elapsed, 2)
             stages_completed += 1
@@ -335,9 +335,9 @@ async def _stream_analysis(request: AnalysisRequest) -> AsyncGenerator[str, None
     # --- Risk ---
     if cfg.risk.enabled:
         try:
-            t0 = time.monotonic()
+            t0_ns = time.perf_counter_ns()
             risk = _run_risk_stage(request.text)
-            elapsed = (time.monotonic() - t0) * 1000
+            elapsed = max((time.perf_counter_ns() - t0_ns) / 1_000_000.0, 0.001)
             timings["risk_ms"] = round(elapsed, 2)
             stages_completed += 1
             yield _sse_event("risk", {
@@ -352,7 +352,7 @@ async def _stream_analysis(request: AnalysisRequest) -> AsyncGenerator[str, None
             })
 
     # --- complete ---
-    total_ms = (time.monotonic() - wall_start) * 1000
+    total_ms = max((time.perf_counter_ns() - wall_start_ns) / 1_000_000.0, 0.001)
     yield _sse_event("complete", {
         "stages_completed": stages_completed,
         "total_processing_time_ms": round(total_ms, 2),
@@ -417,3 +417,4 @@ async def stream_analysis(
             "X-Accel-Buffering": "no",  # Disable nginx buffering for SSE
         },
     )
+

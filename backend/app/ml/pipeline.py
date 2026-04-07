@@ -241,7 +241,7 @@ class ClinicalPipeline:
         """
         self.ensure_loaded()
         cfg = config or PipelineConfig()
-        pipeline_start = time.time()
+        pipeline_start_ns = time.perf_counter_ns()
 
         result = PipelineResult(document_id=document_id)
 
@@ -267,7 +267,7 @@ class ClinicalPipeline:
 
         # Populate model version metadata
         result.model_versions = self._collect_model_versions()
-        result.processing_time_ms = (time.time() - pipeline_start) * 1000
+        result.processing_time_ms = max((time.perf_counter_ns() - pipeline_start_ns) / 1_000_000.0, 0.001)
 
         logger.debug(
             "ClinicalPipeline.process completed in %.1f ms (document_id=%s)",
@@ -470,3 +470,4 @@ class ClinicalPipeline:
             if component is not None and hasattr(component, "version"):
                 versions[name] = component.version
         return versions
+

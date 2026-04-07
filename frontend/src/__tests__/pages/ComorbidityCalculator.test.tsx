@@ -10,7 +10,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ComorbidityCalculator } from '../../pages/ComorbidityCalculator';
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -296,3 +296,4 @@ describe('ComorbidityCalculator — API integration', () => {
     });
   });
 });
+

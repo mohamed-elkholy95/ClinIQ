@@ -246,7 +246,7 @@ async def run_analysis(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> AnalysisResponse:
     """Orchestrate all active pipeline stages and return the aggregated result."""
-    wall_start = time.monotonic()
+    wall_start_ns = time.perf_counter_ns()
     document_hash = hashlib.sha256(payload.text.encode()).hexdigest()
 
     try:
@@ -263,30 +263,30 @@ async def run_analysis(
 
         # --- NER stage ---
         if cfg.ner.enabled:
-            t0 = time.monotonic()
+            t0_ns = time.perf_counter_ns()
             entities = _run_ner(payload.text, cfg.ner.min_confidence)
-            ner_ms = (time.monotonic() - t0) * 1000
+            ner_ms = max((time.perf_counter_ns() - t0_ns) / 1_000_000.0, 0.001)
 
         # --- ICD-10 prediction stage ---
         if cfg.icd.enabled:
-            t0 = time.monotonic()
+            t0_ns = time.perf_counter_ns()
             icd_codes = _run_icd(payload.text, cfg.icd.top_k, cfg.icd.min_confidence)
-            icd_ms = (time.monotonic() - t0) * 1000
+            icd_ms = max((time.perf_counter_ns() - t0_ns) / 1_000_000.0, 0.001)
 
         # --- Summarisation stage ---
         if cfg.summary.enabled:
-            t0 = time.monotonic()
+            t0_ns = time.perf_counter_ns()
             summary = _run_summary(payload.text, cfg.summary.detail_level)
-            summary_ms = (time.monotonic() - t0) * 1000
+            summary_ms = max((time.perf_counter_ns() - t0_ns) / 1_000_000.0, 0.001)
             summary.processing_time_ms = summary_ms
 
         # --- Risk scoring stage ---
         if cfg.risk.enabled:
-            t0 = time.monotonic()
+            t0_ns = time.perf_counter_ns()
             risk_result = _run_risk(payload.text)
-            risk_ms = (time.monotonic() - t0) * 1000
+            risk_ms = max((time.perf_counter_ns() - t0_ns) / 1_000_000.0, 0.001)
 
-        total_ms = (time.monotonic() - wall_start) * 1000
+        total_ms = max((time.perf_counter_ns() - wall_start_ns) / 1_000_000.0, 0.001)
 
         await _write_audit_log(
             db,
@@ -327,3 +327,4 @@ async def run_analysis(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during analysis. Please try again.",
         ) from exc
+

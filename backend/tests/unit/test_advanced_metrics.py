@@ -6,8 +6,6 @@ ROUGE F-measure, Hierarchical ICD-10 evaluation, and AUPRC.
 
 from __future__ import annotations
 
-import math
-
 import pytest
 
 from app.ml.utils.advanced_metrics import (
@@ -27,7 +25,6 @@ from app.ml.utils.advanced_metrics import (
     compute_partial_ner_metrics,
     compute_rouge,
 )
-
 
 # =========================================================================
 # Cohen's Kappa

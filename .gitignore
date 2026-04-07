@@ -56,6 +56,5 @@ redis_data/
 minio_data/
 
 # Project
-AGENTS.md
 backend/.coverage
 .coverage

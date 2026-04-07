@@ -50,13 +50,11 @@ Design decisions
 from __future__ import annotations
 
 import math
-from collections import Counter, defaultdict
-from dataclasses import dataclass, field
-from typing import Sequence
+from collections import Counter
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 import numpy as np
-from numpy.typing import NDArray
-
 
 # ---------------------------------------------------------------------------
 # Cohen's Kappa
@@ -123,7 +121,7 @@ def compute_cohens_kappa(
     label_idx = {lab: i for i, lab in enumerate(labels)}
     k = len(labels)
     matrix = np.zeros((k, k), dtype=np.int64)
-    for a, b in zip(rater_a, rater_b):
+    for a, b in zip(rater_a, rater_b, strict=False):
         matrix[label_idx[a], label_idx[b]] += 1
 
     observed = float(np.trace(matrix)) / n
@@ -133,10 +131,7 @@ def compute_cohens_kappa(
     col_marginals = matrix.sum(axis=0).astype(np.float64) / n
     expected = float(np.dot(row_marginals, col_marginals))
 
-    if abs(1.0 - expected) < 1e-12:
-        kappa = 1.0  # Perfect agreement by both metrics.
-    else:
-        kappa = (observed - expected) / (1.0 - expected)
+    kappa = 1.0 if abs(1.0 - expected) < 1e-12 else (observed - expected) / (1.0 - expected)
 
     return KappaResult(
         kappa=kappa,
@@ -197,7 +192,7 @@ def compute_mcc(
         raise ValueError("Input sequences must have equal length")
 
     tp = fp = fn = tn = 0
-    for t, p in zip(y_true, y_pred):
+    for t, p in zip(y_true, y_pred, strict=False):
         if t == 1 and p == 1:
             tp += 1
         elif t == 0 and p == 1:
@@ -292,7 +287,7 @@ def compute_calibration(
         )
 
     # Brier score — mean squared error of probabilities.
-    brier = sum((p - t) ** 2 for t, p in zip(y_true, y_prob)) / n
+    brier = sum((p - t) ** 2 for t, p in zip(y_true, y_prob, strict=False)) / n
 
     # Bin predictions into equal-width intervals.
     bin_boundaries = np.linspace(0.0, 1.0, n_bins + 1)
@@ -489,7 +484,7 @@ def compute_partial_ner_metrics(
     for p_type, p_start, p_end in pred_entities:
         best_j = -1
         best_score = 0.0
-        for j, (g_type, g_start, g_end) in enumerate(gold_entities):
+        for j, (_g_type, g_start, g_end) in enumerate(gold_entities):
             if j in used_gold:
                 continue
             score = _span_jaccard(p_start, p_end, g_start, g_end)
@@ -795,7 +790,7 @@ def compute_hierarchical_icd_metrics(
     block_matches = 0
     chapter_matches = 0
 
-    for gold, pred in zip(gold_codes, pred_codes):
+    for gold, pred in zip(gold_codes, pred_codes, strict=False):
         g_norm = gold.strip().upper()
         p_norm = pred.strip().upper()
 
@@ -882,13 +877,13 @@ def compute_auprc(
         return AUPRCResult(label=label, auprc=0.0, n_positive=n_pos, n_total=n)
 
     # Sort by descending score.
-    pairs = sorted(zip(y_scores, y_true), key=lambda x: -x[0])
+    pairs = sorted(zip(y_scores, y_true, strict=False), key=lambda x: -x[0])
 
     precisions = [1.0]
     recalls = [0.0]
     tp = 0
 
-    for i, (score, truth) in enumerate(pairs, 1):
+    for i, (_score, truth) in enumerate(pairs, 1):
         if truth == 1:
             tp += 1
         prec = tp / i
@@ -902,3 +897,4 @@ def compute_auprc(
         auprc += (recalls[i] - recalls[i - 1]) * (precisions[i] + precisions[i - 1]) / 2
 
     return AUPRCResult(label=label, auprc=auprc, n_positive=n_pos, n_total=n)
+

@@ -11,7 +11,6 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 
-
 SAMPLE_NOTE = """
 CHIEF COMPLAINT:
 Chest pain and shortness of breath.

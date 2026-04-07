@@ -402,7 +402,7 @@ class EnhancedClinicalPipeline:
         """
         self._ensure_modules()
         cfg = config or EnhancedPipelineConfig()
-        pipeline_start = time.time()
+        pipeline_start_ns = time.perf_counter_ns()
         result = EnhancedPipelineResult()
 
         # --- Base pipeline ---
@@ -478,7 +478,7 @@ class EnhancedClinicalPipeline:
         if cfg.enable_comorbidity:
             result = self._run_comorbidity(text, cfg, result)
 
-        result.processing_time_ms = (time.time() - pipeline_start) * 1000
+        result.processing_time_ms = max((time.perf_counter_ns() - pipeline_start_ns) / 1_000_000.0, 0.001)
         logger.debug(
             "EnhancedClinicalPipeline.process completed in %.1f ms "
             "(document_id=%s, errors=%d)",
@@ -969,3 +969,4 @@ class EnhancedClinicalPipeline:
             logger.error("Comorbidity scoring failed: %s", exc)
             result.component_errors["comorbidity"] = str(exc)
         return result
+

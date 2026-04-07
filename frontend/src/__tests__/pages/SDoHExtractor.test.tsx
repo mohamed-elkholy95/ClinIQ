@@ -10,7 +10,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SDoHExtractor } from '../../pages/SDoHExtractor';
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -260,3 +260,4 @@ describe('SDoHExtractor — domain filter', () => {
     });
   });
 });
+

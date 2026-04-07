@@ -16,8 +16,8 @@ This guide covers deploying ClinIQ to production using Docker Compose and Kubern
 ### 1. Prepare Environment
 
 ```bash
-git clone https://github.com/cliniq/cliniq.git
-cd cliniq
+git clone https://github.com/mohamed-elkholy95/ClinIQ.git
+cd ClinIQ
 
 # Create production .env file
 cat > .env << 'EOF'
@@ -467,3 +467,4 @@ curl -s http://localhost:8000/api/v1/health/ready | jq .
 # Liveness (basic process check)
 curl -s http://localhost:8000/api/v1/health/live | jq .
 ```
+
